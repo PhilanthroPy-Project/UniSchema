@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import type { ZodError } from 'zod'
 
+import { enqueueDriftEvent } from '../store/driftQueue.js'
+
 export const DRIFT_VENDORS = ['cvent', 'givecampus'] as const
 
 export type DriftVendor = (typeof DRIFT_VENDORS)[number]
@@ -24,23 +26,20 @@ const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
   },
 }
 
-export type DriftCaptureFailureReason =
-  | 'disabled'
-  | 'invalid_vendor'
-  | 'read_only'
-  | 'write_error'
+export type DriftCaptureFailureReason = 'disabled' | 'invalid_vendor'
 
 export type DriftCaptureResult =
   | {
       captured: true
-      fixturePath: string
-      testPath: string
-      basename: string
+      driftEventId: string
+      fixturePath?: string
+      testPath?: string
+      basename?: string
+      localWriteSkipped?: boolean
     }
   | {
       captured: false
       reason: DriftCaptureFailureReason
-      error?: string
     }
 
 const PROJECT_ROOT = path.resolve(
@@ -53,7 +52,15 @@ export function isDriftVendor(value: string): value is DriftVendor {
 }
 
 export function isDriftCaptureEnabled(): boolean {
-  if (typeof process === 'undefined' || process.versions.node === undefined) {
+  if (process.env.DRIFT_CAPTURE === 'disabled') {
+    return false
+  }
+
+  return true
+}
+
+export function isLocalFilesystemCaptureEnabled(): boolean {
+  if (!isDriftCaptureEnabled()) {
     return false
   }
 
@@ -61,11 +68,7 @@ export function isDriftCaptureEnabled(): boolean {
     return false
   }
 
-  if (process.env.DRIFT_CAPTURE === 'disabled') {
-    return false
-  }
-
-  return true
+  return process.env.DRIFT_CAPTURE !== 'queue-only'
 }
 
 /** Filesystem-safe, deterministic formatting for a given instant. */
@@ -126,12 +129,16 @@ export function isReadOnlyFilesystemError(error: unknown): boolean {
   return code === 'EROFS' || code === 'EPERM' || code === 'EACCES'
 }
 
-async function writeDriftArtifacts(
+async function writeLocalDriftArtifacts(
   fixturePath: string,
   testPath: string,
   rawPayload: unknown,
   testSource: string,
-): Promise<DriftCaptureResult> {
+): Promise<{ fixturePath?: string; testPath?: string; basename?: string; skipped?: boolean; error?: string }> {
+  if (!isLocalFilesystemCaptureEnabled()) {
+    return { skipped: true }
+  }
+
   try {
     await mkdir(path.dirname(fixturePath), { recursive: true })
     await mkdir(path.dirname(testPath), { recursive: true })
@@ -147,31 +154,18 @@ async function writeDriftArtifacts(
     })
 
     return {
-      captured: true,
       fixturePath,
       testPath,
       basename: path.basename(fixturePath, '.json'),
     }
   } catch (error) {
-    if (isReadOnlyFilesystemError(error)) {
-      return {
-        captured: false,
-        reason: 'read_only',
-        error: error instanceof Error ? error.message : String(error),
-      }
-    }
-
-    return {
-      captured: false,
-      reason: 'write_error',
-      error: error instanceof Error ? error.message : String(error),
-    }
+    return { error: error instanceof Error ? error.message : String(error) }
   }
 }
 
 /**
- * Persists a failed vendor payload and generates a failing Vitest contract
- * so an autonomous agent can patch the mapper when upstream schemas drift.
+ * Enqueues a failed vendor payload to the drift dead-letter store and,
+ * when enabled, generates local Vitest fixtures for the agent loop.
  */
 export async function captureSchemaDrift(
   vendor: string,
@@ -198,5 +192,32 @@ export async function captureSchemaDrift(
     validationError.issues.length,
   )
 
-  return writeDriftArtifacts(fixturePath, testPath, rawPayload, testSource)
+  const localArtifacts = await writeLocalDriftArtifacts(
+    fixturePath,
+    testPath,
+    rawPayload,
+    testSource,
+  )
+
+  const driftEvent = enqueueDriftEvent(vendor, rawPayload, validationError, {
+    fixturePath: localArtifacts.fixturePath,
+    testPath: localArtifacts.testPath,
+  })
+
+  if (localArtifacts.error) {
+    console.warn('[drift-capture] local fixture write failed; dead-letter queue persisted event', {
+      vendor,
+      driftEventId: driftEvent.id,
+      error: localArtifacts.error,
+    })
+  }
+
+  return {
+    captured: true,
+    driftEventId: driftEvent.id,
+    fixturePath: localArtifacts.fixturePath,
+    testPath: localArtifacts.testPath,
+    basename: localArtifacts.basename,
+    localWriteSkipped: localArtifacts.skipped,
+  }
 }

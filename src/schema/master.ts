@@ -6,6 +6,8 @@ export const EventTypeSchema = z.enum([
   'EMAIL_CLICK',
 ])
 
+export const NormalizedMetadataSchema = z.record(z.string(), z.unknown())
+
 export const ConstituentEventSchema = z.object({
   eventId: z.string().uuid(),
   constituentEmail: z.string().email(),
@@ -15,6 +17,8 @@ export const ConstituentEventSchema = z.object({
   sourceSystem: z.string(),
   amount: z.number().optional(),
   currency: z.string().optional(),
+  /** Vendor-specific fields mapped via the admin canvas for downstream ML pipelines. */
+  normalizedMetadata: NormalizedMetadataSchema.default({}),
   payload: z.record(z.string(), z.unknown()),
   createdAt: z.string().datetime(),
 })

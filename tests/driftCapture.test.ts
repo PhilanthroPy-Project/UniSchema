@@ -12,8 +12,10 @@ import {
   formatDriftTimestamp,
   isDriftCaptureEnabled,
   isDriftVendor,
+  isLocalFilesystemCaptureEnabled,
   isReadOnlyFilesystemError,
 } from '../src/utils/driftCapture.js'
+import { listDriftEvents } from '../src/store/driftQueue.js'
 
 const sampleZodError = new ZodError([
   {
@@ -112,10 +114,10 @@ describe('captureSchemaDrift', () => {
     )
   })
 
-  it('is disabled while Vitest is running by default', () => {
+  it('disables local filesystem capture while Vitest is running', () => {
     process.env.VITEST = 'true'
 
-    expect(isDriftCaptureEnabled()).toBe(false)
+    expect(isLocalFilesystemCaptureEnabled()).toBe(false)
   })
 
   it('returns disabled when drift capture is turned off', async () => {
@@ -147,23 +149,27 @@ describe('captureSchemaDrift', () => {
 
     const result = await captureSchemaDrift('cvent', rawPayload, sampleZodError)
 
-    expect(result).toEqual({
-      captured: true,
-      fixturePath,
-      testPath,
-      basename,
-    })
+    expect(result.captured).toBe(true)
+    if (result.captured) {
+      expect(result.fixturePath).toBe(fixturePath)
+      expect(result.testPath).toBe(testPath)
+      expect(result.basename).toBe(basename)
+      expect(result.driftEventId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      )
+    }
 
     const savedFixture = await readFile(fixturePath, 'utf8')
     const savedTest = await readFile(testPath, 'utf8')
 
     expect(JSON.parse(savedFixture)).toEqual(rawPayload)
     expect(savedTest).toContain('mapCventToMaster(driftPayload)')
+    expect(listDriftEvents('cvent')).toHaveLength(1)
 
     vi.restoreAllMocks()
   })
 
-  it('returns write_error when drift artifacts already exist', async () => {
+  it('still enqueues drift events when local fixture files already exist', async () => {
     const basename = 'givecampus-2026-06-20T15-04-05-456Z'
     const fixturePath = path.join(PROJECT_ROOT, buildDriftFixtureRelativePath(basename))
     const testPath = path.join(PROJECT_ROOT, buildDriftTestRelativePath(basename))
@@ -176,15 +182,13 @@ describe('captureSchemaDrift', () => {
     const secondResult = await captureSchemaDrift('givecampus', { id: 'gc-1' }, sampleZodError)
 
     expect(firstResult.captured).toBe(true)
-    expect(secondResult).toMatchObject({
-      captured: false,
-      reason: 'write_error',
-    })
+    expect(secondResult.captured).toBe(true)
+    expect(listDriftEvents('givecampus')).toHaveLength(2)
 
     vi.restoreAllMocks()
   })
 
-  it('returns read_only when the drift directory is not writable', async () => {
+  it('persists to the dead-letter queue when the drift directory is not writable', async () => {
     const driftDir = path.join(PROJECT_ROOT, 'tests/__fixtures__/drift')
     const basename = 'cvent-2026-06-20T15-04-05-789Z'
     const fixturePath = path.join(PROJECT_ROOT, buildDriftFixtureRelativePath(basename))
@@ -199,10 +203,8 @@ describe('captureSchemaDrift', () => {
     try {
       const result = await captureSchemaDrift('cvent', { AttendeeStub: 'x' }, sampleZodError)
 
-      expect(result).toMatchObject({
-        captured: false,
-        reason: 'read_only',
-      })
+      expect(result.captured).toBe(true)
+      expect(listDriftEvents('cvent')).toHaveLength(1)
     } finally {
       await chmod(driftDir, 0o755)
       vi.restoreAllMocks()

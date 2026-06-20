@@ -21,7 +21,7 @@ function PanelResizeHandle({ onMouseDown }: { onMouseDown: (event: React.MouseEv
       onMouseDown={onMouseDown}
       className="group relative z-10 flex w-3 shrink-0 cursor-col-resize items-center justify-center"
     >
-      <div className="h-10 w-1 rounded-full bg-transparent transition group-hover:bg-apple-hairline group-active:bg-apple-blue-ios/40" />
+      <div className="h-10 w-1 rounded-full bg-transparent transition group-hover:bg-theme-hairline group-active:bg-apple-blue-ios/40" />
     </div>
   )
 }

@@ -38,6 +38,18 @@ export function toMappingConnections(edges: Edge[]): MappingConnection[] {
     }))
 }
 
+export function edgesFromMappingConnections(mappings: MappingConnection[]): Edge[] {
+  return mappings.map((mapping) => ({
+    id: `edge-${mapping.source}-${mapping.target}`,
+    source: `source-${mapping.source}`,
+    target: `target-${mapping.target}`,
+    sourceHandle: mapping.source,
+    targetHandle: mapping.target,
+    animated: true,
+    style: { stroke: '#007AFF', strokeWidth: 2 },
+  }))
+}
+
 export function buildMappingArtifact(
   vendor: string,
   edges: Edge[],
@@ -46,9 +58,19 @@ export function buildMappingArtifact(
     vendor,
     exportedAt: new Date().toISOString(),
     mappings: toMappingConnections(edges),
+    metadataMappings: [],
   }
 }
 
 export function serializeMappingArtifact(artifact: MappingArtifact): string {
   return JSON.stringify(artifact, null, 2)
+}
+
+/** Stable fingerprint of mapping connections for sync-state comparison. */
+export function getMappingsFingerprint(edges: Edge[]): string {
+  const sorted = [...toMappingConnections(edges)].sort(
+    (a, b) => a.source.localeCompare(b.source) || a.target.localeCompare(b.target),
+  )
+
+  return JSON.stringify(sorted)
 }

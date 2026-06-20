@@ -4,11 +4,15 @@ import { ZodError } from 'zod'
 import app from '../src/index.js'
 import * as cventMapper from '../src/mappers/cvent.js'
 import * as giveCampusMapper from '../src/mappers/givecampus.js'
+import { listPendingEgressEvents } from '../src/store/egressStore.js'
+import { listDriftEvents } from '../src/store/driftQueue.js'
+import { upsertMapping } from '../src/store/mappingRegistry.js'
 import * as driftCapture from '../src/utils/driftCapture.js'
 import {
   validCventPayload,
   validGiveCampusPayload,
 } from './fixtures/payloads.js'
+import { runIngestion, waitForIngestion } from './helpers/ingestion.js'
 
 async function postJson(path: string, body: unknown) {
   return app.request(path, {
@@ -33,55 +37,47 @@ describe('GET /health', () => {
 })
 
 describe('POST /webhooks/cvent', () => {
-  it('returns 200 and a mapped ConstituentEvent for valid payloads', async () => {
+  it('accepts valid payloads asynchronously and persists egress events', async () => {
     const response = await postJson('/webhooks/cvent', validCventPayload)
-    const body = await readJson<{
-      constituentEmail: string
-      eventType: string
-      sourceSystem: string
-      payload: typeof validCventPayload
-      eventId: string
-    }>(response)
+    const body = await readJson<{ accepted: boolean; ingestionId: string }>(response)
 
-    expect(response.status).toBe(200)
-    expect(body.constituentEmail).toBe(validCventPayload.EmailAddress)
-    expect(body.eventType).toBe('EVENT_REGISTRATION')
-    expect(body.sourceSystem).toBe('CVENT')
-    expect(body.payload).toEqual(validCventPayload)
-    expect(body.eventId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    )
+    expect(response.status).toBe(202)
+    expect(body.accepted).toBe(true)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.constituentEmail).toBe(validCventPayload.EmailAddress)
+
+    const pending = listPendingEgressEvents()
+    expect(pending.some((event) => event.eventId === ingestion.result?.eventId)).toBe(false)
   })
 
-  it('returns 400 with flattened Zod errors for invalid payloads', async () => {
-    const driftSpy = vi.spyOn(driftCapture, 'captureSchemaDrift').mockResolvedValue({
-      captured: false,
-      reason: 'disabled',
-    })
+  it('records flattened Zod errors for invalid payloads', async () => {
+    process.env.DRIFT_CAPTURE = 'queue-only'
 
     const invalidPayload = {
       AttendeeStub: 'attendee-12345',
       EventCode: 'REG-2026-GALA',
     }
     const response = await postJson('/webhooks/cvent', invalidPayload)
-    const body = await readJson<{
-      success: boolean
-      message: string
-      errors: { fieldErrors: Record<string, string[] | undefined> }
-    }>(response)
+    const body = await readJson<{ accepted: boolean; ingestionId: string }>(response)
 
-    expect(response.status).toBe(400)
-    expect(body.success).toBe(false)
-    expect(body.message).toBe('Failed to map Cvent payload to master schema')
-    expect(body.errors.fieldErrors.EmailAddress).toBeDefined()
-    expect(driftSpy).toHaveBeenCalledOnce()
+    expect(response.status).toBe(202)
 
-    const [vendor, payload, validationError] = driftSpy.mock.calls[0] ?? []
-    expect(vendor).toBe('cvent')
-    expect(payload).toEqual(invalidPayload)
-    expect(validationError).toBeInstanceOf(ZodError)
+    const ingestion = await waitForIngestion(body.ingestionId)
 
-    driftSpy.mockRestore()
+    expect(ingestion.status).toBe('failed')
+    expect(ingestion.error?.message).toBe('Failed to map Cvent payload to master schema')
+    const fieldErrors = ingestion.error?.errors?.fieldErrors as
+      | Record<string, string[] | undefined>
+      | undefined
+    expect(fieldErrors?.EmailAddress).toBeDefined()
+
+    const driftEvents = listDriftEvents('cvent')
+    expect(driftEvents.length).toBeGreaterThan(0)
+
+    delete process.env.DRIFT_CAPTURE
   })
 
   it('returns 400 when the payload is not a JSON object', async () => {
@@ -94,36 +90,34 @@ describe('POST /webhooks/cvent', () => {
 })
 
 describe('POST /webhooks/givecampus', () => {
-  it('returns 200 and a mapped ConstituentEvent for valid payloads', async () => {
+  it('accepts valid payloads asynchronously', async () => {
     const response = await postJson('/webhooks/givecampus', validGiveCampusPayload)
-    const body = await readJson<{
-      constituentEmail: string
-      amount: number
-      currency: string
-      eventType: string
-      sourceSystem: string
-    }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
 
-    expect(response.status).toBe(200)
-    expect(body.constituentEmail).toBe(validGiveCampusPayload.donor_email)
-    expect(body.amount).toBe(500)
-    expect(body.currency).toBe('USD')
-    expect(body.eventType).toBe('DONATION')
-    expect(body.sourceSystem).toBe('GIVECAMPUS')
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.constituentEmail).toBe(validGiveCampusPayload.donor_email)
+    expect(ingestion.result?.amount).toBe(500)
+    expect(ingestion.result?.currency).toBe('USD')
+    expect(ingestion.result?.eventType).toBe('DONATION')
+    expect(ingestion.result?.sourceSystem).toBe('GIVECAMPUS')
   })
 
-  it('coerces string donation values before responding', async () => {
+  it('coerces string donation values during async processing', async () => {
     const response = await postJson('/webhooks/givecampus', {
       ...validGiveCampusPayload,
       value: '1000.50',
     })
-    const body = await readJson<{ amount: number }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await waitForIngestion(body.ingestionId)
 
-    expect(response.status).toBe(200)
-    expect(body.amount).toBe(1000.5)
+    expect(ingestion.result?.amount).toBe(1000.5)
   })
 
-  it('returns 400 with flattened Zod errors for invalid payloads', async () => {
+  it('records validation failures for invalid payloads', async () => {
     const response = await postJson('/webhooks/givecampus', {
       id: 'gc-1002',
       donation_type: 'donation',
@@ -131,32 +125,29 @@ describe('POST /webhooks/givecampus', () => {
       currency: 'USD',
       donor_email: 'alumni@school.edu',
     })
-    const body = await readJson<{
-      success: boolean
-      message: string
-      errors: Record<string, unknown>
-    }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await waitForIngestion(body.ingestionId)
 
-    expect(response.status).toBe(400)
-    expect(body.success).toBe(false)
-    expect(body.message).toBe('Failed to map GiveCampus payload to master schema')
-    expect(body.errors).toBeDefined()
+    expect(ingestion.status).toBe('failed')
+    expect(ingestion.error?.message).toBe('Failed to map GiveCampus payload to master schema')
   })
 
-  it('returns 400 when donor_email is malformed', async () => {
+  it('records malformed donor_email failures', async () => {
     const response = await postJson('/webhooks/givecampus', {
       ...validGiveCampusPayload,
       donor_email: 'not-an-email',
     })
-    const body = await readJson<{
-      errors: { fieldErrors: Record<string, string[] | undefined> }
-    }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await waitForIngestion(body.ingestionId)
 
-    expect(response.status).toBe(400)
-    expect(body.errors.fieldErrors.donor_email).toBeDefined()
+    expect(ingestion.status).toBe('failed')
+    const fieldErrors = ingestion.error?.errors?.fieldErrors as
+      | Record<string, string[] | undefined>
+      | undefined
+    expect(fieldErrors?.donor_email).toBeDefined()
   })
 
-  it('returns 400 with a descriptive message for non-Zod mapping errors', async () => {
+  it('records descriptive messages for non-Zod mapping errors', async () => {
     const spy = vi
       .spyOn(giveCampusMapper, 'mapGiveCampusToMaster')
       .mockImplementation(() => {
@@ -164,29 +155,115 @@ describe('POST /webhooks/givecampus', () => {
       })
 
     const response = await postJson('/webhooks/givecampus', validGiveCampusPayload)
-    const body = await readJson<{ success: boolean; message: string }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await runIngestion(
+      body.ingestionId,
+      'givecampus',
+      'Failed to map GiveCampus payload to master schema',
+    )
 
-    expect(response.status).toBe(400)
-    expect(body.success).toBe(false)
-    expect(body.message).toBe('Simulated GiveCampus mapping failure')
+    expect(ingestion.status).toBe('failed')
+    expect(ingestion.error?.message).toBe('Simulated GiveCampus mapping failure')
 
     spy.mockRestore()
   })
 })
 
 describe('POST /webhooks/cvent — non-Zod failures', () => {
-  it('returns 400 with a generic message when mapping throws a non-Error value', async () => {
+  it('records a generic message when mapping throws a non-Error value', async () => {
     const spy = vi.spyOn(cventMapper, 'mapCventToMaster').mockImplementation(() => {
       throw 'unexpected failure'
     })
 
     const response = await postJson('/webhooks/cvent', validCventPayload)
-    const body = await readJson<{ success: boolean; message: string }>(response)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await runIngestion(
+      body.ingestionId,
+      'cvent',
+      'Failed to map Cvent payload to master schema',
+    )
 
-    expect(response.status).toBe(400)
-    expect(body.success).toBe(false)
-    expect(body.message).toBe('Unknown mapping error')
+    expect(ingestion.status).toBe('failed')
+    expect(ingestion.error?.message).toBe('Unknown mapping error')
 
     spy.mockRestore()
+  })
+})
+
+describe('admin-defined mappings at runtime', () => {
+  it('uses synced canvas mappings instead of built-in mappers', async () => {
+    upsertMapping(
+      {
+        vendor: 'GiveCampus',
+        exportedAt: '2026-06-20T12:00:00.000Z',
+        mappings: [
+          { source: 'donor_email', target: 'constituentEmail' },
+          { source: 'value', target: 'amount' },
+          { source: 'currency', target: 'currency' },
+        ],
+        metadataMappings: [{ source: 'donation_type', key: 'donationType' }],
+      },
+      '2026-06-20T12:00:00.000Z',
+    )
+
+    const response = await postJson('/webhooks/givecampus', validGiveCampusPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.normalizedMetadata).toEqual({ donationType: 'donation' })
+  })
+})
+
+describe('GET /webhooks/ingestions/:id', () => {
+  it('returns ingestion status and mapped result', async () => {
+    const postResponse = await postJson('/webhooks/cvent', validCventPayload)
+    const postBody = await readJson<{ ingestionId: string }>(postResponse)
+    await waitForIngestion(postBody.ingestionId)
+
+    const response = await app.request(`/webhooks/ingestions/${postBody.ingestionId}`)
+    const body = await readJson<{ success: boolean; ingestion: { status: string } }>(response)
+
+    expect(response.status).toBe(200)
+    expect(body.success).toBe(true)
+    expect(body.ingestion.status).toBe('completed')
+  })
+})
+
+describe('GET /egress/events', () => {
+  it('returns pending warehouse staging rows when push egress is disabled', async () => {
+    process.env.EGRESS_TARGET = 'none'
+
+    const postResponse = await postJson('/webhooks/givecampus', validGiveCampusPayload)
+    const postBody = await readJson<{ ingestionId: string }>(postResponse)
+    await waitForIngestion(postBody.ingestionId)
+
+    const response = await app.request('/egress/events')
+    const body = await readJson<{ success: boolean; count: number }>(response)
+
+    expect(response.status).toBe(200)
+    expect(body.success).toBe(true)
+    expect(body.count).toBeGreaterThan(0)
+
+    process.env.EGRESS_TARGET = 'local'
+  })
+})
+
+describe('drift capture observability', () => {
+  it('does not invoke drift capture when disabled', async () => {
+    process.env.DRIFT_CAPTURE = 'disabled'
+    const driftSpy = vi.spyOn(driftCapture, 'captureSchemaDrift')
+
+    const response = await postJson('/webhooks/cvent', {
+      AttendeeStub: 'attendee-12345',
+      EventCode: 'REG-2026-GALA',
+    })
+    const body = await readJson<{ ingestionId: string }>(response)
+    await waitForIngestion(body.ingestionId)
+
+    expect(driftSpy).not.toHaveBeenCalled()
+
+    delete process.env.DRIFT_CAPTURE
+    driftSpy.mockRestore()
   })
 })

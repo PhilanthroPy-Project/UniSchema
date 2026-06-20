@@ -21,11 +21,19 @@ export const MappingConnectionSchema = z.object({
 
 export type MappingConnection = z.infer<typeof MappingConnectionSchema>
 
+export const MetadataMappingSchema = z.object({
+  source: z.string().trim().min(1, 'Source field path is required'),
+  key: z.string().trim().min(1, 'Metadata key is required'),
+})
+
+export type MetadataMapping = z.infer<typeof MetadataMappingSchema>
+
 export const MappingArtifactSchema = z
   .object({
     vendor: z.string().trim().min(1, 'Vendor is required'),
     exportedAt: z.string().datetime({ message: 'exportedAt must be an ISO-8601 datetime' }),
     mappings: z.array(MappingConnectionSchema),
+    metadataMappings: z.array(MetadataMappingSchema).default([]),
   })
   .superRefine((artifact, ctx) => {
     const seenTargets = new Set<string>()

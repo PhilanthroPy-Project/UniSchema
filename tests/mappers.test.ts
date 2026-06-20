@@ -27,9 +27,22 @@ describe('mapCventToMaster', () => {
     expect(result.sourceSystem).toBe('CVENT')
     expect(result.payload).toEqual(rawPayload)
     expect(result.eventId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
     expect(() => new Date(result.createdAt).toISOString()).not.toThrow()
+  })
+
+  it('produces the same eventId when the same Cvent payload is retried', () => {
+    const rawPayload = {
+      AttendeeStub: 'attendee-12345',
+      EmailAddress: 'jane.doe@university.edu',
+      EventCode: 'REG-2026-GALA',
+    }
+
+    const first = mapCventToMaster(rawPayload)
+    const second = mapCventToMaster(rawPayload)
+
+    expect(first.eventId).toBe(second.eventId)
   })
 
   it('throws a ZodError when required Cvent fields are missing', () => {
@@ -160,6 +173,47 @@ describe('mapGiveCampusToMaster', () => {
 
     expect(result.amount).toBe(1000.5)
     expect(result.amount).toStrictEqual(1000.5)
+  })
+
+  it('handles European-formatted numeric strings', () => {
+    const rawPayload = {
+      id: 'gc-eu-1',
+      donation_type: 'donation',
+      value: '1.000,50',
+      currency: 'EUR',
+      donor_email: 'alumni@school.edu',
+    }
+
+    const result = mapGiveCampusToMaster(rawPayload)
+
+    expect(result.amount).toBe(1000.5)
+  })
+
+  it('handles currency-prefixed numeric strings', () => {
+    const result = mapGiveCampusToMaster({
+      id: 'gc-currency-1',
+      donation_type: 'donation',
+      value: '$1,000.50',
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    })
+
+    expect(result.amount).toBe(1000.5)
+  })
+
+  it('produces the same eventId when the same GiveCampus payload is retried', () => {
+    const rawPayload = {
+      id: 'gc-999',
+      donation_type: 'donation',
+      value: 500.0,
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    }
+
+    const first = mapGiveCampusToMaster(rawPayload)
+    const second = mapGiveCampusToMaster(rawPayload)
+
+    expect(first.eventId).toBe(second.eventId)
   })
 
   it('throws a ZodError if value is unparseable', () => {

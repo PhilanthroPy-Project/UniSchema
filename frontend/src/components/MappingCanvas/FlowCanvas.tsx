@@ -11,6 +11,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
+import { useTheme } from '../../context/ThemeContext'
 import { MAPPABLE_TARGET_FIELDS } from '../../types/constituentEvent'
 import {
   SOURCE_FIELD_NODE_TYPE,
@@ -41,6 +42,7 @@ type FlowCanvasProps = {
   edges: Edge[]
   onEdgesChange: (edges: Edge[]) => void
   onActiveSourcePathChange?: (path: string | null) => void
+  readOnly?: boolean
 }
 
 function buildFlowNodes(payload: Record<string, unknown>): Node[] {
@@ -83,7 +85,9 @@ export function FlowCanvas({
   edges,
   onEdgesChange,
   onActiveSourcePathChange,
+  readOnly = false,
 }: FlowCanvasProps) {
+  const { isDark } = useTheme()
   const nodes = useMemo(() => buildFlowNodes(payload), [payload])
 
   const isValidConnection = useCallback(
@@ -93,7 +97,7 @@ export function FlowCanvas({
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      if (!isSourceToTargetConnection(connection, nodes)) {
+      if (readOnly || !isSourceToTargetConnection(connection, nodes)) {
         return
       }
 
@@ -109,11 +113,18 @@ export function FlowCanvas({
         ),
       )
     },
-    [edges, nodes, onActiveSourcePathChange, onEdgesChange],
+    [edges, nodes, onActiveSourcePathChange, onEdgesChange, readOnly],
   )
 
   return (
-    <div className="h-full w-full bg-[#F5F5F7]">
+    <div className="relative h-full w-full bg-theme-canvas transition-colors duration-300">
+      {readOnly && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-4 pt-3">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-theme-surface px-3 py-1.5 text-xs font-medium text-apple-green shadow-sm backdrop-blur-xl">
+            Synced with engine — editing locked
+          </div>
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -123,23 +134,24 @@ export function FlowCanvas({
         fitView
         fitViewOptions={{ padding: 0.25 }}
         proOptions={{ hideAttribution: true }}
-        nodesConnectable
-        elementsSelectable
-        className="bg-[#F5F5F7]"
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
+        edgesFocusable={!readOnly}
+        className="bg-theme-canvas"
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1.5}
-          color="#E5E5EA"
+          color={isDark ? '#48484a' : '#E5E5EA'}
         />
-        <Controls className="!rounded-apple-lg !border !border-apple-hairline/60 !bg-white/70 !shadow-[0_8px_30px_rgb(0,0,0,0.04)] !backdrop-blur-xl [&>button]:!border-apple-divider [&>button]:!bg-transparent [&>button]:!text-apple-ink [&>button:hover]:!bg-apple-pearl" />
+        <Controls showInteractive={false} />
         <MiniMap
           nodeColor={(node) =>
             node.type === SOURCE_FIELD_NODE_TYPE ? '#007AFF' : '#34C759'
           }
-          maskColor="rgba(245, 245, 247, 0.85)"
-          className="!rounded-apple-lg !border !border-apple-hairline/60 !bg-white/70 !shadow-[0_8px_30px_rgb(0,0,0,0.04)] !backdrop-blur-xl"
+          maskColor={isDark ? 'rgba(20, 20, 22, 0.75)' : 'rgba(245, 245, 247, 0.85)'}
+          maskStrokeColor={isDark ? '#48484a' : '#E5E5EA'}
         />
       </ReactFlow>
     </div>

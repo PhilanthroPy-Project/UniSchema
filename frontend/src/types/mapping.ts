@@ -9,4 +9,5 @@ export type MappingArtifact = {
   vendor: string
   exportedAt: string
   mappings: MappingConnection[]
+  metadataMappings?: Array<{ source: string; key: string }>
 }

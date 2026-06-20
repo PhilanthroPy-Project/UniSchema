@@ -1,10 +1,10 @@
-import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import {
   ConstituentEventSchema,
   type ConstituentEvent,
 } from '../schema/master.js'
+import { deterministicEventId } from '../utils/deterministicEventId.js'
 
 export const CventPayloadSchema = z.object({
   AttendeeStub: z.string().min(1),
@@ -52,7 +52,7 @@ export function mapCventToMaster(rawPayload: unknown): ConstituentEvent {
   const cvent = parsed.data
 
   const masterCandidate = {
-    eventId: randomUUID(),
+    eventId: deterministicEventId('CVENT', cvent.AttendeeStub),
     constituentEmail: cvent.EmailAddress,
     firstName: cvent.FirstName,
     lastName: cvent.LastName,

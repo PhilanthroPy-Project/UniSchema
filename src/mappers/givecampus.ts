@@ -1,20 +1,22 @@
-import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import {
   ConstituentEventSchema,
   type ConstituentEvent,
 } from '../schema/master.js'
+import { deterministicEventId } from '../utils/deterministicEventId.js'
+import { parseLocaleNumber } from '../utils/parseLocaleNumber.js'
 
 const GiveCampusValueSchema = z.union([
   z.number(),
   z.string().transform((value, ctx) => {
-    const parsed = Number.parseFloat(value)
+    const parsed = parseLocaleNumber(value)
 
-    if (Number.isNaN(parsed)) {
+    if (parsed === null) {
       ctx.addIssue({
         code: 'custom',
-        message: 'value must be a number or a string parseable to a float',
+        message:
+          'value must be a number or a locale-formatted numeric string (e.g. 1000.50, 1,000.50, 1.000,50)',
       })
       return z.NEVER
     }
@@ -51,7 +53,7 @@ export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
   const giveCampus = parsed.data
 
   const masterCandidate = {
-    eventId: randomUUID(),
+    eventId: deterministicEventId('GIVECAMPUS', giveCampus.id),
     constituentEmail: giveCampus.donor_email,
     eventType: 'DONATION' as const,
     sourceSystem: 'GIVECAMPUS',

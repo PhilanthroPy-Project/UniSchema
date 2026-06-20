@@ -24,6 +24,7 @@ export const validConstituentEvent = {
   sourceSystem: 'GIVECAMPUS',
   amount: 500,
   currency: 'USD',
+  normalizedMetadata: {},
   payload: { id: 'gc-999' },
   createdAt: '2026-06-20T12:00:00.000Z',
 }

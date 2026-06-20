@@ -36,12 +36,12 @@ function TreeRow({
           'flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors',
           isHighlighted
             ? 'bg-apple-blue-ios/10 text-apple-blue-ios shadow-sm'
-            : 'text-apple-ink/80 hover:bg-white/70',
+            : 'text-theme-ink/80 hover:bg-theme-elevated',
         ].join(' ')}
         style={{ marginLeft: depth * 12 }}
       >
-        <span className="shrink-0 text-apple-muted">{node.key}:</span>
-        <span className="break-all font-medium text-apple-ink">
+        <span className="shrink-0 text-theme-muted">{node.key}:</span>
+        <span className="break-all font-medium text-theme-ink">
           {formatPayloadValue(node.value)}
         </span>
       </div>
@@ -53,15 +53,15 @@ function TreeRow({
       <button
         type="button"
         onClick={() => onToggle(node.path)}
-        className="flex w-full items-center gap-1.5 rounded-lg px-1 py-1.5 text-left text-xs text-apple-ink transition-colors hover:bg-white/70"
+        className="flex w-full items-center gap-1.5 rounded-lg px-1 py-1.5 text-left text-xs text-theme-ink transition-colors hover:bg-theme-elevated"
       >
         {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-apple-muted" />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-theme-muted" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-apple-muted" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-theme-muted" />
         )}
         <span className="font-semibold">{node.key}</span>
-        <span className="text-apple-muted">{`{${node.children.length}}`}</span>
+        <span className="text-theme-muted">{`{${node.children.length}}`}</span>
       </button>
       {isExpanded &&
         node.children.map((child) => (
@@ -101,19 +101,19 @@ export function SourcePayloadPanel({
   }
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-white/80 shadow-sm backdrop-blur-xl">
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
       <div className="px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F5F5F7]">
-            <FileJson className="h-4 w-4 text-apple-muted" strokeWidth={2} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-theme-inset">
+            <FileJson className="h-4 w-4 text-theme-muted" strokeWidth={2} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-apple-ink">Source Payload</h2>
-            <p className="text-xs text-apple-muted">{vendor} webhook JSON</p>
+            <h2 className="text-sm font-semibold text-theme-ink">Source Payload</h2>
+            <p className="text-xs text-theme-muted">{vendor} webhook JSON</p>
           </div>
         </div>
       </div>
-      <div className="mx-3 mb-3 flex-1 overflow-y-auto rounded-xl bg-[#F5F5F7]/60 p-2">
+      <div className="mx-3 mb-3 flex-1 overflow-y-auto rounded-xl bg-theme-inset p-2">
         {tree.map((node) => (
           <TreeRow
             key={node.path}

@@ -20,6 +20,33 @@ export type MappingSyncFailure = {
 
 export type MappingSyncResult = MappingSyncSuccess | MappingSyncFailure
 
+export type StoredMappingArtifact = MappingArtifact & {
+  syncedAt: string
+}
+
+export async function fetchMappingArtifact(
+  vendor: string,
+): Promise<StoredMappingArtifact | null> {
+  const response = await fetch(
+    `${API_BASE}/mappings/${encodeURIComponent(vendor.toLowerCase())}`,
+  )
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to load mapping configuration')
+  }
+
+  const body = (await response.json()) as {
+    success: boolean
+    mapping: StoredMappingArtifact
+  }
+
+  return body.mapping
+}
+
 export async function syncMappingArtifact(
   artifact: MappingArtifact,
 ): Promise<MappingSyncResult> {

@@ -1,10 +1,19 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
+import { VENDOR_WEBHOOK_CONFIGS } from './config/webhookRoutes.js'
+import { initDatabase } from './db/client.js'
 import { createWebhookHandler } from './middleware/webhookHandler.js'
-import * as cventMapper from './mappers/cvent.js'
-import * as giveCampusMapper from './mappers/givecampus.js'
+import {
+  handleDriftList,
+  handleEgressAck,
+  handleEgressList,
+  handleIngestionGet,
+  handleMappingGet,
+} from './routes/api.js'
 import { handleMappingSync } from './routes/mappingsSync.js'
+
+initDatabase()
 
 const app = new Hono()
 
@@ -12,30 +21,28 @@ app.use(
   '/mappings/*',
   cors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    allowMethods: ['POST', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
   }),
 )
 
-app.post(
-  '/webhooks/cvent',
-  createWebhookHandler({
-    vendor: 'cvent',
-    mapToMaster: (rawPayload) => cventMapper.mapCventToMaster(rawPayload),
-    failureMessage: 'Failed to map Cvent payload to master schema',
-  }),
-)
+app.post('/webhooks/cvent', createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.cvent))
 
 app.post(
   '/webhooks/givecampus',
-  createWebhookHandler({
-    vendor: 'givecampus',
-    mapToMaster: (rawPayload) => giveCampusMapper.mapGiveCampusToMaster(rawPayload),
-    failureMessage: 'Failed to map GiveCampus payload to master schema',
-  }),
+  createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.givecampus),
 )
 
+app.get('/webhooks/ingestions/:id', handleIngestionGet)
+
 app.post('/mappings/sync', handleMappingSync)
+app.get('/mappings/:vendor', handleMappingGet)
+
+/** Legacy pull-based egress — prefer push via S3/local publisher in production. */
+app.get('/egress/events', handleEgressList)
+app.post('/egress/ack', handleEgressAck)
+
+app.get('/drift/events', handleDriftList)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
