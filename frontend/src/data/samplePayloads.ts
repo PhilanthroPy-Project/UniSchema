@@ -53,12 +53,24 @@ export const IMODULES_VENDOR = 'iModules'
 export const BLACKBAUD_VENDOR = 'Blackbaud'
 export const NPSP_VENDOR = 'NPSP'
 
+export const SLATE_SAMPLE_PAYLOAD: Record<string, unknown> = {
+  id: 'slate-reg-2026-001',
+  email: 'prospect@university.edu',
+  first: 'Jordan',
+  last: 'Lee',
+  form: 'event_registration',
+  event_title: 'Open House 2026',
+}
+
+export const SLATE_VENDOR = 'Slate'
+
 export const VENDOR_OPTIONS: VendorOption[] = [
   { slug: 'givecampus', label: GIVECAMPUS_VENDOR, samplePayload: GIVECAMPUS_SAMPLE_PAYLOAD },
   { slug: 'cvent', label: CVENT_VENDOR, samplePayload: CVENT_SAMPLE_PAYLOAD },
   { slug: 'imodules', label: IMODULES_VENDOR, samplePayload: IMODULES_SAMPLE_PAYLOAD },
   { slug: 'blackbaud', label: BLACKBAUD_VENDOR, samplePayload: BLACKBAUD_SAMPLE_PAYLOAD },
   { slug: 'npsp', label: NPSP_VENDOR, samplePayload: NPSP_SAMPLE_PAYLOAD },
+  { slug: 'slate', label: SLATE_VENDOR, samplePayload: SLATE_SAMPLE_PAYLOAD },
 ]
 
 export function getVendorOption(slug: string): VendorOption | undefined {

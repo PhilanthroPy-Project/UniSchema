@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import type { Context } from 'hono'
 
+import { hasVerifiedAdminAuth } from './mappingSyncAuth.js'
+
 export type DriftListAuthDecision =
   | { action: 'allow' }
   | { action: 'verify'; token: string }
@@ -27,6 +29,10 @@ export function resolveDriftListAuth(): DriftListAuthDecision {
 }
 
 export function isDriftListAuthorized(c: Context): boolean {
+  if (hasVerifiedAdminAuth(c)) {
+    return true
+  }
+
   const decision = resolveDriftListAuth()
 
   if (decision.action === 'allow') {
@@ -48,6 +54,10 @@ export function isDriftListAuthorized(c: Context): boolean {
 }
 
 export function isDriftAgentAuthorized(c: Context): boolean {
+  if (hasVerifiedAdminAuth(c)) {
+    return true
+  }
+
   const token = process.env.DRIFT_AGENT_TOKEN
 
   if (!token) {

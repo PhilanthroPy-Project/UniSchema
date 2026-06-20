@@ -1,9 +1,13 @@
+import type { Context } from 'hono'
+
 import {
   deleteAllVendorMappings,
+  insertMappingAuditLog,
   selectVendorMappingByVendor,
   upsertVendorMappingRow,
 } from '../db/unified.js'
 import type { MappingArtifact } from '../schema/mapping.js'
+import { mappingDiffHash, newAuditLogId, resolveMappingActor } from '../utils/oidcAuth.js'
 
 export type StoredMapping = MappingArtifact & {
   syncedAt: string
@@ -16,6 +20,7 @@ function normalizeVendorKey(vendor: string): string {
 export async function upsertMapping(
   artifact: MappingArtifact,
   syncedAt: string,
+  actorContext?: Context,
 ): Promise<StoredMapping> {
   const stored: StoredMapping = { ...artifact, syncedAt }
   const vendor = normalizeVendorKey(artifact.vendor)
@@ -25,6 +30,20 @@ export async function upsertMapping(
     mappingsJson: JSON.stringify(artifact.mappings),
     metadataMappingsJson: JSON.stringify(artifact.metadataMappings ?? []),
     exportedAt: artifact.exportedAt,
+    syncedAt,
+  })
+
+  const actor = actorContext ? resolveMappingActor(actorContext) : 'system'
+  const artifactJson = JSON.stringify({
+    mappings: artifact.mappings,
+    metadataMappings: artifact.metadataMappings ?? [],
+  })
+
+  await insertMappingAuditLog({
+    id: newAuditLogId(),
+    vendor,
+    actor,
+    diffHash: mappingDiffHash(artifactJson),
     syncedAt,
   })
 

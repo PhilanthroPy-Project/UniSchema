@@ -7,13 +7,14 @@ import {
 } from '../src/data/samplePayloads'
 
 describe('samplePayloads vendor catalog', () => {
-  it('includes all five built-in vendors', () => {
+  it('includes all six built-in vendors', () => {
     expect(VENDOR_OPTIONS.map((option) => option.slug)).toEqual([
       'givecampus',
       'cvent',
       'imodules',
       'blackbaud',
       'npsp',
+      'slate',
     ])
   })
 

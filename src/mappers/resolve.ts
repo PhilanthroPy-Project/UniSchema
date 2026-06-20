@@ -7,6 +7,7 @@ import { mapWithArtifact } from './dynamic.js'
 import { mapGiveCampusToMaster } from './givecampus.js'
 import { mapImodulesToMaster } from './imodules.js'
 import { mapNpspToMaster } from './npsp.js'
+import { mapSlateToMaster } from './slate.js'
 
 export async function resolveVendorMapper(
   vendor: DriftVendor,
@@ -28,6 +29,8 @@ export async function resolveVendorMapper(
       return mapBlackbaudToMaster
     case 'npsp':
       return mapNpspToMaster
+    case 'slate':
+      return mapSlateToMaster
     default:
       throw new Error(`Unsupported vendor: ${vendor}`)
   }

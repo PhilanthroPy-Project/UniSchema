@@ -1,6 +1,6 @@
-# Adding vendor #3 (bring your own vendor)
+# Adding a vendor (bring your own vendor)
 
-UniSchema ships **GiveCampus** and **Cvent**. Everything else (Blackbaud, Salesforce NPSP, iModules, Slate, …) follows the same **6-file checklist** below.
+UniSchema ships **six built-in vendors** (GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate). Ellucian and others follow the same **6-file checklist** below.
 
 Plan **~2–4 hours** if you have a sample webhook payload and the vendor's HMAC header name.
 
@@ -52,7 +52,7 @@ Use slug `imodules` and enum `IMODULES` as a running example.
 | 5 | `src/mappers/resolve.ts` | `case 'imodules': return mapImodulesToMaster` |
 | 6 | `src/config/webhookRoutes.ts` | Route config (secret env key, signature header) |
 
-Routes are **auto-registered** from `webhookRoutes.ts` — you do **not** edit `src/index.ts`.
+Routes are **auto-registered** from `webhookRoutes.ts` — you do **not** edit `src/app.ts` or `src/routes/register.ts`.
 
 Also update:
 
@@ -61,8 +61,8 @@ Also update:
 | `src/mappers/index.ts` | Re-export new mapper |
 | `.env.example` | Document `IMODULES_WEBHOOK_SECRET=` |
 | `tests/fixtures/payloads.ts` | `validImodulesPayload` |
-| `tests/mappers.test.ts` | Unit test mapper |
-| `tests/webhooks.test.ts` | POST `/webhooks/imodules` integration |
+| `tests/unit/mappers.test.ts` | Unit test mapper |
+| `tests/integration/webhooks.test.ts` | POST `/webhooks/imodules` integration |
 | `samples/imodules-registration.json` | Sample payload for docs / manual curl |
 
 ---

@@ -73,3 +73,29 @@ export async function syncMappingArtifact(
 
   return body
 }
+
+export async function previewMappingArtifact(
+  artifact: MappingArtifact,
+  samplePayload: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`${API_BASE}/mappings/preview`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildAuthHeaders(),
+    },
+    body: JSON.stringify({ ...artifact, samplePayload }),
+  })
+
+  const body = (await response.json()) as {
+    success: boolean
+    event?: Record<string, unknown>
+    message?: string
+  }
+
+  if (!response.ok || !body.success || !body.event) {
+    throw new Error(body.message ?? 'Preview failed')
+  }
+
+  return body.event
+}

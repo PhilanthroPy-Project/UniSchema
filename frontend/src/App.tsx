@@ -8,6 +8,12 @@ type AppView = 'mapping' | 'drift'
 
 export default function App() {
   const [view, setView] = useState<AppView>('mapping')
+  const [mappingVendorSlug, setMappingVendorSlug] = useState<string | undefined>()
+
+  const openMappingForVendor = (vendorSlug: string) => {
+    setMappingVendorSlug(vendorSlug)
+    setView('mapping')
+  }
 
   return (
     <div className="flex h-screen flex-col">
@@ -41,9 +47,9 @@ export default function App() {
       </nav>
       <div className="min-h-0 flex-1">
         {view === 'mapping' ? (
-          <MappingCanvas />
+          <MappingCanvas initialVendorSlug={mappingVendorSlug} />
         ) : (
-          <DriftQueuePanel onNavigateMapping={() => setView('mapping')} />
+          <DriftQueuePanel onNavigateMapping={openMappingForVendor} />
         )}
       </div>
     </div>

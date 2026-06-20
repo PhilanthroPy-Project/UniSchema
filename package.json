@@ -1,23 +1,34 @@
 {
   "name": "unischema",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Webhook Unifier for university advancement teams",
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PhilanthroPy-Project/UniSchema.git"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "build": "npm run build --prefix frontend",
+    "build": "npm run build -w unischema-frontend",
     "demo": "bash scripts/demo-webhook.sh",
     "benchmark": "bash scripts/load-benchmark.sh",
     "docker:up": "docker compose up --build",
     "docker:demo": "docker compose up --build -d && bash scripts/demo-webhook.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:security": "vitest run tests/security.test.ts",
+    "test:security": "vitest run tests/unit/security.test.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:all": "npm test && npm run test --prefix frontend",
-    "validate": "npm run typecheck && npm run test:security && npm run test:coverage && npm run typecheck --prefix frontend && npm run test --prefix frontend && npm run build"
+    "test:all": "npm test && npm run test -w unischema-frontend",
+    "validate": "npm run typecheck && npm run test:security && npm run test:coverage && npm run typecheck -w unischema-frontend && npm run test -w unischema-frontend && npm run build"
   },
   "keywords": [
     "webhook",
@@ -34,6 +45,8 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.26",
     "postgres": "^3.4.9",
+    "pg-boss": "^10.1.5",
+    "redis": "^4.7.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

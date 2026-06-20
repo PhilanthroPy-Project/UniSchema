@@ -9,6 +9,7 @@ export const DRIFT_VENDORS = [
   'imodules',
   'blackbaud',
   'npsp',
+  'slate',
 ] as const
 
 export type DriftVendor = (typeof DRIFT_VENDORS)[number]
@@ -20,12 +21,14 @@ type DriftVendorConfig = {
     | 'mapImodulesToMaster'
     | 'mapBlackbaudToMaster'
     | 'mapNpspToMaster'
+    | 'mapSlateToMaster'
   readonly mapperModule:
     | '../../src/mappers/cvent.js'
     | '../../src/mappers/givecampus.js'
     | '../../src/mappers/imodules.js'
     | '../../src/mappers/blackbaud.js'
     | '../../src/mappers/npsp.js'
+    | '../../src/mappers/slate.js'
 }
 
 const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
@@ -48,6 +51,10 @@ const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
   npsp: {
     mapperFn: 'mapNpspToMaster',
     mapperModule: '../../src/mappers/npsp.js',
+  },
+  slate: {
+    mapperFn: 'mapSlateToMaster',
+    mapperModule: '../../src/mappers/slate.js',
   },
 }
 

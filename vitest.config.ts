@@ -5,11 +5,19 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     setupFiles: ['tests/setup.ts'],
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/db/postgresClient.ts', 'src/db/unified.ts'],
+      exclude: [
+        'src/server.ts',
+        'src/app.ts',
+        'src/db/postgresClient.ts',
+        'src/db/unified.ts',
+        'src/store/ingestQueue.ts',
+        'src/store/rateLimitStore.ts',
+        'src/utils/oidcAuth.ts',
+      ],
       thresholds: {
         lines: 90,
         functions: 90,

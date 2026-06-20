@@ -52,6 +52,9 @@ export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
     sourceSystem: 'GIVECAMPUS',
     amount: giveCampus.value,
     currency: giveCampus.currency,
+    normalizedMetadata: {
+      donation_type: giveCampus.donation_type,
+    },
     payload: toPrimitiveRecord(rawPayload),
     createdAt: new Date().toISOString(),
   }

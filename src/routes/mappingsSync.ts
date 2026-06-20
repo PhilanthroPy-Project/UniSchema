@@ -57,7 +57,7 @@ export async function handleMappingSync(c: Context): Promise<Response> {
   }
 
   const syncedAt = new Date().toISOString()
-  const stored = await upsertMapping(parsed.data, syncedAt)
+  const stored = await upsertMapping(parsed.data, syncedAt, c)
 
   const response: MappingSyncResponse = {
     success: true,

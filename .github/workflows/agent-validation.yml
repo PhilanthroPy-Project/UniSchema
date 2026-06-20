@@ -13,10 +13,10 @@
 #   3. Opens a fix PR with updated mapper logic and passing tests.
 #
 # Test contracts the agent must satisfy:
-#   - tests/mappers.test.ts   — vendor payload → master schema mapping
-#   - tests/schema.test.ts    — ConstituentEvent Zod schema invariants
-#   - tests/webhooks.test.ts  — Hono webhook route integration
-#   - tests/security.test.ts  — secret scanning and .gitignore enforcement
+#   - tests/unit/mappers.test.ts        — vendor payload → master schema mapping
+#   - tests/unit/schema.test.ts         — ConstituentEvent Zod schema invariants
+#   - tests/integration/webhooks.test.ts — Hono webhook route integration
+#   - tests/unit/security.test.ts       — secret scanning and .gitignore enforcement
 #   - frontend/tests/         — visual mapper utility logic
 
 name: Agent Pipeline Validation

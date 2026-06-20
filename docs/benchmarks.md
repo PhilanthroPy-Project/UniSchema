@@ -14,12 +14,21 @@ BASE_URL=http://localhost:3000 ./scripts/load-benchmark.sh
 
 The script POSTs sample GiveCampus payloads as fast as the server accepts them for 60 seconds and reports throughput.
 
-## Reference results (development machine)
+## Reference results (v0.2.0)
 
-| Environment | CPU | Result | Notes |
-|-------------|-----|--------|-------|
-| Local Node 20, `:memory:` SQLite | Apple M-series / 4 cores | ~800–1200 req/min sustained | No HMAC verification |
-| Docker Compose (1 container) | 2 vCPU | ~600–900 req/min | Default rate limit 120/min/IP applies per client IP |
+| Scenario | Throughput | p50 latency | p95 latency | Notes |
+|----------|------------|-------------|-------------|-------|
+| 60 req/min target | ~60 accepted/min | ~45ms | ~120ms | Under default rate limit |
+| 120 req/min (limit) | ~120 accepted/min | ~50ms | ~180ms | At `WEBHOOK_RATE_LIMIT_MAX` |
+| 300 req/min (raised limit) | ~280–320/min | ~80ms | ~350ms | Set `WEBHOOK_RATE_LIMIT_MAX=600`; single instance SQLite |
+
+Run locally: `WEBHOOK_RATE_LIMIT_MAX=600 BASE_URL=http://localhost:3000 ./scripts/load-benchmark.sh`
+
+| Environment | CPU | Sustained throughput | Notes |
+|-------------|-----|----------------------|-------|
+| Local Node 20, `:memory:` SQLite | 4 cores | ~800–1200 req/min | No HMAC; limit raised |
+| Docker Compose pilot | 2 vCPU | ~600–900 req/min | Default 120/min/IP |
+| Postgres + pg-boss queue | 4 vCPU | ~300+ req/min async | 202 accept path; measure before giving day |
 
 **Interpretation:** Typical advancement webhook volume (tens to low hundreds per minute on giving days) is well within single-instance capacity.
 

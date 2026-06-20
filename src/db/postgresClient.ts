@@ -55,6 +55,14 @@ CREATE TABLE IF NOT EXISTS constituent_events (
 );
 
 CREATE INDEX IF NOT EXISTS constituent_events_egress_idx ON constituent_events (egress_status);
+
+CREATE TABLE IF NOT EXISTS mapping_audit_log (
+  id TEXT PRIMARY KEY NOT NULL,
+  vendor TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  diff_hash TEXT NOT NULL,
+  synced_at TEXT NOT NULL
+);
 `
 
 export async function initPostgresDatabase(): Promise<UniSchemaPostgresDatabase> {
@@ -105,5 +113,6 @@ export async function resetPostgresDatabase(): Promise<void> {
     DELETE FROM webhook_ingestions;
     DELETE FROM drift_events;
     DELETE FROM vendor_mappings;
+    DELETE FROM mapping_audit_log;
   `)
 }

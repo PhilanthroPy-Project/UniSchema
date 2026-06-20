@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: unischema
+      POSTGRES_PASSWORD: unischema
+      POSTGRES_DB: unischema
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unischema"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  unischema:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SERVE_FRONTEND: "true"
+      TRUST_PROXY: "true"
+      WEBHOOK_SIGNATURE_REQUIRED: "true"
+      MAPPING_SYNC_REQUIRED: "true"
+      EGRESS_TARGET: ${EGRESS_TARGET:-local}
+      EGRESS_LOCAL_DIR: /app/data/egress
+      DATABASE_URL: postgres://unischema:unischema@postgres:5432/unischema
+      GIVECAMPUS_WEBHOOK_SECRET: ${GIVECAMPUS_WEBHOOK_SECRET:?Set GIVECAMPUS_WEBHOOK_SECRET}
+      CVENT_WEBHOOK_SECRET: ${CVENT_WEBHOOK_SECRET:?Set CVENT_WEBHOOK_SECRET}
+      MAPPING_SYNC_TOKEN: ${MAPPING_SYNC_TOKEN:?Set MAPPING_SYNC_TOKEN}
+      DRIFT_AGENT_TOKEN: ${DRIFT_AGENT_TOKEN:-${MAPPING_SYNC_TOKEN}}
+    volumes:
+      - unischema-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres-data:
+  unischema-data:

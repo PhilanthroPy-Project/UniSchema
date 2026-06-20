@@ -8,22 +8,33 @@ Pick the guide that matches your role — you don't need to read everything.
 |------|-------|-----------|
 | **Admin / analyst** | [admin-guide.md](./admin-guide.md) | Draw mapping lines on the canvas, sync to engine |
 | **Operator** | [operator-guide.md](./operator-guide.md) | Set `EGRESS_TARGET`, webhook secrets, deploy to cloud |
-| **Developer** | [adding-a-vendor.md](./adding-a-vendor.md) | Add vendor #3 in 6 files |
+| **Developer** | [adding-a-vendor.md](./adding-a-vendor.md) | Add a vendor in 6 files |
 | **Data engineer** | [../examples/downstream/README.md](../examples/downstream/README.md) | Read NDJSON batches, prove downstream value |
-| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | SQLite limits, scale, honest v0.1.0 scope |
+| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.2.0 scope |
+| **Security / privacy** | [security-and-privacy.md](./security-and-privacy.md) | FERPA-adjacent guidance, retention, rotation |
 
-| **Pilot program** | [case-studies/README.md](./case-studies/README.md) | Join or document a pilot deployment |
+## Vendor maturity tiers
+
+| Tier | Vendors | Expectation |
+|------|---------|-------------|
+| **Tier 1** | GiveCampus, Cvent | Production-tested fixtures; primary support |
+| **Tier 2** | iModules | Reference implementation for new vendors |
+| **Tier 3** | Blackbaud, NPSP | Community — submit real (redacted) payload PRs to certify |
+| **Tier 3** | Slate | Community mapper — verify form field names with your Slate instance |
+
+Community-tier vendors (Blackbaud, NPSP, Slate): submit redacted real payload PRs to certify field names against your instance.
 
 ## Vendor compatibility matrix
 
-| Vendor | Status | Webhook route | Notes |
-|--------|--------|---------------|-------|
-| GiveCampus | Built-in | `/webhooks/givecampus` | Donations |
-| Cvent | Built-in | `/webhooks/cvent` | Registrations, events |
-| iModules | Built-in | `/webhooks/imodules` | Reference vendor #3 |
-| Blackbaud RENXT | Built-in (community) | `/webhooks/blackbaud` | Gift webhooks — verify payload shape |
-| Salesforce NPSP | Built-in (community) | `/webhooks/npsp` | Donation objects — verify field API names |
-| Slate, Ellucian, etc. | Planned / community | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
+| Vendor | Tier | Webhook route | Notes |
+|--------|------|---------------|-------|
+| GiveCampus | 1 | `/webhooks/givecampus` | Donations |
+| Cvent | 1 | `/webhooks/cvent` | Registrations, events |
+| iModules | 2 | `/webhooks/imodules` | Reference vendor |
+| Blackbaud RENXT | 3 | `/webhooks/blackbaud` | Gift webhooks — verify payload shape |
+| Salesforce NPSP | 3 | `/webhooks/npsp` | Donation objects — verify field API names |
+| Slate | 3 | `/webhooks/slate` | Form webhooks — verify field API names |
+| Ellucian, etc. | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
 
 ## Additional references
 
@@ -38,7 +49,8 @@ Pick the guide that matches your role — you don't need to read everything.
 
 | Goal | Start here |
 |------|------------|
-| First webhook in 15 min (local) | [../README.md#quick-start-15-minutes](../README.md#quick-start-15-minutes) |
+| Pilot (SQLite, local egress) | `docker compose -f docker-compose.pilot.yml up` |
+| Production (Postgres, secrets enforced) | [docker-compose.prod.yml](../docker-compose.prod.yml) |
 | Low-ops cloud (Fly / Railway) | [../deploy/README.md](../deploy/README.md) |
 | S3 bucket only (Terraform) | [../deploy/terraform/README.md](../deploy/terraform/README.md) |
 
@@ -52,8 +64,8 @@ Pick the guide that matches your role — you don't need to read everything.
 
 ## Quick answers
 
-**Do we need Airflow?** No for a pilot. S3 egress + a Python script or notebook is enough. Airflow is optional for scheduled warehouse loads.
+**Do we need Airflow?** No for a pilot. S3 egress + a Python script or notebook is enough.
 
-**Do we need Postgres?** Not for a pilot. SQLite is fine on a single Fly/Railway instance. See [limitations-and-roadmap.md#scale--database](./limitations-and-roadmap.md#scale--database) before high-volume production.
+**Do we need Postgres?** Not for a pilot. Use Postgres when you need 2+ instances or shared state — [postgres.md](./postgres.md).
 
-**Is there a hosted SaaS?** Not yet. Use [deploy templates](../deploy/README.md) — Fly.io has a free allowance suitable for demos.
+**Is there a hosted SaaS?** Not yet — self-host with Docker or Fly/Railway templates.

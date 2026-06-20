@@ -1,24 +1,10 @@
 import type { Edge } from 'reactflow'
 
 import type { ConstituentEventFieldKey } from './types/constituentEvent'
-import type { MappingArtifact, MappingConnection } from './types/mapping'
+import type { MappingArtifact, MappingConnection, MetadataMapping } from './types/mapping'
 import { isConstituentEventFieldKey } from './utils/connectionValidation'
 
-export type { MappingArtifact, MappingConnection } from './types/mapping'
-
-export type SourceField =
-  | 'id'
-  | 'donation_type'
-  | 'value'
-  | 'currency'
-  | 'donor_email'
-
-export type DestinationField =
-  | 'eventId'
-  | 'constituentEmail'
-  | 'eventType'
-  | 'amount'
-  | 'currency'
+export type { MappingArtifact, MappingConnection, MetadataMapping } from './types/mapping'
 
 export function toMappingConnections(edges: Edge[]): MappingConnection[] {
   return edges
@@ -53,12 +39,13 @@ export function edgesFromMappingConnections(mappings: MappingConnection[]): Edge
 export function buildMappingArtifact(
   vendor: string,
   edges: Edge[],
+  metadataMappings: MetadataMapping[] = [],
 ): MappingArtifact {
   return {
     vendor,
     exportedAt: new Date().toISOString(),
     mappings: toMappingConnections(edges),
-    metadataMappings: [],
+    metadataMappings,
   }
 }
 
@@ -66,11 +53,20 @@ export function serializeMappingArtifact(artifact: MappingArtifact): string {
   return JSON.stringify(artifact, null, 2)
 }
 
+function fingerprintMetadata(mappings: MetadataMapping[]): string {
+  return JSON.stringify(
+    [...mappings].sort((a, b) => a.key.localeCompare(b.key) || a.source.localeCompare(b.source)),
+  )
+}
+
 /** Stable fingerprint of mapping connections for sync-state comparison. */
-export function getMappingsFingerprint(edges: Edge[]): string {
+export function getMappingsFingerprint(
+  edges: Edge[],
+  metadataMappings: MetadataMapping[] = [],
+): string {
   const sorted = [...toMappingConnections(edges)].sort(
     (a, b) => a.source.localeCompare(b.source) || a.target.localeCompare(b.target),
   )
 
-  return JSON.stringify(sorted)
+  return JSON.stringify({ mappings: sorted, metadata: fingerprintMetadata(metadataMappings) })
 }

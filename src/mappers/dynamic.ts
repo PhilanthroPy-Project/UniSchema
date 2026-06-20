@@ -98,6 +98,10 @@ function coerceTargetValue(target: MappableTargetField, value: unknown): unknown
 const DEFAULT_EVENT_TYPES: Record<string, ConstituentEvent['eventType']> = {
   cvent: 'EVENT_REGISTRATION',
   givecampus: 'DONATION',
+  imodules: 'EVENT_REGISTRATION',
+  blackbaud: 'DONATION',
+  npsp: 'DONATION',
+  slate: 'EVENT_REGISTRATION',
 }
 
 /**

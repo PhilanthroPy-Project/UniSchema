@@ -1,27 +1,31 @@
 # Limitations & roadmap (read before production)
 
-UniSchema is **v0.1.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
+UniSchema is **v0.2.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
 
 ## What works well today
 
-- GiveCampus + Cvent webhooks → **ConstituentEvent** with HMAC verification
+- Five built-in vendors → **ConstituentEvent** with HMAC verification
 - Async ingest with crash recovery
 - Local or S3 egress push
-- Visual mapping canvas for field overrides
+- Visual mapping canvas for field overrides + `normalizedMetadata`
+- SQLite default or optional Postgres ([postgres.md](./postgres.md))
 - Docker Compose + single-URL bundled UI
 - 15-minute demo script (`npm run demo`)
 
-## Honest limitations (v0.1.0)
+## Vendor maturity tiers
 
-### Narrow vendor coverage
+| Tier | Vendors | Status |
+|------|---------|--------|
+| **Tier 1** | GiveCampus, Cvent | Production-tested fixtures, primary support |
+| **Tier 2** | iModules | Reference vendor #3 implementation |
+| **Tier 3** | Blackbaud, NPSP | Community mappers — verify with your real payloads |
+| **Planned** | Slate, Ellucian | Open an issue or PR via [adding-a-vendor.md](./adding-a-vendor.md) |
 
-| Supported | Not built-in |
-|-----------|--------------|
-| GiveCampus | Blackbaud Raiser's Edge NXT |
-| Cvent | Salesforce NPSP |
-| | iModules, Slate, Ellucian, etc. |
+## Honest limitations (v0.2.0)
 
-Adding vendor #3 is documented in [adding-a-vendor.md](./adding-a-vendor.md) (6 files). You're not blocked, but you're not plug-and-play either.
+### Not every advancement vendor is built-in
+
+Slate, Ellucian, and niche CRMs still require the [6-file vendor checklist](./adding-a-vendor.md). You're not blocked, but you're not plug-and-play for every shop.
 
 ### Fixed master schema
 
@@ -30,31 +34,36 @@ Core fields (`constituentEmail`, `eventType`, `sourceSystem`, etc.) are **opinio
 - **Good:** one downstream model for analytics and ML
 - **Bad:** if your org's canonical constituent model differs significantly
 
-Use `normalizedMetadata` for org-specific fields. Changing core fields requires schema + pipeline coordination.
+Use `normalizedMetadata` for org-specific fields. Changing core fields requires schema + pipeline coordination ([schema-governance.md](./schema-governance.md)).
 
 ### Three event types only
 
 `EVENT_REGISTRATION`, `DONATION`, `EMAIL_CLICK`
 
-Email opens, volunteer shifts, membership renewals, etc. must map to the nearest type or wait for enum extensions.
+Email opens, volunteer shifts, membership renewals, etc. must map to the nearest type or wait for enum extensions via RFC.
 
-### SQLite backend (pilot scale)
+### Scale characteristics
 
-Fine for:
+**Pilot (SQLite, single instance):**
 
 - Single-instance deploy
 - Thousands to low millions of rows with modest write rates
-- Teams validating webhook → warehouse flow
+- Default ~120 req/min/IP rate limit
+
+**Production (Postgres, optional Redis):**
+
+- Postgres for shared state across instances ([postgres.md](./postgres.md))
+- Optional `REDIS_URL` for shared rate limits ([benchmarks.md](./benchmarks.md))
+- Multi-instance guide: [deploy/README.md](../deploy/README.md#multi-instance-production)
 
 **Not** fine for (today):
 
-- Multiple app instances writing concurrently
-- HA failover without external DB
-- Very high webhook burst rates across instances
+- Multi-region active-active
+- Very high burst rates without load testing
 
 ### Many environment variables
 
-Production requires webhook secrets, egress config, mapping sync token, etc. See [operator-guide.md](./operator-guide.md). We aim to reduce this with hosted templates and opinionated defaults — not there yet.
+Production requires webhook secrets, egress config, mapping sync token, etc. See [operator-guide.md](./operator-guide.md). Compose profiles (`docker-compose.pilot.yml` vs `docker-compose.prod.yml`) reduce guesswork.
 
 ### Drift agent is experimental
 
@@ -68,7 +77,7 @@ The LLM drift runner (`agents/drift_runner/`) is **human-in-the-loop assistive t
 
 **Do not** enable unsupervised agent loops against production. See [agents/README.md](../agents/README.md).
 
-### No managed SaaS
+### No managed SaaS (yet)
 
 Self-host Node + secrets + S3 (+ optionally Airflow) is still required. Cloud templates: [deploy/README.md](../deploy/README.md).
 
@@ -79,30 +88,31 @@ Self-host Node + secrets + S3 (+ optionally Airflow) is still required. Cloud te
 ### Current architecture
 
 ```
-Single Node process
-  └── SQLite (WAL, one writer)
-  └── In-memory S3 batch buffer
-  └── In-memory rate limit buckets (per IP)
+Node process(es)
+  └── SQLite (default) or Postgres (DATABASE_URL)
+  └── Optional Redis rate limit (REDIS_URL)
+  └── In-memory S3 batch buffer (per instance)
+  └── Optional pg-boss ingest queue (when DATABASE_URL set)
 ```
 
 **Default rate limit:** 120 requests / minute / client IP (`WEBHOOK_RATE_LIMIT_MAX`). Tune for your vendor's burst pattern.
 
-**Async ingest:** Webhooks return **202** immediately; mapping runs on the event loop. Throughput is adequate for typical advancement webhook volumes on one instance; load-test before peak giving day.
+**Async ingest:** Webhooks return **202** immediately; mapping runs in background. Throughput is adequate for typical advancement webhook volumes on one instance; run `npm run benchmark` before peak giving day.
 
 ### Before high-volume production
 
-| Question | v0.1.0 answer | Planned direction |
+| Question | v0.2.0 answer | Planned direction |
 |----------|---------------|-----------------|
-| Postgres instead of SQLite? | Not supported | Track as adoption milestone |
-| Horizontal scaling (2+ instances)? | Rate limits & SQLite are in-process | Requires shared DB + queue |
-| Webhook volume limits? | ~120/min/IP default; single CPU bound | Document + benchmark per release |
-| Multi-region? | Single region | Out of scope for v0.1 |
+| Postgres instead of SQLite? | Supported via `DATABASE_URL` | Documented migration path |
+| Horizontal scaling (2+ instances)? | Postgres + optional Redis | Multi-instance deploy guide |
+| Webhook volume limits? | Benchmarked — see [benchmarks.md](./benchmarks.md) | Per-release numbers |
+| Multi-region? | Single region | Out of scope for v0.2 |
 
-**Recommendation:** Run a pilot on SQLite + S3 egress. Measure peak webhooks/minute during a giving period. If you need >1 instance or Postgres, open an issue with your volume numbers — it helps prioritize.
+**Recommendation:** Run a pilot on SQLite + S3 egress. Measure peak webhooks/minute during a giving period. If you need >1 instance, use Postgres + Redis per [deploy/README.md](../deploy/README.md).
 
 ### Data durability
 
-- Ingest state: SQLite (`webhook_ingestions`, `constituent_events`)
+- Ingest state: SQLite or Postgres (`webhook_ingestions`, `constituent_events`)
 - Egress: S3 (durable) or local disk (volume backups required)
 - Recovery workers re-process stale pending ingestions and egress on startup
 
@@ -110,10 +120,11 @@ Single Node process
 
 ## Roadmap themes (not committed dates)
 
-1. **Adoption** — more cloud templates, vendor #3 examples, downstream DAG samples ✅ in progress
-2. **Vendors** — community-contributed mappers (Blackbaud, NPSP)
-3. **Scale** — Postgres option, optional Redis rate limit / queue
-4. **Product** — vendor selector in canvas, mapping sync token in UI
-5. **Hosted tier** — explore managed option if community demand exists
+1. **Adoption** — GHCR releases, compose profiles, downstream ML kit ✅ in progress
+2. **Vendors** — Slate (#6), community certification for Blackbaud/NPSP
+3. **Scale** — Redis rate limit, pg-boss queue, published benchmarks ✅ in progress
+4. **Product** — metadata canvas, import mapping, drift UI actions ✅ in progress
+5. **Trust (v1.0)** — OIDC admin auth, mapping audit log, compliance docs
+6. **Hosted tier** — RFC after v0.3 adoption signals
 
 Contributions welcome — especially vendor mappers with real payload fixtures and tests.

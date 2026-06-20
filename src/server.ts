@@ -2,18 +2,29 @@ import { serve } from '@hono/node-server'
 
 import { getDatabaseDialect, initDatabase, initPostgresDatabase } from './db/client.js'
 import { recoverPendingEgress, recoverPendingIngestions } from './store/recoveryWorker.js'
+import {
+  formatConfigValidationError,
+  validateProductionConfig,
+} from './utils/configValidation.js'
 import { logError } from './utils/logger.js'
 
 const port = Number(process.env.PORT ?? 3000)
 
 async function bootstrap(): Promise<void> {
+  const configIssues = validateProductionConfig()
+
+  if (configIssues.length > 0) {
+    console.error(formatConfigValidationError(configIssues))
+    process.exit(1)
+  }
+
   if (getDatabaseDialect() === 'postgres') {
     await initPostgresDatabase()
   } else {
     initDatabase()
   }
 
-  const { default: app } = await import('./index.js')
+  const { default: app } = await import('./app.js')
 
   void Promise.all([recoverPendingIngestions(), recoverPendingEgress()])
     .then(([ingestionsRecovered, egressRecovered]) => {

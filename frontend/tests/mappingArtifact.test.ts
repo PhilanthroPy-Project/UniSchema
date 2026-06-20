@@ -33,6 +33,14 @@ describe('buildMappingArtifact', () => {
     expect(artifact.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 
+  it('includes metadataMappings in the artifact', () => {
+    const artifact = buildMappingArtifact('GiveCampus', [], [
+      { source: 'donation_type', key: 'donationType' },
+    ])
+
+    expect(artifact.metadataMappings).toEqual([{ source: 'donation_type', key: 'donationType' }])
+  })
+
   it('serializes mapping artifacts as formatted JSON', () => {
     const artifact = {
       vendor: 'GiveCampus',

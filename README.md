@@ -1,13 +1,28 @@
 # UniSchema
 
-**v0.1.0** — Open-source webhook unification for university advancement teams.
+**v0.2.0** — Open-source webhook unification for university advancement teams.
 
-Turn GiveCampus, Cvent (and vendors you add) into one **ConstituentEvent** schema, with a visual mapper UI and push-to-storage egress for analytics.
+Turn GiveCampus, Cvent, iModules, Blackbaud, NPSP (and vendors you add) into one **ConstituentEvent** schema, with a visual mapper UI and push-to-storage egress for analytics.
 
-> **Pilot-ready, not forgettable yet.** Two built-in vendors, SQLite, self-hosted.  
+> **Pilot-ready, not forgettable yet.** Six built-in vendors, SQLite or Postgres, self-hosted.  
 > Read [docs/limitations-and-roadmap.md](./docs/limitations-and-roadmap.md) before production donor data.
 
 **One URL:** API + admin UI on the same port.
+
+[![Deploy on Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7c3aed?style=for-the-badge&logo=fly.io)](https://fly.io/docs/languages-and-frameworks/docker/)
+[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://docs.railway.com/guides/dockerfiles)
+
+Docker image: `ghcr.io/PhilanthroPy-Project/unischema:latest`
+
+---
+
+## Adoption paths
+
+| Stage | Stack | Guide |
+|-------|-------|-------|
+| **Pilot** (~15 min) | Docker + SQLite + local egress | [Quick start](#quick-start-15-minutes) |
+| **Production** | Fly/Railway + S3 + Postgres optional | [Operator guide](./docs/operator-guide.md) |
+| **Scale** | Postgres + benchmarks + multi-instance | [Benchmarks](./docs/benchmarks.md) · [Postgres](./docs/postgres.md) |
 
 ---
 
@@ -18,7 +33,7 @@ Turn GiveCampus, Cvent (and vendors you add) into one **ConstituentEvent** schem
 | **New adopter** — first webhook in ~15 min | [Quick start](#quick-start-15-minutes) below |
 | **Admin / analyst** — drawing mapping lines on the canvas | [docs/admin-guide.md](./docs/admin-guide.md) |
 | **Operator** — secrets, S3 egress, cloud deploy | [docs/operator-guide.md](./docs/operator-guide.md) |
-| **Developer** — adding Blackbaud, NPSP, vendor #3 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
+| **Developer** — adding Slate, Ellucian, vendor #7 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
 | **Data engineer** — prove downstream value | [examples/downstream/](examples/downstream/README.md) (notebook + scripts) |
 | **All docs** | [docs/README.md](docs/README.md) |
 
@@ -31,7 +46,7 @@ Turn GiveCampus, Cvent (and vendors you add) into one **ConstituentEvent** schem
 ```bash
 git clone https://github.com/PhilanthroPy-Project/UniSchema.git
 cd UniSchema
-docker compose up --build
+docker compose -f docker-compose.pilot.yml up --build
 ```
 
 1. Open [http://localhost:3000](http://localhost:3000) — mapping canvas + API together  
@@ -58,15 +73,16 @@ npm run demo
 
 ## What UniSchema is (and isn't)
 
-| ✅ Today | ⚠️ v0.1.0 limits |
+| ✅ Today (v0.2.0) | ⚠️ Limits |
 |----------|------------------|
-| GiveCampus + Cvent → ConstituentEvent | Blackbaud, NPSP, iModules — [bring your own vendor](./docs/adding-a-vendor.md) |
-| HMAC webhook verification | ~120 req/min/IP default; single-instance SQLite |
-| Idempotent egress (duplicate webhooks skip re-publish) | Set `TRUST_PROXY=true` when behind Fly/Railway/nginx |
-| Visual canvas overrides | Core master schema is opinionated — [details](./docs/limitations-and-roadmap.md) |
-| Local + S3 egress push | No managed SaaS — [Fly / Railway / Terraform S3](deploy/README.md) |
-| 3 event types: registration, donation, email click | Extending enums needs code + pipeline coordination |
-| Drift queue for schema failures | LLM drift agent is **experimental** — [human review required](./agents/README.md) |
+| 5 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP | Slate, Ellucian — [add your own](./docs/adding-a-vendor.md) |
+| Tier 1 (prod-tested): GiveCampus, Cvent · Tier 3 (community): Blackbaud, NPSP | Verify community mappers with your real payloads |
+| SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis (see [deploy guide](./deploy/README.md)) |
+| HMAC webhook verification | ~120 req/min/IP default; tune for peak giving day |
+| Visual canvas + metadata mappings + import/export | Core master schema is opinionated — [details](./docs/limitations-and-roadmap.md) |
+| Local + S3 egress push | No managed SaaS yet — [Fly / Railway / Terraform S3](deploy/README.md) |
+| 3 event types: registration, donation, email click | Extending enums needs RFC + pipeline coordination |
+| Drift queue + experimental LLM agent | **Human review required** — [agents/README.md](./agents/README.md) |
 
 ---
 
@@ -78,6 +94,7 @@ No hosted tier yet. Use bundled Docker image + platform templates:
 |----------|------|
 | Fly.io | [deploy/fly.toml](./deploy/fly.toml) + [deploy/README.md](./deploy/README.md) |
 | Railway | [deploy/railway.toml](./deploy/railway.toml) |
+| GHCR image | `docker pull ghcr.io/PhilanthroPy-Project/unischema:0.2.0` |
 | Any host | [Dockerfile](./Dockerfile) |
 
 Production checklist → [operator guide](./docs/operator-guide.md).
@@ -86,7 +103,7 @@ Production checklist → [operator guide](./docs/operator-guide.md).
 
 | Variable | Purpose |
 |----------|---------|
-| `GIVECAMPUS_WEBHOOK_SECRET` / `CVENT_WEBHOOK_SECRET` | HMAC verification (required in production) |
+| `GIVECAMPUS_WEBHOOK_SECRET` / `CVENT_WEBHOOK_SECRET` (+ per-vendor secrets) | HMAC verification (required in production) |
 | `MAPPING_SYNC_TOKEN` | Protects mapping sync, mapping GET, and ingestion polling |
 | `DRIFT_AGENT_TOKEN` | Protects drift queue API |
 | `TRUST_PROXY=true` | Trust `X-Forwarded-For` only when behind a reverse proxy |
@@ -103,7 +120,7 @@ python3 examples/downstream/read_local_egress.py data/egress
 
 Or open the **[Jupyter notebook](examples/downstream/egress_report.ipynb)** for a stakeholder-friendly summary chart.
 
-Airflow DAG stub + S3 batch reader → [examples/downstream/](examples/downstream/README.md).
+Board of Trustee engagement ML starter → [examples/downstream/bot_engagement_classifier.py](examples/downstream/bot_engagement_classifier.py).
 
 ---
 
@@ -111,11 +128,12 @@ Airflow DAG stub + S3 batch reader → [examples/downstream/](examples/downstrea
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/webhooks/givecampus` | GiveCampus webhook (**202**) |
-| `POST` | `/webhooks/cvent` | Cvent webhook (**202**) |
+| `GET` | `/health` | Health check (version, egress, drift count) |
+| `GET` | `/api/vendors` | Vendor registry |
+| `POST` | `/webhooks/{vendor}` | Vendor webhooks (**202**) — givecampus, cvent, imodules, blackbaud, npsp |
 | `GET` | `/webhooks/ingestions/:id` | Poll async status (Bearer auth in production) |
 | `POST` | `/api/mappings/sync` | Save canvas mapping (Bearer auth in production) |
+| `POST` | `/api/mappings/preview` | Preview ConstituentEvent from artifact (no persist) |
 | `GET` | `/api/mappings/:vendor` | Load canvas mapping (Bearer auth in production) |
 | `GET` | `/api/drift/events` | Schema drift queue (Bearer auth in production) |
 
@@ -129,14 +147,17 @@ Full operator reference → [docs/operator-guide.md](./docs/operator-guide.md).
 
 ```
 UniSchema/
-├── docs/              admin, operator, vendor, limitations guides
-├── deploy/            Fly.io + Railway templates
-├── examples/downstream/   report scripts + Airflow stub
-├── frontend/          React mapping canvas
-├── src/               Hono API, mappers, egress
-├── samples/           demo webhook payloads
-├── scripts/           demo-webhook.sh
-└── agents/            experimental drift agent (Python)
+├── src/                    # Hono API — app.ts, server.ts, mappers, egress
+├── frontend/               # React mapping canvas (npm workspace)
+├── tests/
+│   ├── unit/               # Module-level tests
+│   └── integration/        # Full HTTP route tests
+├── docs/                   # Role guides (admin, operator, vendor)
+├── deploy/                 # Fly.io, Railway, Terraform
+├── examples/downstream/    # Analytics scripts + notebook
+├── samples/                # Demo webhook payloads
+├── scripts/                # demo-webhook.sh, benchmarks
+└── agents/                 # Experimental drift agent (Python)
 ```
 
 ---
@@ -144,7 +165,7 @@ UniSchema/
 ## Testing
 
 ```bash
-npm test                  # backend (232 tests)
+npm test                  # backend
 npm run validate          # full CI parity (backend + frontend + build)
 ```
 

@@ -403,3 +403,33 @@ export async function deleteAllVendorMappings(): Promise<void> {
 
   getDb().delete(vendorMappings).run()
 }
+
+export async function countPendingIngestionRows(): Promise<number> {
+  if (isPostgres()) {
+    const rows = await pgDb()
+      .select()
+      .from(webhookIngestions)
+      .where(eq(webhookIngestions.status, 'pending'))
+
+    return rows.length
+  }
+
+  return getDb()
+    .select()
+    .from(webhookIngestions)
+    .where(eq(webhookIngestions.status, 'pending'))
+    .all().length
+}
+
+export async function insertMappingAuditLog(
+  values: typeof import('./schema.js').mappingAuditLog.$inferInsert,
+): Promise<void> {
+  const { mappingAuditLog } = await import('./schema.js')
+
+  if (isPostgres()) {
+    await pgDb().insert(mappingAuditLog).values(values)
+    return
+  }
+
+  getDb().insert(mappingAuditLog).values(values).run()
+}

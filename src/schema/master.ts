@@ -14,6 +14,7 @@ export const SourceSystemSchema = z.enum([
   'IMODULES',
   'BLACKBAUD',
   'NPSP',
+  'SLATE',
 ])
 
 export type SourceSystem = z.infer<typeof SourceSystemSchema>
@@ -21,6 +22,7 @@ export type SourceSystem = z.infer<typeof SourceSystemSchema>
 export const NormalizedMetadataSchema = PrimitiveRecordSchema
 
 export const ConstituentEventSchema = z.object({
+  schemaVersion: z.literal(1).optional(),
   eventId: z.string().uuid(),
   constituentEmail: z.string().email(),
   firstName: z.string().optional(),

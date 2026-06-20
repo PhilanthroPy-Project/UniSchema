@@ -149,7 +149,7 @@ Prove value to stakeholders with the sample scripts in [examples/downstream/](..
 
 ```bash
 npm run test:security
-npm test -- tests/webhookSecurity.test.ts
+npm test -- tests/integration/webhookSecurity.test.ts
 ```
 
 Never commit `.env` or vendor secrets to git.

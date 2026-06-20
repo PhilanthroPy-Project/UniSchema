@@ -90,4 +90,13 @@ describe('getMappingsFingerprint', () => {
 
     expect(baseline).not.toBe(modified)
   })
+
+  it('includes metadata mappings in the fingerprint', () => {
+    const withoutMeta = getMappingsFingerprint(sampleEdges, [])
+    const withMeta = getMappingsFingerprint(sampleEdges, [
+      { source: 'donation_type', key: 'donation_type' },
+    ])
+
+    expect(withoutMeta).not.toBe(withMeta)
+  })
 })

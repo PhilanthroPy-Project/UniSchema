@@ -84,6 +84,14 @@ function createTables(database: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS constituent_events_egress_idx ON constituent_events (egress_status);
+
+    CREATE TABLE IF NOT EXISTS mapping_audit_log (
+      id TEXT PRIMARY KEY NOT NULL,
+      vendor TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      diff_hash TEXT NOT NULL,
+      synced_at TEXT NOT NULL
+    );
   `)
 }
 

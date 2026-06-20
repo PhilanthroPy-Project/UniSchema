@@ -1,5 +1,7 @@
 import type { Context, Next } from 'hono'
 
+import { checkRateLimitDistributed } from '../store/rateLimitStore.js'
+
 export type RateLimitConfig = {
   maxRequests: number
   windowMs: number
@@ -108,7 +110,7 @@ export function createWebhookGuardMiddleware() {
 
     const rateLimitConfig = resolveRateLimitConfig()
 
-    if (!checkRateLimit(clientIp, rateLimitConfig)) {
+    if (!(await checkRateLimitDistributed(clientIp, rateLimitConfig))) {
       return c.json({ success: false, message: 'Too many requests' }, 429)
     }
 

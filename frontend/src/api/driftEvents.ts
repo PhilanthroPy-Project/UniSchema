@@ -15,15 +15,20 @@ export type DriftEventSummary = {
   validationErrors: DriftValidationErrors
   mapperKind: string
   localFixturePath?: string | null
+  rawPayload?: Record<string, unknown>
 }
 
 export async function fetchDriftEvents(
   status: 'pending' | 'processed' = 'pending',
   vendor?: string,
+  includePayload = false,
 ): Promise<DriftEventSummary[]> {
   const params = new URLSearchParams({ status })
   if (vendor) {
     params.set('vendor', vendor)
+  }
+  if (includePayload) {
+    params.set('includePayload', 'true')
   }
 
   const response = await fetch(`${API_BASE}/drift/events?${params.toString()}`, {
@@ -40,6 +45,17 @@ export async function fetchDriftEvents(
   }
 
   return body.events
+}
+
+export async function ackDriftEvent(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/drift/events/${encodeURIComponent(id)}/ack`, {
+    method: 'POST',
+    headers: buildAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to ack drift event (${response.status})`)
+  }
 }
 
 export async function fetchVendors(): Promise<

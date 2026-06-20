@@ -124,3 +124,29 @@ BASE_URL=https://<host> ./scripts/demo-webhook.sh
 Then configure S3 lifecycle rules and downstream jobs — see [examples/downstream/README.md](../examples/downstream/README.md).
 
 Operator checklist: [docs/operator-guide.md](../docs/operator-guide.md)
+
+---
+
+## Multi-instance production
+
+When one Fly/Railway instance is not enough:
+
+| Component | Requirement |
+|-----------|-------------|
+| Database | Postgres (`DATABASE_URL`) — shared ingestion state |
+| Rate limits | `REDIS_URL` — shared IP buckets across instances |
+| Ingest queue | Enabled by default with Postgres (pg-boss); disable with `INGEST_QUEUE_ENABLED=false` |
+| Sessions | Sticky sessions optional for admin UI; API is stateless |
+
+### Fly.io example (2 machines)
+
+```bash
+fly postgres create
+fly postgres attach --app your-unischema-app
+fly secrets set REDIS_URL=redis://... MAPPING_SYNC_TOKEN=...
+fly scale count 2 --app your-unischema-app
+```
+
+Deploy with [deploy/fly.toml](./fly.toml). All instances must share the same Postgres and Redis.
+
+See [docs/postgres.md](../docs/postgres.md) and [docs/benchmarks.md](../docs/benchmarks.md).

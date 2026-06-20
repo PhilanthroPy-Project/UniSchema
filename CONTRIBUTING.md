@@ -26,8 +26,8 @@ Every new vendor PR must include:
 
 1. `src/mappers/{vendor}.ts` with Zod payload schema + mapper function
 2. Registration in `src/schema/master.ts`, `src/utils/sourceSystem.ts`, `src/utils/driftCapture.ts`, `src/config/webhookRoutes.ts`, `src/mappers/resolve.ts`
-3. `tests/mappers.test.ts` unit tests
-4. `tests/webhooks.test.ts` integration test for `POST /webhooks/{vendor}`
+3. `tests/unit/mappers.test.ts` unit tests
+4. `tests/integration/webhooks.test.ts` integration test for `POST /webhooks/{vendor}`
 5. `samples/{vendor}-*.json` sample payload
 6. `.env.example` secret variable documented
 
@@ -39,7 +39,7 @@ npm run validate
 
 ## Code of conduct
 
-Be respectful and constructive. UniSchema serves advancement teams handling donor and constituent data — treat issues and reviews with appropriate care for privacy and production impact.
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). UniSchema serves advancement teams handling donor and constituent data — treat issues and reviews with appropriate care for privacy and production impact.
 
 ## Security
 

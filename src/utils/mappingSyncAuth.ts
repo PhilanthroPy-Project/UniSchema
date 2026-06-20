@@ -2,6 +2,8 @@ import { timingSafeEqual } from 'node:crypto'
 
 import type { Context } from 'hono'
 
+import { isOidcAuthorized } from './oidcAuth.js'
+
 export type MappingSyncAuthDecision =
   | { action: 'allow' }
   | { action: 'verify'; token: string }
@@ -30,6 +32,10 @@ export function resolveMappingSyncAuth(): MappingSyncAuthDecision {
 }
 
 export function isMappingSyncAuthorized(c: Context): boolean {
+  if (isOidcAuthorized(c)) {
+    return true
+  }
+
   const decision = resolveMappingSyncAuth()
 
   if (decision.action === 'allow') {
@@ -37,6 +43,28 @@ export function isMappingSyncAuthorized(c: Context): boolean {
   }
 
   if (decision.action === 'misconfigured') {
+    return false
+  }
+
+  const authHeader = c.req.header('Authorization') ?? ''
+  const expected = `Bearer ${decision.token}`
+
+  if (authHeader.length !== expected.length) {
+    return false
+  }
+
+  return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
+}
+
+/** True only when a valid Bearer mapping sync or OIDC token is present (not dev allow mode). */
+export function hasVerifiedAdminAuth(c: Context): boolean {
+  if (isOidcAuthorized(c)) {
+    return true
+  }
+
+  const decision = resolveMappingSyncAuth()
+
+  if (decision.action !== 'verify') {
     return false
   }
 

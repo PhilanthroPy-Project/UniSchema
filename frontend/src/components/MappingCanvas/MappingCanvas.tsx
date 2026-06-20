@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowRightLeft, CloudUpload, Download, Layers, Loader2 } from 'lucide-react'
+import {
+  ArrowRightLeft,
+  CloudUpload,
+  Download,
+  Layers,
+  Loader2,
+  Play,
+  Upload,
+} from 'lucide-react'
 import type { Edge } from 'reactflow'
 
 import { fetchMappingArtifact, syncMappingArtifact } from '../../api/syncMapping'
@@ -15,9 +23,14 @@ import {
   getMappingsFingerprint,
   serializeMappingArtifact,
 } from '../../mappingUtils'
+import type { MetadataMapping } from '../../types/mapping'
+import { parseMappingArtifactJson } from '../../utils/importMapping'
+import { buildPayloadTree, flattenLeafPaths } from '../../utils/payloadTree'
+import { runMappingPreview } from '../../utils/previewMapping'
 
 import { SyncTokenSettings } from '../SyncTokenSettings'
 import { FlowCanvas } from './FlowCanvas'
+import { MappingPreviewModal } from './MappingPreviewModal'
 import { MasterSchemaPanel } from './MasterSchemaPanel'
 import { ResizableThreeColumnLayout } from './ResizableThreeColumnLayout'
 import { SourcePayloadPanel } from './SourcePayloadPanel'
@@ -28,14 +41,43 @@ type ActionStatus = {
   message: string
 } | null
 
-export function MappingCanvas() {
-  const [selectedVendor, setSelectedVendor] = useState<VendorOption>(VENDOR_OPTIONS[0]!)
+type MappingCanvasProps = {
+  initialVendorSlug?: string
+}
+
+export function MappingCanvas({ initialVendorSlug }: MappingCanvasProps) {
+  const initialVendor =
+    (initialVendorSlug ? getVendorOption(initialVendorSlug) : undefined) ?? VENDOR_OPTIONS[0]!
+
+  const [selectedVendor, setSelectedVendor] = useState<VendorOption>(initialVendor)
+  const [customPayload, setCustomPayload] = useState<Record<string, unknown> | null>(null)
   const [edges, setEdges] = useState<Edge[]>([])
+  const [metadataMappings, setMetadataMappings] = useState<MetadataMapping[]>([])
   const [highlightedPath, setHighlightedPath] = useState<string | null>(null)
   const [actionStatus, setActionStatus] = useState<ActionStatus>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLoadingMapping, setIsLoadingMapping] = useState(true)
   const [lastSyncedFingerprint, setLastSyncedFingerprint] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewResult, setPreviewResult] = useState<Record<string, unknown> | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+
+  const activePayload = customPayload ?? selectedVendor.samplePayload
+
+  const sourcePaths = useMemo(
+    () => flattenLeafPaths(buildPayloadTree(activePayload)),
+    [activePayload],
+  )
+
+  useEffect(() => {
+    if (initialVendorSlug) {
+      const option = getVendorOption(initialVendorSlug)
+      if (option) {
+        setSelectedVendor(option)
+      }
+    }
+  }, [initialVendorSlug])
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +85,7 @@ export function MappingCanvas() {
     async function loadSavedMapping() {
       setIsLoadingMapping(true)
       setEdges([])
+      setMetadataMappings([])
       setLastSyncedFingerprint(null)
 
       try {
@@ -53,20 +96,22 @@ export function MappingCanvas() {
         }
 
         if (!stored) {
-          setLastSyncedFingerprint(getMappingsFingerprint([]))
+          setLastSyncedFingerprint(getMappingsFingerprint([], []))
           return
         }
 
         const hydratedEdges = edgesFromMappingConnections(stored.mappings)
+        const hydratedMetadata = stored.metadataMappings ?? []
         setEdges(hydratedEdges)
-        setLastSyncedFingerprint(getMappingsFingerprint(hydratedEdges))
+        setMetadataMappings(hydratedMetadata)
+        setLastSyncedFingerprint(getMappingsFingerprint(hydratedEdges, hydratedMetadata))
       } catch {
         if (!cancelled) {
           setActionStatus({
             tone: 'error',
             message: 'Unable to load saved mapping configuration',
           })
-          setLastSyncedFingerprint(getMappingsFingerprint([]))
+          setLastSyncedFingerprint(getMappingsFingerprint([], []))
         }
       } finally {
         if (!cancelled) {
@@ -82,11 +127,14 @@ export function MappingCanvas() {
     }
   }, [selectedVendor.label])
 
-  const currentFingerprint = useMemo(() => getMappingsFingerprint(edges), [edges])
+  const currentFingerprint = useMemo(
+    () => getMappingsFingerprint(edges, metadataMappings),
+    [edges, metadataMappings],
+  )
 
   const hasUnsavedChanges =
     lastSyncedFingerprint === null
-      ? edges.length > 0
+      ? edges.length > 0 || metadataMappings.length > 0
       : currentFingerprint !== lastSyncedFingerprint
 
   const isCanvasSynced = lastSyncedFingerprint !== null && !hasUnsavedChanges
@@ -105,12 +153,13 @@ export function MappingCanvas() {
     const option = getVendorOption(slug)
     if (option) {
       setSelectedVendor(option)
+      setCustomPayload(null)
       setActionStatus(null)
     }
   }, [])
 
   const handleExportMapping = useCallback(() => {
-    const artifact = buildMappingArtifact(selectedVendor.label, edges)
+    const artifact = buildMappingArtifact(selectedVendor.label, edges, metadataMappings)
     const serialized = serializeMappingArtifact(artifact)
 
     const blob = new Blob([serialized], { type: 'application/json' })
@@ -125,10 +174,59 @@ export function MappingCanvas() {
       tone: 'success',
       message: `${artifact.mappings.length} mapping(s) exported`,
     })
-  }, [edges, selectedVendor.label, selectedVendor.slug])
+  }, [edges, metadataMappings, selectedVendor.label, selectedVendor.slug])
+
+  const handleImportMapping = useCallback(async () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json,.json'
+
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) {
+        return
+      }
+
+      void file.text().then((text) => {
+        const parsed = parseMappingArtifactJson(text)
+
+        if (!parsed.success) {
+          setActionStatus({ tone: 'error', message: parsed.message })
+          return
+        }
+
+        const hydratedEdges = edgesFromMappingConnections(parsed.artifact.mappings)
+        setEdges(hydratedEdges)
+        setMetadataMappings(parsed.artifact.metadataMappings ?? [])
+        setActionStatus({
+          tone: 'success',
+          message: `Imported ${parsed.artifact.mappings.length} mapping(s)`,
+        })
+      })
+    }
+
+    input.click()
+  }, [])
+
+  const handleTestMapping = useCallback(async () => {
+    const artifact = buildMappingArtifact(selectedVendor.label, edges, metadataMappings)
+    setPreviewOpen(true)
+    setPreviewLoading(true)
+    setPreviewResult(null)
+    setPreviewError(null)
+
+    const result = await runMappingPreview(artifact, activePayload)
+    setPreviewLoading(false)
+
+    if (result.ok) {
+      setPreviewResult(result.event)
+    } else {
+      setPreviewError(result.message)
+    }
+  }, [activePayload, edges, metadataMappings, selectedVendor.label])
 
   const handleSyncToEngine = useCallback(async () => {
-    const artifact = buildMappingArtifact(selectedVendor.label, edges)
+    const artifact = buildMappingArtifact(selectedVendor.label, edges, metadataMappings)
 
     setIsSyncing(true)
     setActionStatus(null)
@@ -163,7 +261,7 @@ export function MappingCanvas() {
     } finally {
       setIsSyncing(false)
     }
-  }, [currentFingerprint, edges, selectedVendor.label])
+  }, [currentFingerprint, edges, metadataMappings, selectedVendor.label])
 
   return (
     <div className="flex h-full flex-col bg-theme-bg font-system text-theme-ink transition-colors duration-300">
@@ -196,7 +294,7 @@ export function MappingCanvas() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <label className="flex items-center gap-2 text-sm text-theme-muted">
               Vendor
               <select
@@ -225,16 +323,32 @@ export function MappingCanvas() {
             <ThemeToggle />
             <button
               type="button"
+              onClick={handleImportMapping}
+              className="inline-flex items-center gap-2 rounded-full bg-theme-surface px-4 py-2.5 text-sm font-medium text-theme-ink shadow-sm backdrop-blur-xl transition hover:bg-theme-elevated"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </button>
+            <button
+              type="button"
               onClick={handleExportMapping}
-              className="inline-flex items-center gap-2 rounded-full bg-theme-surface px-5 py-2.5 text-sm font-medium text-theme-ink shadow-sm backdrop-blur-xl transition hover:bg-theme-elevated"
+              className="inline-flex items-center gap-2 rounded-full bg-theme-surface px-4 py-2.5 text-sm font-medium text-theme-ink shadow-sm backdrop-blur-xl transition hover:bg-theme-elevated"
             >
               <Download className="h-4 w-4" />
-              Export Mapping
+              Export
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleTestMapping()}
+              className="inline-flex items-center gap-2 rounded-full bg-theme-surface px-4 py-2.5 text-sm font-medium text-theme-ink shadow-sm backdrop-blur-xl transition hover:bg-theme-elevated"
+            >
+              <Play className="h-4 w-4" />
+              Test
             </button>
             <button
               type="button"
               onClick={handleSyncToEngine}
-              disabled={isSyncing || edges.length === 0 || !hasUnsavedChanges}
+              disabled={isSyncing || (edges.length === 0 && metadataMappings.length === 0) || !hasUnsavedChanges}
               className="inline-flex items-center gap-2 rounded-full bg-apple-blue-focus px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-apple-blue disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSyncing ? (
@@ -252,8 +366,9 @@ export function MappingCanvas() {
         left={
           <SourcePayloadPanel
             vendor={getVendorLabel(selectedVendor.slug)}
-            payload={selectedVendor.samplePayload}
+            payload={activePayload}
             highlightedPath={highlightedPath}
+            onPayloadChange={setCustomPayload}
           />
         }
         center={
@@ -278,7 +393,7 @@ export function MappingCanvas() {
                 </div>
               ) : (
                 <FlowCanvas
-                  payload={selectedVendor.samplePayload}
+                  payload={activePayload}
                   edges={edges}
                   onEdgesChange={setEdges}
                   onActiveSourcePathChange={setHighlightedPath}
@@ -287,7 +402,14 @@ export function MappingCanvas() {
             </div>
           </section>
         }
-        right={<MasterSchemaPanel connectedTargets={connectedTargets} />}
+        right={
+          <MasterSchemaPanel
+            connectedTargets={connectedTargets}
+            sourcePaths={sourcePaths}
+            metadataMappings={metadataMappings}
+            onMetadataMappingsChange={setMetadataMappings}
+          />
+        }
       />
 
       <footer className="shrink-0 bg-theme-surface px-6 py-2.5 shadow-sm backdrop-blur-xl transition-colors duration-300">
@@ -296,9 +418,20 @@ export function MappingCanvas() {
           <span>
             Active connections:{' '}
             <span className="font-medium text-theme-ink">{edges.length}</span>
+            {' · '}
+            Metadata:{' '}
+            <span className="font-medium text-theme-ink">{metadataMappings.length}</span>
           </span>
         </div>
       </footer>
+
+      <MappingPreviewModal
+        open={previewOpen}
+        loading={previewLoading}
+        result={previewResult}
+        error={previewError}
+        onClose={() => setPreviewOpen(false)}
+      />
     </div>
   )
 }

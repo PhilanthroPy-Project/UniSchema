@@ -1,0 +1,14 @@
+name: unischema_staging
+version: 1.0.0
+config-version: 2
+
+profile: unischema
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  unischema_staging:
+    staging:
+      +materialized: view

@@ -43,6 +43,15 @@ export const validNpspPayload = {
   RecordType: 'Donation',
 } as const
 
+export const validSlatePayload = {
+  id: 'slate-reg-2026-001',
+  email: 'prospect@university.edu',
+  first: 'Jordan',
+  last: 'Lee',
+  form: 'event_registration',
+  event_title: 'Open House 2026',
+} as const
+
 export const validConstituentEvent: ConstituentEvent = {
   eventId: '550e8400-e29b-41d4-a716-446655440000',
   constituentEmail: 'alumni@school.edu',

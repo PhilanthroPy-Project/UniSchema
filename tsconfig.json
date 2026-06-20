@@ -14,5 +14,5 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*", "tests/unit/**/*", "tests/integration/**/*", "tests/helpers/**/*", "tests/fixtures/**/*"]
 }

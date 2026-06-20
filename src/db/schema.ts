@@ -50,3 +50,11 @@ export const constituentEvents = sqliteTable(
   },
   (table) => [index('constituent_events_egress_idx').on(table.egressStatus)],
 )
+
+export const mappingAuditLog = sqliteTable('mapping_audit_log', {
+  id: text('id').primaryKey(),
+  vendor: text('vendor').notNull(),
+  actor: text('actor').notNull(),
+  diffHash: text('diff_hash').notNull(),
+  syncedAt: text('synced_at').notNull(),
+})

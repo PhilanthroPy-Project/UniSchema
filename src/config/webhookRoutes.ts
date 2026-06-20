@@ -33,6 +33,12 @@ export const VENDOR_WEBHOOK_CONFIGS: Record<DriftVendor, WebhookRouteConfig> = {
     secretEnvKey: 'NPSP_WEBHOOK_SECRET',
     signatureHeader: 'x-npsp-signature',
   },
+  slate: {
+    vendor: 'slate',
+    failureMessage: 'Failed to map Slate payload to master schema',
+    secretEnvKey: 'SLATE_WEBHOOK_SECRET',
+    signatureHeader: 'x-slate-signature',
+  },
 }
 
 export const VENDOR_REGISTRY = Object.values(VENDOR_WEBHOOK_CONFIGS).map((config) => ({

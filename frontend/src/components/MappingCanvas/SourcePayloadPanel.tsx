@@ -1,16 +1,18 @@
-import { ChevronDown, ChevronRight, FileJson } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { ChevronDown, ChevronRight, FileJson, Upload } from 'lucide-react'
 
 import {
   buildPayloadTree,
   formatPayloadValue,
   type PayloadTreeNode,
 } from '../../utils/payloadTree'
+import { parsePayloadJson } from '../../utils/importMapping'
 
 type SourcePayloadPanelProps = {
   vendor: string
   payload: Record<string, unknown>
   highlightedPath?: string | null
+  onPayloadChange?: (payload: Record<string, unknown>) => void
 }
 
 function TreeRow({
@@ -82,7 +84,13 @@ export function SourcePayloadPanel({
   vendor,
   payload,
   highlightedPath,
+  onPayloadChange,
 }: SourcePayloadPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [pasteError, setPasteError] = useState<string | null>(null)
+
   const tree = useMemo(() => buildPayloadTree(payload), [payload])
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
     () => new Set(tree.map((node) => node.path)),
@@ -100,18 +108,88 @@ export function SourcePayloadPanel({
     })
   }
 
+  const applyPayload = (raw: string) => {
+    const result = parsePayloadJson(raw)
+    if (!result.success) {
+      setPasteError(result.message)
+      return
+    }
+    setPasteError(null)
+    onPayloadChange?.(result.payload)
+    setPasteOpen(false)
+    setPasteText('')
+  }
+
+  const handleFileUpload = async (file: File) => {
+    const text = await file.text()
+    applyPayload(text)
+  }
+
   return (
     <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
       <div className="px-4 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-theme-inset">
-            <FileJson className="h-4 w-4 text-theme-muted" strokeWidth={2} />
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-theme-inset">
+              <FileJson className="h-4 w-4 text-theme-muted" strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-theme-ink">Source Payload</h2>
+              <p className="text-xs text-theme-muted">{vendor} webhook JSON</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-sm font-semibold text-theme-ink">Source Payload</h2>
-            <p className="text-xs text-theme-muted">{vendor} webhook JSON</p>
-          </div>
+          {onPayloadChange && (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPasteOpen((open) => !open)}
+                className="rounded-full bg-theme-inset px-2.5 py-1 text-[11px] text-theme-ink hover:bg-theme-elevated"
+              >
+                Paste
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-1 rounded-full bg-theme-inset px-2.5 py-1 text-[11px] text-theme-ink hover:bg-theme-elevated"
+              >
+                <Upload className="h-3 w-3" />
+                Upload
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) {
+                    void handleFileUpload(file)
+                  }
+                  event.target.value = ''
+                }}
+              />
+            </div>
+          )}
         </div>
+        {pasteOpen && (
+          <div className="mt-3 space-y-2">
+            <textarea
+              value={pasteText}
+              onChange={(event) => setPasteText(event.target.value)}
+              rows={4}
+              placeholder='{"id": "...", ...}'
+              className="w-full rounded-xl border border-theme-border bg-theme-inset p-2 text-xs font-mono"
+            />
+            {pasteError && <p className="text-xs text-apple-red">{pasteError}</p>}
+            <button
+              type="button"
+              onClick={() => applyPayload(pasteText)}
+              className="rounded-full bg-apple-blue-focus px-3 py-1 text-xs text-white"
+            >
+              Apply payload
+            </button>
+          </div>
+        )}
       </div>
       <div className="mx-3 mb-3 flex-1 overflow-y-auto rounded-xl bg-theme-inset p-2">
         {tree.map((node) => (

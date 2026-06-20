@@ -1,14 +1,7 @@
 """
-Airflow DAG stub — trigger when UniSchema writes an S3 NDJSON batch.
+Complete Airflow DAG — S3 NDJSON batch → parse → optional warehouse COPY stub.
 
-Two integration options:
-  1. Set AIRFLOW_WEBHOOK_URL to Airflow's REST API (dagRuns) — UniSchema POSTs manifest metadata
-  2. S3 event notification on *.manifest.json → SQS → this DAG
-
-This stub reads conf passed from the webhook trigger and runs the local report script logic.
-Replace `process_unischema_batch` with your warehouse load (Snowflake COPY, BigQuery, etc.).
-
-Requires: apache-airflow, boto3 (provider packages vary by Airflow version)
+Trigger via UniSchema AIRFLOW_WEBHOOK_URL or S3 event notification.
 """
 
 from __future__ import annotations
@@ -28,11 +21,9 @@ default_args = {
 
 def process_unischema_batch(**context) -> None:
     conf = context["dag_run"].conf or {}
-    # Example conf from UniSchema egress.batch.ready webhook:
-    # { "event": "egress.batch.ready", "s3Uri": "s3://bucket/.../batch.ndjson", ... }
     s3_uri = conf.get("s3Uri")
     if not s3_uri:
-        raise ValueError("dag_run.conf missing s3Uri — wire AIRFLOW_WEBHOOK_URL or pass conf manually")
+        raise ValueError("dag_run.conf missing s3Uri")
 
     import boto3
 
@@ -42,28 +33,38 @@ def process_unischema_batch(**context) -> None:
 
     totals: dict[str, float] = {}
     counts: dict[str, int] = {}
+    rows: list[dict] = []
+
     for line in body.splitlines():
         if not line.strip():
             continue
         event = json.loads(line)
+        rows.append(event)
         source = event.get("sourceSystem", "UNKNOWN")
         counts[source] = counts.get(source, 0) + 1
         amount = event.get("amount")
         if isinstance(amount, (int, float)):
             totals[source] = totals.get(source, 0.0) + float(amount)
 
-    print(f"Loaded batch {s3_uri}: {sum(counts.values())} events")
+    print(f"Loaded batch {s3_uri}: {len(rows)} events")
     for source, count in sorted(counts.items()):
         print(f"  {source}: {count} events, ${totals.get(source, 0):,.2f} donations")
 
-    # TODO: COPY INTO warehouse, update dbt model, send Slack summary, etc.
+    # Snowflake COPY pattern (replace connection id and stage):
+    # COPY INTO constituent_events FROM @unischema_stage/{key}
+    #   FILE_FORMAT = (TYPE = JSON STRIP_OUTER_ARRAY = FALSE);
+    #
+    # BigQuery: load job from gs://bucket/key with NEWLINE_DELIMITED_JSON
+
+    context["ti"].xcom_push(key="row_count", value=len(rows))
+    context["ti"].xcom_push(key="s3_uri", value=s3_uri)
 
 
 with DAG(
     dag_id="unischema_ingest",
     default_args=default_args,
     description="Process UniSchema ConstituentEvent NDJSON batch from S3",
-    schedule=None,  # trigger only — webhook or S3 event
+    schedule=None,
     start_date=datetime(2026, 1, 1),
     catchup=False,
     tags=["unischema", "advancement"],

@@ -1,49 +1,31 @@
-# dbt staging model for ConstituentEvent NDJSON batches
+# Minimal dbt project stub for UniSchema S3 NDJSON egress
 
-Load UniSchema S3 egress batches into your warehouse, then apply this staging model.
+This folder demonstrates how to stage ConstituentEvent batches in a warehouse after UniSchema S3 push.
+
+## Layout
+
+```
+dbt/
+├── dbt_project.yml
+└── models/staging/stg_constituent_events.sql
+```
 
 ## Assumptions
 
-- Raw table: `raw_unischema.constituent_events` (one row per NDJSON line, JSON column `data`)
-- dbt project with `staging` folder
+- S3 prefix: `s3://your-bucket/constituent-events/` (matches `EGRESS_S3_PREFIX`)
+- Files: NDJSON batches + `.manifest.json` sidecars from UniSchema egress
 
-## Model: `models/staging/stg_constituent_events.sql`
+## Quick start
 
-```sql
-with source as (
-  select
-    data:eventId::string as event_id,
-    lower(data:constituentEmail::string) as constituent_email,
-    data:firstName::string as first_name,
-    data:lastName::string as last_name,
-    data:eventType::string as event_type,
-    data:sourceSystem::string as source_system,
-    data:amount::number as amount,
-    data:currency::string as currency,
-    data:normalizedMetadata as normalized_metadata,
-    data:createdAt::timestamp_tz as created_at,
-    current_timestamp() as loaded_at
-  from {{ source('unischema', 'constituent_events') }}
-)
+1. Copy this folder to your dbt project or use as a submodule.
+2. Configure `profiles.yml` with your warehouse (Snowflake, BigQuery, Redshift).
+3. Create an external table or stage pointing at the S3 prefix.
+4. Run:
 
-select * from source
+```bash
+dbt run --select stg_constituent_events
 ```
 
-## Source definition (`models/sources.yml`)
+## Model
 
-```yaml
-sources:
-  - name: unischema
-    database: analytics
-    schema: raw_unischema
-    tables:
-      - name: constituent_events
-        description: NDJSON lines from UniSchema S3 egress batches
-```
-
-## Next steps
-
-- Join `constituent_email` to CRM golden record
-- Aggregate by `source_system` and `event_type` for advancement dashboards
-
-See also [read_s3_ndjson_batch.py](../read_s3_ndjson_batch.py) for loading batches into files before warehouse ingest.
+See [models/staging/stg_constituent_events.sql](./models/staging/stg_constituent_events.sql) for column mapping aligned with `ConstituentEvent` v0.2.

@@ -6,6 +6,8 @@ import type { Context } from 'hono'
 
 import { VENDOR_REGISTRY } from '../config/webhookRoutes.js'
 import { getEgressConfigSummary } from '../egress/config.js'
+import { getDatabaseDialect } from '../db/dialect.js'
+import { countPendingIngestions } from '../store/ingestQueue.js'
 import { countPendingDriftEvents } from '../utils/driftCapture.js'
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -22,12 +24,18 @@ function readPackageVersion(): string {
 
 export async function handleHealth(c: Context): Promise<Response> {
   const egress = getEgressConfigSummary()
+  const pendingIngestions = await countPendingIngestions()
 
   return c.json({
     status: 'ok',
     version: readPackageVersion(),
     egressTarget: egress.target,
     driftPendingCount: await countPendingDriftEvents(),
+    pendingIngestionCount: pendingIngestions,
+    redisRateLimit: Boolean(process.env.REDIS_URL?.trim()),
+    ingestQueue: getDatabaseDialect() === 'postgres' && process.env.INGEST_QUEUE_ENABLED !== 'false'
+      ? 'pg-boss'
+      : 'inline',
     timestamp: new Date().toISOString(),
   })
 }
@@ -39,6 +47,7 @@ export function handleVendorsList(c: Context): Response {
     imodules: 'iModules',
     blackbaud: 'Blackbaud',
     npsp: 'NPSP',
+    slate: 'Slate',
   }
 
   return c.json({

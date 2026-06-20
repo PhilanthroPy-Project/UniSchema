@@ -9,7 +9,7 @@ import {
   failIngestion,
   tryClaimIngestion,
 } from '../store/ingestionQueue.js'
-import { scheduleIngestion } from '../store/ingestionWorker.js'
+import { scheduleIngestion } from '../store/ingestQueue.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import { captureSchemaDrift, isDriftCaptureEnabled, type DriftVendor } from '../utils/driftCapture.js'
 import { logError, logInfo } from '../utils/logger.js'

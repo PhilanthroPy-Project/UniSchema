@@ -4,9 +4,14 @@ import {
   CONSTITUENT_EVENT_FIELDS,
   type ConstituentEventFieldMeta,
 } from '../../types/constituentEvent'
+import type { MetadataMapping } from '../../types/mapping'
+import { MetadataMappingsEditor } from './MetadataMappingsEditor'
 
 type MasterSchemaPanelProps = {
   connectedTargets: Set<string>
+  sourcePaths: string[]
+  metadataMappings: MetadataMapping[]
+  onMetadataMappingsChange: (mappings: MetadataMapping[]) => void
 }
 
 function RequirementIndicator({
@@ -83,7 +88,12 @@ function SchemaFieldRow({
   )
 }
 
-export function MasterSchemaPanel({ connectedTargets }: MasterSchemaPanelProps) {
+export function MasterSchemaPanel({
+  connectedTargets,
+  sourcePaths,
+  metadataMappings,
+  onMetadataMappingsChange,
+}: MasterSchemaPanelProps) {
   return (
     <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
       <div className="px-4 py-4">
@@ -97,7 +107,7 @@ export function MasterSchemaPanel({ connectedTargets }: MasterSchemaPanelProps) 
           </div>
         </div>
       </div>
-      <ul className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3">
+      <ul className="flex flex-col gap-1.5 overflow-y-auto px-3 pb-1">
         {CONSTITUENT_EVENT_FIELDS.map((field) => (
           <SchemaFieldRow
             key={field.key}
@@ -106,6 +116,11 @@ export function MasterSchemaPanel({ connectedTargets }: MasterSchemaPanelProps) 
           />
         ))}
       </ul>
+      <MetadataMappingsEditor
+        mappings={metadataMappings}
+        sourcePaths={sourcePaths}
+        onChange={onMetadataMappingsChange}
+      />
     </aside>
   )
 }
