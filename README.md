@@ -88,6 +88,7 @@ UniSchema enforces a multi-layer test contract for both human contributors and t
 | Mapper tests | `tests/mappers.test.ts` | Vendor payload → master schema mapping and boundary cases |
 | Schema tests | `tests/schema.test.ts` | `ConstituentEvent` Zod invariants |
 | Webhook tests | `tests/webhooks.test.ts` | Hono route integration (`/health`, `/webhooks/*`) |
+| Security tests | `tests/security.test.ts` | Secret scanning and sensitive-path `.gitignore` enforcement |
 | Frontend tests | `frontend/tests/` | Visual mapper utility logic |
 
 Run all commands from the **repository root** (`UniSchema/`), not from `frontend/`.
@@ -104,6 +105,13 @@ npm run validate
 npm run typecheck
 npm test
 npm run test:coverage
+npm run test:security
+```
+
+**Security only** (from repository root):
+
+```bash
+npm run test:security
 ```
 
 **Frontend only:**
@@ -121,7 +129,28 @@ npm run build
 npm run test:all
 ```
 
-CI runs on every push to `main` and on pull requests via the **Agent Pipeline Validation** workflow. The pipeline blocks merges unless backend typecheck, coverage-backed tests, frontend typecheck, frontend tests, and production build all pass.
+CI runs on every push to `main` and on pull requests via the **Agent Pipeline Validation** workflow. The pipeline blocks merges unless the security guard passes, backend typecheck, coverage-backed tests, frontend typecheck, frontend tests, and production build all pass.
+
+## Security
+
+This repository is public. Treat credentials as compromised if they ever appear in git history.
+
+**Local setup**
+
+- Copy `.env.example` to `.env` for local configuration.
+- Never commit `.env`, key files (`.pem`, `.key`), or credential JSON.
+
+**Automated guardrails**
+
+- `.gitignore` blocks common secret and environment file paths.
+- `tests/security.test.ts` scans tracked files for high-confidence secret patterns (GitHub tokens, AWS keys, private keys, etc.) and fails if forbidden paths are tracked.
+- CI runs the security suite first and blocks tracked `.env` files before backend or frontend jobs start.
+
+Run the guard locally before opening a PR:
+
+```bash
+npm run test:security
+```
 
 ## License
 

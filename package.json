@@ -8,10 +8,11 @@
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:security": "vitest run tests/security.test.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:all": "npm test && npm run test --prefix frontend",
-    "validate": "npm run typecheck && npm run test:coverage && npm run typecheck --prefix frontend && npm run test --prefix frontend && npm run build --prefix frontend"
+    "validate": "npm run typecheck && npm run test:security && npm run test:coverage && npm run typecheck --prefix frontend && npm run test --prefix frontend && npm run build --prefix frontend"
   },
   "keywords": [
     "webhook",

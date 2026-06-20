@@ -16,7 +16,7 @@ function RequirementIndicator({
 }) {
   if (requirement === 'required') {
     return (
-      <span className="rounded border border-rose-300 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+      <span className="rounded-full bg-apple-red/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-apple-red">
         Required
       </span>
     )
@@ -24,14 +24,14 @@ function RequirementIndicator({
 
   if (requirement === 'optional') {
     return (
-      <span className="rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600">
+      <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-apple-muted">
         Optional
       </span>
     )
   }
 
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-apple-muted">
       <Lock className="h-2.5 w-2.5" />
       System
     </span>
@@ -48,28 +48,34 @@ function SchemaFieldRow({
   return (
     <li
       className={[
-        'border-b border-gray-200 px-4 py-3 last:border-b-0',
-        isConnected ? 'bg-emerald-50/60' : 'bg-white',
+        'rounded-xl px-3 py-2.5 transition-colors',
+        isConnected ? 'bg-apple-green/8 shadow-sm' : 'bg-white/50 hover:bg-white/70',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-mono text-sm font-medium text-gray-900">{field.key}</p>
-          <p className="mt-0.5 text-xs text-gray-500">{field.description}</p>
+          <p className="truncate text-sm font-medium tracking-tight text-apple-ink">
+            {field.key}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-apple-muted">
+            {field.description}
+          </p>
         </div>
         <RequirementIndicator requirement={field.requirement} />
       </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-        <span className="font-mono">{field.valueType}</span>
-        {!field.mappable && (
-          <span className="inline-flex items-center gap-1 text-gray-400">
-            <Lock className="h-3 w-3" />
-            Read-only
-          </span>
-        )}
-        {isConnected && (
-          <span className="font-medium text-emerald-700">Mapped</span>
-        )}
+      <div className="mt-2 flex items-center justify-between text-[11px] text-apple-muted">
+        <span className="rounded-md bg-[#F5F5F7]/80 px-1.5 py-0.5">{field.valueType}</span>
+        <div className="flex items-center gap-2">
+          {!field.mappable && (
+            <span className="inline-flex items-center gap-1 text-apple-muted/80">
+              <Lock className="h-3 w-3" />
+              Read-only
+            </span>
+          )}
+          {isConnected && (
+            <span className="font-medium text-apple-green">Mapped</span>
+          )}
+        </div>
       </div>
     </li>
   )
@@ -77,17 +83,19 @@ function SchemaFieldRow({
 
 export function MasterSchemaPanel({ connectedTargets }: MasterSchemaPanelProps) {
   return (
-    <aside className="flex h-full flex-col border-l-2 border-gray-200 bg-gray-50">
-      <div className="border-b-2 border-gray-200 bg-white px-4 py-4">
-        <div className="flex items-center gap-2">
-          <Database className="h-4 w-4 text-gray-700" strokeWidth={2.5} />
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-white/80 shadow-sm backdrop-blur-xl">
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F5F5F7]">
+            <Database className="h-4 w-4 text-apple-muted" strokeWidth={2} />
+          </div>
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Master Schema</h2>
-            <p className="text-xs text-gray-500">ConstituentEvent (locked)</p>
+            <h2 className="text-sm font-semibold text-apple-ink">Master Schema</h2>
+            <p className="text-xs text-apple-muted">ConstituentEvent (locked)</p>
           </div>
         </div>
       </div>
-      <ul className="flex-1 overflow-y-auto border-t border-gray-200">
+      <ul className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3">
         {CONSTITUENT_EVENT_FIELDS.map((field) => (
           <SchemaFieldRow
             key={field.key}

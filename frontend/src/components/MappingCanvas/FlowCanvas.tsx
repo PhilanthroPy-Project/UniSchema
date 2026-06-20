@@ -103,7 +103,7 @@ export function FlowCanvas({
           {
             ...connection,
             animated: true,
-            style: { stroke: '#111827', strokeWidth: 2 },
+            style: { stroke: '#007AFF', strokeWidth: 2 },
           },
           dedupeTargetEdges(edges, connection),
         ),
@@ -113,7 +113,7 @@ export function FlowCanvas({
   )
 
   return (
-    <div className="h-full w-full bg-[#fafafa]">
+    <div className="h-full w-full bg-[#F5F5F7]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -125,21 +125,21 @@ export function FlowCanvas({
         proOptions={{ hideAttribution: true }}
         nodesConnectable
         elementsSelectable
-        className="bg-transparent"
+        className="bg-[#F5F5F7]"
       >
         <Background
-          variant={BackgroundVariant.Lines}
+          variant={BackgroundVariant.Dots}
           gap={24}
-          size={1}
-          color="#E5E7EB"
+          size={1.5}
+          color="#E5E5EA"
         />
-        <Controls className="!rounded-md !border-2 !border-gray-900 !bg-white !shadow-none [&>button]:!border-gray-200 [&>button]:!bg-white [&>button]:!text-gray-800 [&>button:hover]:!bg-gray-50" />
+        <Controls className="!rounded-apple-lg !border !border-apple-hairline/60 !bg-white/70 !shadow-[0_8px_30px_rgb(0,0,0,0.04)] !backdrop-blur-xl [&>button]:!border-apple-divider [&>button]:!bg-transparent [&>button]:!text-apple-ink [&>button:hover]:!bg-apple-pearl" />
         <MiniMap
           nodeColor={(node) =>
-            node.type === SOURCE_FIELD_NODE_TYPE ? '#0EA5E9' : '#10B981'
+            node.type === SOURCE_FIELD_NODE_TYPE ? '#007AFF' : '#34C759'
           }
-          maskColor="rgba(250, 250, 250, 0.85)"
-          className="!rounded-md !border-2 !border-gray-900 !bg-white"
+          maskColor="rgba(245, 245, 247, 0.85)"
+          className="!rounded-apple-lg !border !border-apple-hairline/60 !bg-white/70 !shadow-[0_8px_30px_rgb(0,0,0,0.04)] !backdrop-blur-xl"
         />
       </ReactFlow>
     </div>
