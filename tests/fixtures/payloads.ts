@@ -1,3 +1,5 @@
+import type { ConstituentEvent } from '../../src/schema/master.js'
+
 export const validCventPayload = {
   AttendeeStub: 'attendee-12345',
   EmailAddress: 'jane.doe@university.edu',
@@ -15,12 +17,12 @@ export const validGiveCampusPayload = {
   donor_email: 'alumni@school.edu',
 } as const
 
-export const validConstituentEvent = {
+export const validConstituentEvent: ConstituentEvent = {
   eventId: '550e8400-e29b-41d4-a716-446655440000',
   constituentEmail: 'alumni@school.edu',
   firstName: 'Jane',
   lastName: 'Doe',
-  eventType: 'DONATION' as const,
+  eventType: 'DONATION',
   sourceSystem: 'GIVECAMPUS',
   amount: 500,
   currency: 'USD',

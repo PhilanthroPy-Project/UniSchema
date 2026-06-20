@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { and, eq, lt } from 'drizzle-orm'
+import { and, eq, lt, or } from 'drizzle-orm'
 import type { ZodError } from 'zod'
 
 import { getDb } from '../db/client.js'
@@ -8,7 +8,7 @@ import { webhookIngestions } from '../db/schema.js'
 import type { ConstituentEvent } from '../schema/master.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
 
-export type IngestionStatus = 'pending' | 'completed' | 'failed'
+export type IngestionStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
 export type IngestionRecord = {
   id: string
@@ -58,6 +58,24 @@ export function getIngestion(id: string): IngestionRecord | undefined {
   return toIngestionRecord(row)
 }
 
+/**
+ * Atomically claims a pending ingestion for background processing.
+ * Returns undefined when another worker already claimed or finished the row.
+ */
+export function tryClaimIngestion(id: string): IngestionRecord | undefined {
+  const result = getDb()
+    .update(webhookIngestions)
+    .set({ status: 'processing' })
+    .where(and(eq(webhookIngestions.id, id), eq(webhookIngestions.status, 'pending')))
+    .run()
+
+  if (result.changes === 0) {
+    return undefined
+  }
+
+  return getIngestion(id)
+}
+
 /** Returns pending ingestions older than the given threshold (default: 5 minutes). */
 export function listStalePendingIngestions(
   olderThanMs = 5 * 60 * 1000,
@@ -73,6 +91,21 @@ export function listStalePendingIngestions(
   return rows.map(toIngestionRecord)
 }
 
+/** Resets stale `processing` rows back to `pending` for crash recovery. */
+export function releaseStaleProcessingIngestions(olderThanMs = 5 * 60 * 1000): number {
+  const threshold = new Date(Date.now() - olderThanMs).toISOString()
+
+  const result = getDb()
+    .update(webhookIngestions)
+    .set({ status: 'pending' })
+    .where(
+      and(eq(webhookIngestions.status, 'processing'), lt(webhookIngestions.createdAt, threshold)),
+    )
+    .run()
+
+  return result.changes
+}
+
 export function completeIngestion(id: string, result: ConstituentEvent): void {
   getDb()
     .update(webhookIngestions)
@@ -81,7 +114,12 @@ export function completeIngestion(id: string, result: ConstituentEvent): void {
       resultJson: JSON.stringify(result),
       completedAt: new Date().toISOString(),
     })
-    .where(eq(webhookIngestions.id, id))
+    .where(
+      and(
+        eq(webhookIngestions.id, id),
+        or(eq(webhookIngestions.status, 'processing'), eq(webhookIngestions.status, 'pending')),
+      ),
+    )
     .run()
 }
 
@@ -96,7 +134,12 @@ export function failIngestion(
       errorJson: JSON.stringify(error),
       completedAt: new Date().toISOString(),
     })
-    .where(eq(webhookIngestions.id, id))
+    .where(
+      and(
+        eq(webhookIngestions.id, id),
+        or(eq(webhookIngestions.status, 'processing'), eq(webhookIngestions.status, 'pending')),
+      ),
+    )
     .run()
 }
 

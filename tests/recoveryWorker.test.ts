@@ -68,6 +68,26 @@ describe('recoverPendingIngestions', () => {
     expect(recovered).toBe(0)
     expect(getIngestion('unknown-vendor-ingestion')?.status).toBe('pending')
   })
+
+  it('releases stale processing ingestions before re-processing pending rows', async () => {
+    const staleCreatedAt = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+    getDb()
+      .insert(webhookIngestions)
+      .values({
+        id: 'stale-processing-recovery',
+        vendor: 'givecampus',
+        rawPayloadJson: JSON.stringify(validGiveCampusPayload),
+        status: 'processing',
+        createdAt: staleCreatedAt,
+      })
+      .run()
+
+    const recovered = await recoverPendingIngestions()
+
+    expect(recovered).toBe(1)
+    expect(getIngestion('stale-processing-recovery')?.status).toBe('completed')
+  })
 })
 
 describe('recoverPendingEgress', () => {

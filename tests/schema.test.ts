@@ -4,6 +4,7 @@ import { ZodError } from 'zod'
 import {
   ConstituentEventSchema,
   EventTypeSchema,
+  SourceSystemSchema,
 } from '../src/schema/master.js'
 import { validConstituentEvent } from './fixtures/payloads.js'
 
@@ -17,6 +18,16 @@ describe('EventTypeSchema', () => {
 
   it('rejects unknown event types', () => {
     expect(() => EventTypeSchema.parse('UNKNOWN')).toThrow(ZodError)
+  })
+})
+
+describe('SourceSystemSchema', () => {
+  it.each(['CVENT', 'GIVECAMPUS'] as const)('accepts valid source system %s', (sourceSystem) => {
+    expect(SourceSystemSchema.parse(sourceSystem)).toBe(sourceSystem)
+  })
+
+  it('rejects unknown source systems', () => {
+    expect(() => SourceSystemSchema.parse('NEWVENDOR')).toThrow(ZodError)
   })
 })
 

@@ -8,6 +8,10 @@ export const EventTypeSchema = z.enum([
   'EMAIL_CLICK',
 ])
 
+export const SourceSystemSchema = z.enum(['CVENT', 'GIVECAMPUS'])
+
+export type SourceSystem = z.infer<typeof SourceSystemSchema>
+
 export const NormalizedMetadataSchema = PrimitiveRecordSchema
 
 export const ConstituentEventSchema = z.object({
@@ -16,7 +20,7 @@ export const ConstituentEventSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   eventType: EventTypeSchema,
-  sourceSystem: z.string(),
+  sourceSystem: SourceSystemSchema,
   amount: z.number().optional(),
   currency: z.string().optional(),
   /** Vendor-specific fields mapped via the admin canvas for downstream ML pipelines. */

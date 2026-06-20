@@ -11,6 +11,7 @@ import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egres
 import { getIngestion } from '../store/ingestionQueue.js'
 import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
 import { isDriftAgentAuthorized } from '../utils/driftAgentAuth.js'
+import { isEgressPullAuthorized, resolveEgressPullAuth } from '../utils/egressPullAuth.js'
 
 const EgressAckSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
@@ -42,6 +43,16 @@ export async function handleMappingGet(c: Context): Promise<Response> {
 }
 
 export async function handleEgressList(c: Context): Promise<Response> {
+  const authDecision = resolveEgressPullAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Egress pull token not configured' }, 500)
+  }
+
+  if (!isEgressPullAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
   const limitParam = c.req.query('limit')
   const limit = limitParam ? Number.parseInt(limitParam, 10) : 100
 
@@ -65,6 +76,16 @@ export async function handleEgressList(c: Context): Promise<Response> {
 }
 
 export async function handleEgressAck(c: Context): Promise<Response> {
+  const authDecision = resolveEgressPullAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Egress pull token not configured' }, 500)
+  }
+
+  if (!isEgressPullAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
   let rawBody: unknown
 
   try {

@@ -6,7 +6,7 @@ import {
   type MappingSyncResponse,
 } from '../schema/mapping.js'
 import { upsertMapping } from '../store/mappingRegistry.js'
-import { isMappingSyncAuthorized } from '../utils/mappingSyncAuth.js'
+import { resolveMappingSyncAuth, isMappingSyncAuthorized } from '../utils/mappingSyncAuth.js'
 
 type MappingSyncErrorBody = {
   success: false
@@ -15,6 +15,16 @@ type MappingSyncErrorBody = {
 }
 
 export async function handleMappingSync(c: Context): Promise<Response> {
+  const authDecision = resolveMappingSyncAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    const body: MappingSyncErrorBody = {
+      success: false,
+      message: 'Mapping sync token not configured',
+    }
+    return c.json(body, 500)
+  }
+
   if (!isMappingSyncAuthorized(c)) {
     const body: MappingSyncErrorBody = {
       success: false,

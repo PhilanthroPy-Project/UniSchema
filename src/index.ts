@@ -4,6 +4,7 @@ import { cors } from 'hono/cors'
 import { VENDOR_WEBHOOK_CONFIGS } from './config/webhookRoutes.js'
 import { initDatabase } from './db/client.js'
 import { createWebhookHandler } from './middleware/webhookHandler.js'
+import { createWebhookGuardMiddleware } from './middleware/webhookGuard.js'
 import {
   handleDriftAck,
   handleDriftList,
@@ -27,10 +28,13 @@ app.use(
   }),
 )
 
-app.post('/webhooks/cvent', createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.cvent))
+const webhookGuard = createWebhookGuardMiddleware()
+
+app.post('/webhooks/cvent', webhookGuard, createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.cvent))
 
 app.post(
   '/webhooks/givecampus',
+  webhookGuard,
   createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.givecampus),
 )
 

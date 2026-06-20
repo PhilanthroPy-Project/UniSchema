@@ -9,6 +9,7 @@ import { coerceToPrimitive, toPrimitiveRecord } from '../schema/primitives.js'
 import type { MappingArtifact, MappableTargetField } from '../schema/mapping.js'
 import { deterministicEventId } from '../utils/deterministicEventId.js'
 import { parseLocaleNumber } from '../utils/parseLocaleNumber.js'
+import { resolveSourceSystem } from '../utils/sourceSystem.js'
 
 export function getValueAtPath(payload: Record<string, unknown>, path: string): unknown {
   const segments = path.split('.').filter(Boolean)
@@ -111,7 +112,7 @@ export function mapWithArtifact(
   const rawRecord = rawPayload as Record<string, unknown>
   const payload = toPrimitiveRecord(rawPayload)
   const vendorKey = artifact.vendor.trim().toLowerCase()
-  const sourceSystem = artifact.vendor.trim().toUpperCase()
+  const sourceSystem = resolveSourceSystem(vendorKey)
   const normalizedMetadata: Record<string, string | number | boolean | null> = {}
 
   const candidate: Record<string, unknown> = {

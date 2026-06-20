@@ -8,7 +8,7 @@ import {
   acknowledgeEgressEvents,
   listPendingEgressEvents,
 } from './egressStore.js'
-import { listStalePendingIngestions } from './ingestionQueue.js'
+import { listStalePendingIngestions, releaseStaleProcessingIngestions } from './ingestionQueue.js'
 
 const STALE_INGESTION_MS = 5 * 60 * 1000
 
@@ -19,6 +19,15 @@ const STALE_INGESTION_MS = 5 * 60 * 1000
 export async function recoverPendingIngestions(
   olderThanMs = STALE_INGESTION_MS,
 ): Promise<number> {
+  const released = releaseStaleProcessingIngestions(olderThanMs)
+
+  if (released > 0) {
+    console.info('[recovery] released stale processing ingestions', {
+      count: released,
+      olderThanMs,
+    })
+  }
+
   const staleIngestions = listStalePendingIngestions(olderThanMs)
 
   if (staleIngestions.length === 0) {

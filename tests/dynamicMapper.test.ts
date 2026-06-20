@@ -65,19 +65,17 @@ describe('mapWithArtifact', () => {
   })
 
   it('defaults unknown vendors to EVENT_REGISTRATION and resolves fallback vendor ids', () => {
-    const result = mapWithArtifact(
-      { custom_field: 'abc123', donor_email: 'alumni@school.edu' },
-      {
-        vendor: 'NewVendor',
-        exportedAt: '2026-06-20T12:00:00.000Z',
-        mappings: [{ source: 'donor_email', target: 'constituentEmail' }],
-        metadataMappings: [{ source: 'custom_field', key: 'customField' }],
-      },
-    )
-
-    expect(result.eventType).toBe('EVENT_REGISTRATION')
-    expect(result.sourceSystem).toBe('NEWVENDOR')
-    expect(result.normalizedMetadata).toEqual({ customField: 'abc123' })
+    expect(() =>
+      mapWithArtifact(
+        { custom_field: 'abc123', donor_email: 'alumni@school.edu' },
+        {
+          vendor: 'NewVendor',
+          exportedAt: '2026-06-20T12:00:00.000Z',
+          mappings: [{ source: 'donor_email', target: 'constituentEmail' }],
+          metadataMappings: [{ source: 'custom_field', key: 'customField' }],
+        },
+      ),
+    ).toThrow(/Unsupported vendor/)
   })
 
   it('rejects invalid mapped amounts and event types', () => {

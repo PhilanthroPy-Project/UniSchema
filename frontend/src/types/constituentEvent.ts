@@ -70,10 +70,10 @@ export const CONSTITUENT_EVENT_FIELDS: ConstituentEventFieldMeta[] = [
   {
     key: 'sourceSystem',
     label: 'Source System',
-    valueType: 'string',
+    valueType: 'enum',
     requirement: 'system',
     mappable: false,
-    description: 'Vendor identifier (e.g. CVENT, GIVECAMPUS)',
+    description: 'CVENT | GIVECAMPUS',
   },
   {
     key: 'amount',

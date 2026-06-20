@@ -7,8 +7,9 @@ import {
   completeIngestion,
   createIngestion,
   failIngestion,
-  getIngestion,
+  tryClaimIngestion,
 } from '../store/ingestionQueue.js'
+import { scheduleIngestion } from '../store/ingestionWorker.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import { captureSchemaDrift, isDriftCaptureEnabled, type DriftVendor } from '../utils/driftCapture.js'
 import { resolveSignatureVerification } from '../utils/webhookAuth.js'
@@ -42,9 +43,9 @@ export async function processIngestion(
   ingestionId: string,
   config: WebhookRouteConfig,
 ): Promise<void> {
-  const ingestion = getIngestion(ingestionId)
+  const ingestion = tryClaimIngestion(ingestionId)
 
-  if (!ingestion || ingestion.status !== 'pending') {
+  if (!ingestion) {
     return
   }
 
@@ -162,9 +163,7 @@ export function createWebhookHandler(config: WebhookRouteConfig) {
 
     const ingestion = createIngestion(config.vendor, rawPayload)
 
-    queueMicrotask(() => {
-      void processIngestion(ingestion.id, config)
-    })
+    scheduleIngestion(ingestion.id, config)
 
     const body: WebhookAcceptedBody = {
       accepted: true,

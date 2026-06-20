@@ -10,7 +10,7 @@ export async function waitForIngestion(
   while (Date.now() - start < timeoutMs) {
     const record = getIngestion(ingestionId)
 
-    if (record && record.status !== 'pending') {
+    if (record && record.status !== 'pending' && record.status !== 'processing') {
       return record
     }
 
@@ -20,7 +20,7 @@ export async function waitForIngestion(
   throw new Error(`Ingestion ${ingestionId} did not complete within ${timeoutMs}ms`)
 }
 
-/** Runs ingestion synchronously — useful when queueMicrotask ordering is flaky. */
+/** Runs ingestion synchronously — useful when background scheduling ordering is flaky. */
 export async function runIngestion(
   ingestionId: string,
   vendor: 'cvent' | 'givecampus',

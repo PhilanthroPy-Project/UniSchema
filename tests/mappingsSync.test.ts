@@ -104,6 +104,19 @@ describe('POST /mappings/sync', () => {
     expect(body.message).toBe('Unauthorized')
   })
 
+  it('returns 500 when mapping sync is required but the token is missing', async () => {
+    delete process.env.MAPPING_SYNC_TOKEN
+    process.env.MAPPING_SYNC_REQUIRED = 'true'
+
+    const response = await postJson('/mappings/sync', validArtifact)
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Mapping sync token not configured')
+
+    delete process.env.MAPPING_SYNC_REQUIRED
+  })
+
   it('accepts sync requests with a valid Bearer token', async () => {
     const syncToken = 'mapping-sync-test-token'
     process.env.MAPPING_SYNC_TOKEN = syncToken
