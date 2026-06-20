@@ -81,14 +81,47 @@ Drag from a source field handle to a destination field handle to create a mappin
 
 ## Testing
 
-The mapper test suite is the contract for both human contributors and the autonomous agent pipeline. Tests cover happy-path mapping and strict boundary cases (malformed emails, string-to-float coercion, unparseable values).
+UniSchema enforces a multi-layer test contract for both human contributors and the autonomous agent pipeline:
+
+| Suite | Location | Purpose |
+|-------|----------|---------|
+| Mapper tests | `tests/mappers.test.ts` | Vendor payload → master schema mapping and boundary cases |
+| Schema tests | `tests/schema.test.ts` | `ConstituentEvent` Zod invariants |
+| Webhook tests | `tests/webhooks.test.ts` | Hono route integration (`/health`, `/webhooks/*`) |
+| Frontend tests | `frontend/tests/` | Visual mapper utility logic |
+
+Run all commands from the **repository root** (`UniSchema/`), not from `frontend/`.
+
+**Full local validation (matches CI):**
 
 ```bash
-npm test
-npm run test:watch
+npm run validate
 ```
 
-CI runs on every push to `main` and on pull requests via the **Agent Pipeline Validation** workflow.
+**Backend only** (from repository root):
+
+```bash
+npm run typecheck
+npm test
+npm run test:coverage
+```
+
+**Frontend only:**
+
+```bash
+cd frontend
+npm run typecheck
+npm run test
+npm run build
+```
+
+**Backend + frontend tests** (from repository root):
+
+```bash
+npm run test:all
+```
+
+CI runs on every push to `main` and on pull requests via the **Agent Pipeline Validation** workflow. The pipeline blocks merges unless backend typecheck, coverage-backed tests, frontend typecheck, frontend tests, and production build all pass.
 
 ## License
 

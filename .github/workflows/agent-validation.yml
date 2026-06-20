@@ -1,18 +1,22 @@
 # Agent Pipeline Validation
 #
-# This workflow is the strict testing gate for UniSchema. Every push to main
-# and every pull request must pass before changes are considered merge-ready.
+# Rigorous CI/CD gate for UniSchema. Every push to main and every pull request
+# must pass backend typecheck, coverage-backed tests, and frontend validation
+# before changes are considered merge-ready.
 #
 # AUTONOMOUS AGENT INTEGRATION (future):
-# If this test step fails on a schedule (e.g., due to an upstream API change
-# from Cvent, GiveCampus, or another vendor breaking our Zod schemas), that
-# failure should trigger an autonomous LLM workflow that:
+# If scheduled or PR validation fails (e.g., due to an upstream API change from
+# Cvent, GiveCampus, or another vendor breaking our Zod schemas), that failure
+# should trigger an autonomous LLM workflow that:
 #   1. Inspects the failing test output and the affected vendor payload shape.
 #   2. Patches the relevant mapper(s) under `src/mappers/` to restore validation.
 #   3. Opens a fix PR with updated mapper logic and passing tests.
 #
-# The mapper test suite in `tests/mappers.test.ts` is the contract the agent
-# must satisfy — treat a green run here as the definition of "correct."
+# Test contracts the agent must satisfy:
+#   - tests/mappers.test.ts   — vendor payload → master schema mapping
+#   - tests/schema.test.ts    — ConstituentEvent Zod schema invariants
+#   - tests/webhooks.test.ts  — Hono webhook route integration
+#   - frontend/tests/         — visual mapper utility logic
 
 name: Agent Pipeline Validation
 
@@ -22,9 +26,13 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
-    name: Run mapper test suite
+  backend:
+    name: Backend — typecheck, coverage, tests
     runs-on: ubuntu-latest
 
     steps:
@@ -40,8 +48,49 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run test suite
-        # Gate: if this step fails, do not merge. On scheduled runs, a downstream
-        # autonomous agent should use this failure signal to patch `src/mappers`
-        # and open a PR with the fix (see header comment above).
+      - name: Typecheck backend
+        run: npm run typecheck
+
+      - name: Run backend test suite with coverage
+        run: npm run test:coverage
+
+  frontend:
+    name: Frontend — typecheck, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Run frontend test suite
         run: npm run test
+
+      - name: Build frontend for production
+        run: npm run build
+
+  quality-gate:
+    name: Quality gate — all checks passed
+    runs-on: ubuntu-latest
+    needs:
+      - backend
+      - frontend
+
+    steps:
+      - name: Confirm pipeline success
+        run: echo "All UniSchema quality checks passed."

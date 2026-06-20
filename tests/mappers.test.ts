@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ZodError } from 'zod'
 
+import {
+  ConstituentEventSchema,
+} from '../src/schema/master.js'
 import { mapCventToMaster } from '../src/mappers/cvent.js'
 import { mapGiveCampusToMaster } from '../src/mappers/givecampus.js'
 
@@ -69,6 +72,59 @@ describe('mapCventToMaster', () => {
       }
     }
   })
+
+  it.each([
+    ['DONATION-2026-ANNUAL', 'DONATION'],
+    ['EMAIL-NEWSLETTER-MARCH', 'EMAIL_CLICK'],
+    ['GALA-2026', 'EVENT_REGISTRATION'],
+  ] as const)('maps EventCode %s to eventType %s', (eventCode, expectedEventType) => {
+    const result = mapCventToMaster({
+      AttendeeStub: 'attendee-12345',
+      EmailAddress: 'jane.doe@university.edu',
+      EventCode: eventCode,
+    })
+
+    expect(result.eventType).toBe(expectedEventType)
+  })
+
+  it('maps payloads without optional name fields', () => {
+    const result = mapCventToMaster({
+      AttendeeStub: 'attendee-12345',
+      EmailAddress: 'jane.doe@university.edu',
+      EventCode: 'REG-2026-GALA',
+    })
+
+    expect(result.firstName).toBeUndefined()
+    expect(result.lastName).toBeUndefined()
+  })
+
+  it('throws a ZodError when the payload is not a JSON object', () => {
+    expect(() => mapCventToMaster(null)).toThrow(ZodError)
+    expect(() => mapCventToMaster(['invalid'])).toThrow(ZodError)
+  })
+
+  it('throws a ZodError when master schema validation fails unexpectedly', () => {
+    const spy = vi.spyOn(ConstituentEventSchema, 'safeParse').mockReturnValue({
+      success: false,
+      error: new ZodError([
+        {
+          code: 'custom',
+          path: ['eventId'],
+          message: 'forced validation failure',
+        },
+      ]),
+    } as ReturnType<typeof ConstituentEventSchema.safeParse>)
+
+    expect(() =>
+      mapCventToMaster({
+        AttendeeStub: 'attendee-12345',
+        EmailAddress: 'jane.doe@university.edu',
+        EventCode: 'REG-2026-GALA',
+      }),
+    ).toThrow(ZodError)
+
+    spy.mockRestore()
+  })
 })
 
 describe('mapGiveCampusToMaster', () => {
@@ -116,5 +172,80 @@ describe('mapGiveCampusToMaster', () => {
     }
 
     expect(() => mapGiveCampusToMaster(invalidPayload)).toThrow(ZodError)
+  })
+
+  it('throws a ZodError when donor_email is malformed', () => {
+    const invalidPayload = {
+      id: 'gc-1003',
+      donation_type: 'donation',
+      value: 250,
+      currency: 'USD',
+      donor_email: 'not-an-email',
+    }
+
+    expect(() => mapGiveCampusToMaster(invalidPayload)).toThrow(ZodError)
+
+    try {
+      mapGiveCampusToMaster(invalidPayload)
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError)
+
+      if (error instanceof ZodError) {
+        const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>
+        expect(fieldErrors.donor_email).toBeDefined()
+      }
+    }
+  })
+
+  it('throws a ZodError when required GiveCampus fields are missing', () => {
+    const invalidPayload = {
+      id: 'gc-1004',
+      donation_type: 'donation',
+      currency: 'USD',
+    }
+
+    expect(() => mapGiveCampusToMaster(invalidPayload)).toThrow(ZodError)
+  })
+
+  it('accepts zero as a valid numeric donation value', () => {
+    const result = mapGiveCampusToMaster({
+      id: 'gc-1005',
+      donation_type: 'donation',
+      value: 0,
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    })
+
+    expect(result.amount).toBe(0)
+  })
+
+  it('throws a ZodError when the payload is not a JSON object', () => {
+    expect(() => mapGiveCampusToMaster(undefined)).toThrow(ZodError)
+    expect(() => mapGiveCampusToMaster(null)).toThrow(ZodError)
+  })
+
+  it('throws a ZodError when master schema validation fails unexpectedly', () => {
+    const spy = vi.spyOn(ConstituentEventSchema, 'safeParse').mockReturnValue({
+      success: false,
+      error: new ZodError([
+        {
+          code: 'custom',
+          path: ['amount'],
+          message: 'forced validation failure',
+        },
+      ]),
+    } as ReturnType<typeof ConstituentEventSchema.safeParse>)
+
+    expect(() =>
+      mapGiveCampusToMaster({
+        id: 'gc-1006',
+        donation_type: 'donation',
+        value: 100,
+        currency: 'USD',
+        donor_email: 'alumni@school.edu',
+      }),
+    ).toThrow(ZodError)
+
+    spy.mockRestore()
   })
 })
