@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ZodError } from 'zod'
 
 import { mapCventToMaster } from '../src/mappers/cvent.js'
+import { mapGiveCampusToMaster } from '../src/mappers/givecampus.js'
 
 describe('mapCventToMaster', () => {
   it('maps a valid Cvent payload to the master schema', () => {
@@ -46,5 +47,74 @@ describe('mapCventToMaster', () => {
         expect(fieldErrors.EmailAddress).toBeDefined()
       }
     }
+  })
+
+  it('throws a ZodError when EmailAddress is malformed', () => {
+    const invalidPayload = {
+      AttendeeStub: 'attendee-12345',
+      EmailAddress: 'not-an-email',
+      EventCode: 'REG-2026-GALA',
+    }
+
+    expect(() => mapCventToMaster(invalidPayload)).toThrow(ZodError)
+
+    try {
+      mapCventToMaster(invalidPayload)
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError)
+
+      if (error instanceof ZodError) {
+        const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>
+        expect(fieldErrors.EmailAddress).toBeDefined()
+      }
+    }
+  })
+})
+
+describe('mapGiveCampusToMaster', () => {
+  it('maps a valid GiveCampus payload to the master schema', () => {
+    const rawPayload = {
+      id: 'gc-999',
+      donation_type: 'donation',
+      value: 500.0,
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    }
+
+    const result = mapGiveCampusToMaster(rawPayload)
+
+    expect(result.constituentEmail).toBe('alumni@school.edu')
+    expect(result.amount).toBe(500)
+    expect(result.currency).toBe('USD')
+    expect(result.eventType).toBe('DONATION')
+    expect(result.sourceSystem).toBe('GIVECAMPUS')
+    expect(result.payload).toEqual(rawPayload)
+  })
+
+  it('handles string-based numeric values correctly', () => {
+    const rawPayload = {
+      id: 'gc-1001',
+      donation_type: 'donation',
+      value: '1000.50',
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    }
+
+    const result = mapGiveCampusToMaster(rawPayload)
+
+    expect(result.amount).toBe(1000.5)
+    expect(result.amount).toStrictEqual(1000.5)
+  })
+
+  it('throws a ZodError if value is unparseable', () => {
+    const invalidPayload = {
+      id: 'gc-1002',
+      donation_type: 'donation',
+      value: 'Five Hundred',
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    }
+
+    expect(() => mapGiveCampusToMaster(invalidPayload)).toThrow(ZodError)
   })
 })

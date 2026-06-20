@@ -40,9 +40,13 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+.github/
+  workflows/
+    agent-validation.yml
 src/
   mappers/
     cvent.ts
+    givecampus.ts
     index.ts
   schema/
     master.ts
@@ -59,6 +63,130 @@ vitest.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path=".github/workflows/agent-validation.yml">
+# Agent Pipeline Validation
+#
+# This workflow is the strict testing gate for UniSchema. Every push to main
+# and every pull request must pass before changes are considered merge-ready.
+#
+# AUTONOMOUS AGENT INTEGRATION (future):
+# If this test step fails on a schedule (e.g., due to an upstream API change
+# from Cvent, GiveCampus, or another vendor breaking our Zod schemas), that
+# failure should trigger an autonomous LLM workflow that:
+#   1. Inspects the failing test output and the affected vendor payload shape.
+#   2. Patches the relevant mapper(s) under `src/mappers/` to restore validation.
+#   3. Opens a fix PR with updated mapper logic and passing tests.
+#
+# The mapper test suite in `tests/mappers.test.ts` is the contract the agent
+# must satisfy — treat a green run here as the definition of "correct."
+
+name: Agent Pipeline Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate:
+    name: Run mapper test suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test suite
+        # Gate: if this step fails, do not merge. On scheduled runs, a downstream
+        # autonomous agent should use this failure signal to patch `src/mappers`
+        # and open a PR with the fix (see header comment above).
+        run: npm run test
+</file>
+
+<file path="src/mappers/givecampus.ts">
+import { randomUUID } from 'node:crypto'
+import { z } from 'zod'
+
+import {
+  ConstituentEventSchema,
+  type ConstituentEvent,
+} from '../schema/master.js'
+
+const GiveCampusValueSchema = z.union([
+  z.number(),
+  z.string().transform((value, ctx) => {
+    const parsed = Number.parseFloat(value)
+
+    if (Number.isNaN(parsed)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'value must be a number or a string parseable to a float',
+      })
+      return z.NEVER
+    }
+
+    return parsed
+  }),
+])
+
+export const GiveCampusPayloadSchema = z.object({
+  id: z.string().min(1),
+  donation_type: z.string().min(1),
+  value: GiveCampusValueSchema,
+  currency: z.string().min(1),
+  donor_email: z.string().email(),
+})
+
+export type GiveCampusPayload = z.infer<typeof GiveCampusPayloadSchema>
+
+function toPayloadRecord(rawPayload: unknown): Record<string, unknown> {
+  if (typeof rawPayload !== 'object' || rawPayload === null || Array.isArray(rawPayload)) {
+    throw new Error('GiveCampus payload must be a JSON object')
+  }
+
+  return rawPayload as Record<string, unknown>
+}
+
+export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
+  const parsed = GiveCampusPayloadSchema.safeParse(rawPayload)
+
+  if (!parsed.success) {
+    throw new z.ZodError(parsed.error.issues)
+  }
+
+  const giveCampus = parsed.data
+
+  const masterCandidate = {
+    eventId: randomUUID(),
+    constituentEmail: giveCampus.donor_email,
+    eventType: 'DONATION' as const,
+    sourceSystem: 'GIVECAMPUS',
+    amount: giveCampus.value,
+    currency: giveCampus.currency,
+    payload: toPayloadRecord(rawPayload),
+    createdAt: new Date().toISOString(),
+  }
+
+  const validated = ConstituentEventSchema.safeParse(masterCandidate)
+
+  if (!validated.success) {
+    throw new z.ZodError(validated.error.issues)
+  }
+
+  return validated.data
+}
+</file>
 
 <file path="src/mappers/cvent.ts">
 import { randomUUID } from 'node:crypto'
@@ -137,6 +265,11 @@ export function mapCventToMaster(rawPayload: unknown): ConstituentEvent {
 
 <file path="src/mappers/index.ts">
 export { mapCventToMaster, CventPayloadSchema, type CventPayload } from './cvent.js'
+export {
+  mapGiveCampusToMaster,
+  GiveCampusPayloadSchema,
+  type GiveCampusPayload,
+} from './givecampus.js'
 </file>
 
 <file path="src/schema/master.ts">
@@ -155,6 +288,8 @@ export const ConstituentEventSchema = z.object({
   lastName: z.string().optional(),
   eventType: EventTypeSchema,
   sourceSystem: z.string(),
+  amount: z.number().optional(),
+  currency: z.string().optional(),
   payload: z.record(z.string(), z.unknown()),
   createdAt: z.string().datetime(),
 })
@@ -167,6 +302,7 @@ import { Hono } from 'hono'
 import { ZodError } from 'zod'
 
 import { mapCventToMaster } from './mappers/cvent.js'
+import { mapGiveCampusToMaster } from './mappers/givecampus.js'
 
 const app = new Hono()
 
@@ -182,6 +318,34 @@ app.post('/webhooks/cvent', async (c) => {
         {
           success: false,
           message: 'Failed to map Cvent payload to master schema',
+          errors: error.flatten(),
+        },
+        400,
+      )
+    }
+
+    return c.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown mapping error',
+      },
+      400,
+    )
+  }
+})
+
+app.post('/webhooks/givecampus', async (c) => {
+  try {
+    const body = await c.req.json()
+    const mapped = mapGiveCampusToMaster(body)
+
+    return c.json(mapped, 200)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return c.json(
+        {
+          success: false,
+          message: 'Failed to map GiveCampus payload to master schema',
           errors: error.flatten(),
         },
         400,
@@ -226,6 +390,7 @@ import { describe, expect, it } from 'vitest'
 import { ZodError } from 'zod'
 
 import { mapCventToMaster } from '../src/mappers/cvent.js'
+import { mapGiveCampusToMaster } from '../src/mappers/givecampus.js'
 
 describe('mapCventToMaster', () => {
   it('maps a valid Cvent payload to the master schema', () => {
@@ -272,6 +437,27 @@ describe('mapCventToMaster', () => {
     }
   })
 })
+
+describe('mapGiveCampusToMaster', () => {
+  it('maps a valid GiveCampus payload to the master schema', () => {
+    const rawPayload = {
+      id: 'gc-999',
+      donation_type: 'donation',
+      value: 500.0,
+      currency: 'USD',
+      donor_email: 'alumni@school.edu',
+    }
+
+    const result = mapGiveCampusToMaster(rawPayload)
+
+    expect(result.constituentEmail).toBe('alumni@school.edu')
+    expect(result.amount).toBe(500)
+    expect(result.currency).toBe('USD')
+    expect(result.eventType).toBe('DONATION')
+    expect(result.sourceSystem).toBe('GIVECAMPUS')
+    expect(result.payload).toEqual(rawPayload)
+  })
+})
 </file>
 
 <file path=".gitignore">
@@ -316,6 +502,10 @@ dist/
 }
 </file>
 
+<file path="README.md">
+# UniSchema
+</file>
+
 <file path="tsconfig.json">
 {
   "compilerOptions": {
@@ -346,10 +536,6 @@ export default defineConfig({
     environment: 'node',
   },
 })
-</file>
-
-<file path="README.md">
-# UniSchema
 </file>
 
 </files>

@@ -1,0 +1,47 @@
+# Agent Pipeline Validation
+#
+# This workflow is the strict testing gate for UniSchema. Every push to main
+# and every pull request must pass before changes are considered merge-ready.
+#
+# AUTONOMOUS AGENT INTEGRATION (future):
+# If this test step fails on a schedule (e.g., due to an upstream API change
+# from Cvent, GiveCampus, or another vendor breaking our Zod schemas), that
+# failure should trigger an autonomous LLM workflow that:
+#   1. Inspects the failing test output and the affected vendor payload shape.
+#   2. Patches the relevant mapper(s) under `src/mappers/` to restore validation.
+#   3. Opens a fix PR with updated mapper logic and passing tests.
+#
+# The mapper test suite in `tests/mappers.test.ts` is the contract the agent
+# must satisfy — treat a green run here as the definition of "correct."
+
+name: Agent Pipeline Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate:
+    name: Run mapper test suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test suite
+        # Gate: if this step fails, do not merge. On scheduled runs, a downstream
+        # autonomous agent should use this failure signal to patch `src/mappers`
+        # and open a PR with the fix (see header comment above).
+        run: npm run test

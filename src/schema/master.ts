@@ -13,6 +13,8 @@ export const ConstituentEventSchema = z.object({
   lastName: z.string().optional(),
   eventType: EventTypeSchema,
   sourceSystem: z.string(),
+  amount: z.number().optional(),
+  currency: z.string().optional(),
   payload: z.record(z.string(), z.unknown()),
   createdAt: z.string().datetime(),
 })
