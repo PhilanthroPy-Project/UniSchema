@@ -1,31 +1,29 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { rm } from 'node:fs/promises'
-
 import { publishEgressEvent } from '../../src/egress/publisher.js'
 import * as s3Publisher from '../../src/egress/s3Publisher.js'
 import { acknowledgeEgressEvents, persistConstituentEvent } from '../../src/store/egressStore.js'
 import { validConstituentEvent } from '../fixtures/payloads.js'
 
 describe('publishEgressEvent', () => {
-  afterEach(async () => {
-    await rm('data/test-egress', { recursive: true, force: true })
+  afterEach(() => {
     vi.restoreAllMocks()
   })
 
   it('writes JSON events to the local egress directory', async () => {
+    const localDir = process.env.EGRESS_LOCAL_DIR!
     const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const result = await publishEgressEvent(record)
 
     expect(result.target).toBe('local')
-    expect(result.location).toContain('data/test-egress')
+    expect(result.location).toContain(localDir)
     expect(result.location).toContain(`${validConstituentEvent.eventId}.json`)
   })
 
   it('treats existing local egress files as idempotent', async () => {
     const { publishToLocalFilesystem } = await import('../../src/egress/localPublisher.js')
     const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
-    const localDir = process.env.EGRESS_LOCAL_DIR ?? 'data/test-egress'
+    const localDir = process.env.EGRESS_LOCAL_DIR!
 
     const first = await publishToLocalFilesystem(record, localDir, '')
     const second = await publishToLocalFilesystem(record, localDir, '')
@@ -41,7 +39,7 @@ describe('publishEgressEvent', () => {
 
     const result = await publishEgressEvent(record, {
       target: 's3',
-      localDir: 'data/test-egress',
+      localDir: process.env.EGRESS_LOCAL_DIR!,
       s3Bucket: 'analytics-bucket',
       s3Prefix: 'constituent-events',
       s3Region: 'us-east-1',
@@ -62,7 +60,7 @@ describe('publishEgressEvent', () => {
     await expect(
       publishEgressEvent(record, {
         target: 'none',
-        localDir: 'data/test-egress',
+        localDir: process.env.EGRESS_LOCAL_DIR!,
         s3Prefix: 'constituent-events',
         s3Region: 'us-east-1',
         s3BatchMaxBytes: 5 * 1024 * 1024,
