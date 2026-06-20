@@ -29,6 +29,14 @@ describe('drift agent API', () => {
     }
   })
 
+  it('requires auth to list drift events when DRIFT_AGENT_TOKEN is configured', async () => {
+    await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
+
+    const response = await app.request('/drift/events?status=pending')
+
+    expect(response.status).toBe(401)
+  })
+
   it('requires auth to include raw payloads', async () => {
     await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
 

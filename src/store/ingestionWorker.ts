@@ -1,5 +1,6 @@
 import type { WebhookRouteConfig } from '../middleware/webhookHandler.js'
 import { processIngestion } from '../middleware/webhookHandler.js'
+import { logError } from '../utils/logger.js'
 
 /**
  * Schedules background ingestion on the next event-loop turn.
@@ -8,6 +9,11 @@ import { processIngestion } from '../middleware/webhookHandler.js'
  */
 export function scheduleIngestion(ingestionId: string, config: WebhookRouteConfig): void {
   setImmediate(() => {
-    void processIngestion(ingestionId, config)
+    void processIngestion(ingestionId, config).catch((error) => {
+      logError('[ingestion] background processing failed', {
+        ingestionId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    })
   })
 }

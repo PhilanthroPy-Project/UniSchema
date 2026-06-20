@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt, or } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
 
 import { getDb } from './client.js'
 import { getDatabaseDialect } from './dialect.js'
@@ -45,10 +45,12 @@ export async function selectWebhookIngestionById(
 }
 
 export async function claimWebhookIngestion(id: string): Promise<number> {
+  const claimedAt = new Date().toISOString()
+
   if (isPostgres()) {
     const rows = await pgDb()
       .update(webhookIngestions)
-      .set({ status: 'processing' })
+      .set({ status: 'processing', claimedAt })
       .where(and(eq(webhookIngestions.id, id), eq(webhookIngestions.status, 'pending')))
       .returning({ id: webhookIngestions.id })
 
@@ -57,7 +59,7 @@ export async function claimWebhookIngestion(id: string): Promise<number> {
 
   return getDb()
     .update(webhookIngestions)
-    .set({ status: 'processing' })
+    .set({ status: 'processing', claimedAt })
     .where(and(eq(webhookIngestions.id, id), eq(webhookIngestions.status, 'pending')))
     .run().changes
 }
@@ -80,25 +82,23 @@ export async function listStaleWebhookIngestions(
 }
 
 export async function releaseStaleProcessingIngestionRows(threshold: string): Promise<number> {
+  const staleClaim = or(
+    and(isNotNull(webhookIngestions.claimedAt), lt(webhookIngestions.claimedAt, threshold)),
+    and(isNull(webhookIngestions.claimedAt), lt(webhookIngestions.createdAt, threshold)),
+  )
+  const where = and(eq(webhookIngestions.status, 'processing'), staleClaim)
+
   if (isPostgres()) {
     const rows = await pgDb()
       .update(webhookIngestions)
       .set({ status: 'pending' })
-      .where(
-        and(eq(webhookIngestions.status, 'processing'), lt(webhookIngestions.createdAt, threshold)),
-      )
+      .where(where)
       .returning({ id: webhookIngestions.id })
 
     return rows.length
   }
 
-  return getDb()
-    .update(webhookIngestions)
-    .set({ status: 'pending' })
-    .where(
-      and(eq(webhookIngestions.status, 'processing'), lt(webhookIngestions.createdAt, threshold)),
-    )
-    .run().changes
+  return getDb().update(webhookIngestions).set({ status: 'pending' }).where(where).run().changes
 }
 
 export async function completeWebhookIngestion(
@@ -265,13 +265,36 @@ export async function selectConstituentEventByEventId(
 
 export async function insertConstituentEvent(
   values: typeof constituentEvents.$inferInsert,
-): Promise<void> {
+): Promise<boolean> {
   if (isPostgres()) {
-    await pgDb().insert(constituentEvents).values(values)
-    return
+    const rows = await pgDb()
+      .insert(constituentEvents)
+      .values(values)
+      .onConflictDoNothing({ target: constituentEvents.eventId })
+      .returning({ id: constituentEvents.id })
+
+    return rows.length > 0
   }
 
-  getDb().insert(constituentEvents).values(values).run()
+  try {
+    getDb().insert(constituentEvents).values(values).run()
+    return true
+  } catch (error) {
+    if (isSqliteUniqueConstraintError(error)) {
+      return false
+    }
+
+    throw error
+  }
+}
+
+function isSqliteUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: string }).code === 'SQLITE_CONSTRAINT_UNIQUE'
+  )
 }
 
 export async function listPendingConstituentEventRows(

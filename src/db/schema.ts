@@ -33,6 +33,7 @@ export const webhookIngestions = sqliteTable('webhook_ingestions', {
   resultJson: text('result_json'),
   errorJson: text('error_json'),
   createdAt: text('created_at').notNull(),
+  claimedAt: text('claimed_at'),
   completedAt: text('completed_at'),
 })
 

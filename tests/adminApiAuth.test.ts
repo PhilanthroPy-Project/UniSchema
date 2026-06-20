@@ -140,6 +140,39 @@ describe('production admin API guards', () => {
     expect(ackBody.message).toBe('Egress pull token not configured')
   })
 
+  it('returns 500 on ingestion polling when production mapping token is missing', async () => {
+    delete process.env.MAPPING_SYNC_TOKEN
+    process.env.NODE_ENV = 'production'
+
+    const response = await app.request('/webhooks/ingestions/test-id')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Mapping sync token not configured')
+  })
+
+  it('returns 500 on mapping GET when production mapping token is missing', async () => {
+    delete process.env.MAPPING_SYNC_TOKEN
+    process.env.NODE_ENV = 'production'
+
+    const response = await app.request('/mappings/givecampus')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Mapping sync token not configured')
+  })
+
+  it('returns 500 on drift list when production drift token is missing', async () => {
+    delete process.env.DRIFT_AGENT_TOKEN
+    process.env.NODE_ENV = 'production'
+
+    const response = await app.request('/drift/events')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Drift agent token not configured')
+  })
+
   it('accepts egress pull requests with a valid Bearer token', async () => {
     const pullToken = 'egress-pull-test-token'
     process.env.EGRESS_PULL_TOKEN = pullToken
@@ -153,5 +186,25 @@ describe('production admin API guards', () => {
 
     expect(response.status).toBe(200)
     expect(body.success).toBe(true)
+  })
+
+  it('returns 401 on mapping GET when token is configured but Authorization is missing', async () => {
+    process.env.MAPPING_SYNC_TOKEN = 'mapping-sync-test-token'
+
+    const response = await app.request('/mappings/givecampus')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(401)
+    expect(body.message).toBe('Unauthorized')
+  })
+
+  it('returns 401 on ingestion GET when token is configured but Authorization is missing', async () => {
+    process.env.MAPPING_SYNC_TOKEN = 'mapping-sync-test-token'
+
+    const response = await app.request('/webhooks/ingestions/test-id')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(401)
+    expect(body.message).toBe('Unauthorized')
   })
 })

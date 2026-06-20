@@ -69,6 +69,7 @@ function createTables(database: Database.Database): void {
       result_json TEXT,
       error_json TEXT,
       created_at TEXT NOT NULL,
+      claimed_at TEXT,
       completed_at TEXT
     );
 
@@ -103,6 +104,17 @@ function migrateDriftEventsTable(database: Database.Database): void {
   }
 }
 
+function migrateWebhookIngestionsTable(database: Database.Database): void {
+  const columns = database
+    .prepare('PRAGMA table_info(webhook_ingestions)')
+    .all() as Array<{ name: string }>
+  const columnNames = new Set(columns.map((column) => column.name))
+
+  if (!columnNames.has('claimed_at')) {
+    database.exec('ALTER TABLE webhook_ingestions ADD COLUMN claimed_at TEXT')
+  }
+}
+
 export function initDatabase(): UniSchemaDatabase {
   if (getDatabaseDialect() === 'postgres') {
     throw new Error(
@@ -120,6 +132,7 @@ export function initDatabase(): UniSchemaDatabase {
   sqlite.pragma('foreign_keys = ON')
   createTables(sqlite)
   migrateDriftEventsTable(sqlite)
+  migrateWebhookIngestionsTable(sqlite)
   db = drizzle(sqlite, { schema })
 
   return db

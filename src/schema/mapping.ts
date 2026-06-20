@@ -49,6 +49,20 @@ export const MappingArtifactSchema = z
         seenTargets.add(mapping.target)
       }
     }
+
+    const seenMetadataKeys = new Set<string>()
+
+    for (const [index, metadataMapping] of artifact.metadataMappings.entries()) {
+      if (seenMetadataKeys.has(metadataMapping.key)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Duplicate metadata key "${metadataMapping.key}" — each metadata key may only be mapped once`,
+          path: ['metadataMappings', index, 'key'],
+        })
+      } else {
+        seenMetadataKeys.add(metadataMapping.key)
+      }
+    }
   })
 
 export type MappingArtifact = z.infer<typeof MappingArtifactSchema>

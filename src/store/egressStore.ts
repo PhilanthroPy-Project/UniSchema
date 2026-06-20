@@ -33,7 +33,7 @@ export async function persistConstituentEvent(
   const id = randomUUID()
   const createdAt = new Date().toISOString()
 
-  await insertConstituentEvent({
+  const inserted = await insertConstituentEvent({
     id,
     eventId: event.eventId,
     vendor: normalizedVendor,
@@ -41,6 +41,14 @@ export async function persistConstituentEvent(
     egressStatus: 'pending',
     createdAt,
   })
+
+  if (!inserted) {
+    const raced = await selectConstituentEventByEventId(event.eventId)
+
+    if (raced) {
+      return toEgressRecord(raced)
+    }
+  }
 
   return {
     id,

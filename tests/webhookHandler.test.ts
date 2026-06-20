@@ -244,6 +244,20 @@ describe('createWebhookHandler', () => {
 })
 
 describe('processIngestion', () => {
+  it('logs and returns when claim fails with a database error', async () => {
+    const claimSpy = vi
+      .spyOn(await import('../src/store/ingestionQueue.js'), 'tryClaimIngestion')
+      .mockRejectedValue(new Error('DB unavailable'))
+
+    const { processIngestion } = await import('../src/middleware/webhookHandler.js')
+
+    await expect(
+      processIngestion('ingestion-1', { vendor: 'cvent', failureMessage: 'fail' }),
+    ).resolves.toBeUndefined()
+
+    claimSpy.mockRestore()
+  })
+
   it('records non-Zod mapping failures without invoking drift capture', async () => {
     const driftSpy = vi.spyOn(driftCapture, 'captureSchemaDrift')
     const resolveSpy = vi.spyOn(await import('../src/mappers/resolve.js'), 'mapVendorPayload')
@@ -319,6 +333,59 @@ describe('processIngestion', () => {
     const { listPendingEgressEvents } = await import('../src/store/egressStore.js')
     const pending = await listPendingEgressEvents()
     expect(pending.some((event) => event.eventId === ingestion.result?.eventId)).toBe(true)
+
+    publishSpy.mockRestore()
+  })
+
+  it('skips egress publish when the constituent event was already exported', async () => {
+    const publishSpy = vi.spyOn(await import('../src/egress/publisher.js'), 'publishEgressEvent')
+
+    const app = new Hono()
+    app.post(
+      '/webhooks/test',
+      createWebhookHandler({
+        vendor: 'givecampus',
+        failureMessage: 'Failed to map GiveCampus payload to master schema',
+      }),
+    )
+
+    const payload = {
+      id: 'gc-egress-dedupe',
+      donation_type: 'donation',
+      value: 10,
+      currency: 'USD',
+      donor_email: 'dedupe@school.edu',
+    }
+
+    const first = await app.request('/webhooks/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const firstBody = (await first.json()) as { ingestionId: string }
+
+    await runIngestion(
+      firstBody.ingestionId,
+      'givecampus',
+      'Failed to map GiveCampus payload to master schema',
+    )
+
+    expect(publishSpy).toHaveBeenCalledOnce()
+
+    const second = await app.request('/webhooks/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const secondBody = (await second.json()) as { ingestionId: string }
+
+    await runIngestion(
+      secondBody.ingestionId,
+      'givecampus',
+      'Failed to map GiveCampus payload to master schema',
+    )
+
+    expect(publishSpy).toHaveBeenCalledOnce()
 
     publishSpy.mockRestore()
   })

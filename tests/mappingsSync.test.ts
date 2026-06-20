@@ -82,6 +82,20 @@ describe('POST /mappings/sync', () => {
     expect(body.success).toBe(false)
   })
 
+  it('rejects duplicate metadata keys in a single artifact', async () => {
+    const response = await postJson('/mappings/sync', {
+      ...validArtifact,
+      metadataMappings: [
+        { source: 'donation_type', key: 'donationType' },
+        { source: 'id', key: 'donationType' },
+      ],
+    })
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(400)
+    expect(body.success).toBe(false)
+  })
+
   it('rejects malformed JSON bodies', async () => {
     const response = await app.request('/mappings/sync', {
       method: 'POST',

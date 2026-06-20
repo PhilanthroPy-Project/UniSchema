@@ -10,14 +10,25 @@ import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egres
 import { getIngestion } from '../store/ingestionQueue.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
-import { isDriftAgentAuthorized } from '../utils/driftAgentAuth.js'
+import { isDriftAgentAuthorized, isDriftListAuthorized, resolveDriftListAuth } from '../utils/driftAgentAuth.js'
 import { isEgressPullAuthorized, resolveEgressPullAuth } from '../utils/egressPullAuth.js'
+import { isMappingSyncAuthorized, resolveMappingSyncAuth } from '../utils/mappingSyncAuth.js'
 
 const EgressAckSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
 })
 
 export async function handleMappingGet(c: Context): Promise<Response> {
+  const authDecision = resolveMappingSyncAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
+  }
+
+  if (!isMappingSyncAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
   const vendor = c.req.param('vendor')
 
   if (!vendor?.trim()) {
@@ -113,6 +124,16 @@ export async function handleEgressAck(c: Context): Promise<Response> {
 }
 
 export async function handleIngestionGet(c: Context): Promise<Response> {
+  const authDecision = resolveMappingSyncAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
+  }
+
+  if (!isMappingSyncAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
   const ingestionId = c.req.param('id')
 
   if (!ingestionId) {
@@ -140,6 +161,16 @@ export async function handleIngestionGet(c: Context): Promise<Response> {
 }
 
 export async function handleDriftList(c: Context): Promise<Response> {
+  const authDecision = resolveDriftListAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Drift agent token not configured' }, 500)
+  }
+
+  if (!isDriftListAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
   const vendor = c.req.query('vendor')
   const statusParam = c.req.query('status')
   const includePayload = c.req.query('includePayload') === 'true'

@@ -57,12 +57,16 @@ export function isClientIpAllowed(clientIp: string, allowlist: string[]): boolea
 }
 
 export function resolveClientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for')
+  const trustProxy = process.env.TRUST_PROXY === 'true'
 
-  if (forwarded) {
-    const firstHop = forwarded.split(',')[0]?.trim()
-    if (firstHop) {
-      return firstHop
+  if (trustProxy) {
+    const forwarded = c.req.header('x-forwarded-for')
+
+    if (forwarded) {
+      const firstHop = forwarded.split(',')[0]?.trim()
+      if (firstHop) {
+        return firstHop
+      }
     }
   }
 

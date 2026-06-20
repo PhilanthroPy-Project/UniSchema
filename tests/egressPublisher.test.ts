@@ -22,6 +22,17 @@ describe('publishEgressEvent', () => {
     expect(result.location).toContain(`${validConstituentEvent.eventId}.json`)
   })
 
+  it('treats existing local egress files as idempotent', async () => {
+    const { publishToLocalFilesystem } = await import('../src/egress/localPublisher.js')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const localDir = process.env.EGRESS_LOCAL_DIR ?? 'data/test-egress'
+
+    const first = await publishToLocalFilesystem(record, localDir, '')
+    const second = await publishToLocalFilesystem(record, localDir, '')
+
+    expect(second).toBe(first)
+  })
+
   it('delegates to S3 when the egress target is s3', async () => {
     const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const s3Spy = vi
@@ -66,6 +77,17 @@ describe('publishEgressEvent', () => {
 
     expect(second.id).toBe(first.id)
     expect(second.eventId).toBe(first.eventId)
+  })
+
+  it('handles concurrent inserts for the same eventId without throwing', async () => {
+    const results = await Promise.all([
+      persistConstituentEvent(validConstituentEvent, 'givecampus'),
+      persistConstituentEvent(validConstituentEvent, 'givecampus'),
+    ])
+
+    expect(results[0]?.eventId).toBe(validConstituentEvent.eventId)
+    expect(results[1]?.eventId).toBe(validConstituentEvent.eventId)
+    expect(new Set(results.map((record) => record.id)).size).toBe(1)
   })
 })
 

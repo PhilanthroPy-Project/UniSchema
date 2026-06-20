@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { z } from 'zod'
 
 import {
@@ -37,7 +39,7 @@ function resolveVendorId(payload: Record<string, unknown>, vendor: string): stri
     }
   }
 
-  return `${vendor}-${JSON.stringify(payload).slice(0, 64)}`
+  return `${vendor}-${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`
 }
 
 function coerceTargetValue(target: MappableTargetField, value: unknown): unknown {

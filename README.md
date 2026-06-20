@@ -62,6 +62,7 @@ npm run demo
 |----------|------------------|
 | GiveCampus + Cvent → ConstituentEvent | Blackbaud, NPSP, iModules — [bring your own vendor](./docs/adding-a-vendor.md) |
 | HMAC webhook verification | ~120 req/min/IP default; single-instance SQLite |
+| Idempotent egress (duplicate webhooks skip re-publish) | Set `TRUST_PROXY=true` when behind Fly/Railway/nginx |
 | Visual canvas overrides | Core master schema is opinionated — [details](./docs/limitations-and-roadmap.md) |
 | Local + S3 egress push | No managed SaaS — [Fly / Railway / Terraform S3](deploy/README.md) |
 | 3 event types: registration, donation, email click | Extending enums needs code + pipeline coordination |
@@ -80,6 +81,15 @@ No hosted tier yet. Use bundled Docker image + platform templates:
 | Any host | [Dockerfile](./Dockerfile) |
 
 Production checklist → [operator guide](./docs/operator-guide.md).
+
+**Minimum production env vars** (see [.env.example](./.env.example)):
+
+| Variable | Purpose |
+|----------|---------|
+| `GIVECAMPUS_WEBHOOK_SECRET` / `CVENT_WEBHOOK_SECRET` | HMAC verification (required in production) |
+| `MAPPING_SYNC_TOKEN` | Protects mapping sync, mapping GET, and ingestion polling |
+| `DRIFT_AGENT_TOKEN` | Protects drift queue API |
+| `TRUST_PROXY=true` | Trust `X-Forwarded-For` only when behind a reverse proxy |
 
 ---
 
@@ -104,9 +114,12 @@ Airflow DAG stub + S3 batch reader → [examples/downstream/](examples/downstrea
 | `GET` | `/health` | Health check |
 | `POST` | `/webhooks/givecampus` | GiveCampus webhook (**202**) |
 | `POST` | `/webhooks/cvent` | Cvent webhook (**202**) |
-| `GET` | `/webhooks/ingestions/:id` | Poll async status |
-| `POST` | `/api/mappings/sync` | Save canvas mapping |
-| `GET` | `/api/mappings/:vendor` | Load canvas mapping |
+| `GET` | `/webhooks/ingestions/:id` | Poll async status (Bearer auth in production) |
+| `POST` | `/api/mappings/sync` | Save canvas mapping (Bearer auth in production) |
+| `GET` | `/api/mappings/:vendor` | Load canvas mapping (Bearer auth in production) |
+| `GET` | `/api/drift/events` | Schema drift queue (Bearer auth in production) |
+
+Admin routes are also available without the `/api` prefix. Local dev works without tokens when `NODE_ENV` is not `production`.
 
 Full operator reference → [docs/operator-guide.md](./docs/operator-guide.md).
 
@@ -131,8 +144,8 @@ UniSchema/
 ## Testing
 
 ```bash
-npm test                  # backend (188 tests)
-npm run validate          # full CI parity
+npm test                  # backend (232 tests)
+npm run validate          # full CI parity (backend + frontend + build)
 ```
 
 ---

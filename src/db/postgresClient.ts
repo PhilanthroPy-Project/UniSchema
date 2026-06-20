@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS webhook_ingestions (
   result_json TEXT,
   error_json TEXT,
   created_at TEXT NOT NULL,
+  claimed_at TEXT,
   completed_at TEXT
 );
 
@@ -69,6 +70,9 @@ export async function initPostgresDatabase(): Promise<UniSchemaPostgresDatabase>
 
   sql = postgres(connectionString, { max: 10 })
   await sql.unsafe(CREATE_TABLES_SQL)
+  await sql.unsafe(
+    'ALTER TABLE webhook_ingestions ADD COLUMN IF NOT EXISTS claimed_at TEXT',
+  )
   db = drizzle(sql, { schema })
 
   return db

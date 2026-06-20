@@ -42,7 +42,17 @@ export async function processIngestion(
   ingestionId: string,
   config: WebhookRouteConfig,
 ): Promise<void> {
-  const ingestion = await tryClaimIngestion(ingestionId)
+  let ingestion
+
+  try {
+    ingestion = await tryClaimIngestion(ingestionId)
+  } catch (error) {
+    logError('[ingestion] failed to claim ingestion', {
+      ingestionId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return
+  }
 
   if (!ingestion) {
     return
@@ -53,24 +63,32 @@ export async function processIngestion(
     const record = await persistConstituentEvent(mapped, config.vendor)
 
     if (isEgressEnabled()) {
-      try {
-        const published = await publishEgressEvent(record)
+      if (record.egressStatus === 'exported') {
+        logInfo('[egress] skipping already exported event', {
+          eventId: record.eventId,
+          vendor: record.vendor,
+          ingestionId,
+        })
+      } else {
+        try {
+          const published = await publishEgressEvent(record)
 
-        await acknowledgeEgressEvents([record.id])
-        logInfo('[egress] published constituent event', {
-          eventId: record.eventId,
-          vendor: record.vendor,
-          location: published.location,
-          target: published.target,
-          ingestionId,
-        })
-      } catch (error) {
-        logError('[egress] failed to publish constituent event', {
-          eventId: record.eventId,
-          vendor: record.vendor,
-          ingestionId,
-          error: error instanceof Error ? error.message : String(error),
-        })
+          await acknowledgeEgressEvents([record.id])
+          logInfo('[egress] published constituent event', {
+            eventId: record.eventId,
+            vendor: record.vendor,
+            location: published.location,
+            target: published.target,
+            ingestionId,
+          })
+        } catch (error) {
+          logError('[egress] failed to publish constituent event', {
+            eventId: record.eventId,
+            vendor: record.vendor,
+            ingestionId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
       }
     }
 

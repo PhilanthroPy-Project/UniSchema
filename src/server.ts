@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 
 import { getDatabaseDialect, initDatabase, initPostgresDatabase } from './db/client.js'
 import { recoverPendingEgress, recoverPendingIngestions } from './store/recoveryWorker.js'
+import { logError } from './utils/logger.js'
 
 const port = Number(process.env.PORT ?? 3000)
 
@@ -14,8 +15,8 @@ async function bootstrap(): Promise<void> {
 
   const { default: app } = await import('./index.js')
 
-  void Promise.all([recoverPendingIngestions(), recoverPendingEgress()]).then(
-    ([ingestionsRecovered, egressRecovered]) => {
+  void Promise.all([recoverPendingIngestions(), recoverPendingEgress()])
+    .then(([ingestionsRecovered, egressRecovered]) => {
       if (ingestionsRecovered > 0) {
         console.log(`Recovered ${ingestionsRecovered} stale pending ingestion(s)`)
       }
@@ -23,8 +24,12 @@ async function bootstrap(): Promise<void> {
       if (egressRecovered > 0) {
         console.log(`Recovered ${egressRecovered} pending egress event(s)`)
       }
-    },
-  )
+    })
+    .catch((error) => {
+      logError('[recovery] startup recovery failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+    })
 
   serve(
     {

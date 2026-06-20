@@ -5,8 +5,10 @@ import {
   isClientIpAllowed,
   parseIpAllowlist,
   resetWebhookGuardForTests,
+  resolveClientIp,
   resolveRateLimitConfig,
 } from '../src/middleware/webhookGuard.js'
+import { Hono } from 'hono'
 
 describe('webhook guard helpers', () => {
   afterEach(() => {
@@ -66,11 +68,37 @@ describe('webhook guard helpers', () => {
       process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS = originalWindow
     }
   })
+
+  it('uses X-Forwarded-For only when TRUST_PROXY is enabled', async () => {
+    const originalTrustProxy = process.env.TRUST_PROXY
+    const app = new Hono()
+
+    app.get('/ip', (c) => c.json({ ip: resolveClientIp(c) }))
+
+    process.env.TRUST_PROXY = 'true'
+    const trusted = await app.request('/ip', {
+      headers: { 'x-forwarded-for': '203.0.113.10, 10.0.0.1' },
+    })
+    expect((await trusted.json()) as { ip: string }).toEqual({ ip: '203.0.113.10' })
+
+    delete process.env.TRUST_PROXY
+    const untrusted = await app.request('/ip', {
+      headers: { 'x-forwarded-for': '203.0.113.10' },
+    })
+    expect((await untrusted.json()) as { ip: string }).toEqual({ ip: 'unknown' })
+
+    if (originalTrustProxy === undefined) {
+      delete process.env.TRUST_PROXY
+    } else {
+      process.env.TRUST_PROXY = originalTrustProxy
+    }
+  })
 })
 
 describe('webhook guard middleware', () => {
   const originalAllowlist = process.env.WEBHOOK_IP_ALLOWLIST
   const originalMax = process.env.WEBHOOK_RATE_LIMIT_MAX
+  const originalTrustProxy = process.env.TRUST_PROXY
 
   afterEach(() => {
     resetWebhookGuardForTests()
@@ -86,10 +114,39 @@ describe('webhook guard middleware', () => {
     } else {
       process.env.WEBHOOK_RATE_LIMIT_MAX = originalMax
     }
+
+    if (originalTrustProxy === undefined) {
+      delete process.env.TRUST_PROXY
+    } else {
+      process.env.TRUST_PROXY = originalTrustProxy
+    }
+  })
+
+  it('ignores spoofed X-Forwarded-For when TRUST_PROXY is not enabled', async () => {
+    process.env.WEBHOOK_IP_ALLOWLIST = '203.0.113.10'
+
+    const { default: app } = await import('../src/index.js')
+    const response = await app.request('/webhooks/givecampus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-forwarded-for': '203.0.113.10',
+      },
+      body: JSON.stringify({
+        id: 'gc-guard-spoof',
+        donation_type: 'donation',
+        value: 10,
+        currency: 'USD',
+        donor_email: 'guard@school.edu',
+      }),
+    })
+
+    expect(response.status).toBe(403)
   })
 
   it('returns 403 for clients outside the configured IP allowlist', async () => {
     process.env.WEBHOOK_IP_ALLOWLIST = '203.0.113.10'
+    process.env.TRUST_PROXY = 'true'
 
     const { default: app } = await import('../src/index.js')
     const response = await app.request('/webhooks/givecampus', {
@@ -114,6 +171,7 @@ describe('webhook guard middleware', () => {
 
   it('returns 429 when the client exceeds the configured rate limit', async () => {
     process.env.WEBHOOK_RATE_LIMIT_MAX = '1'
+    process.env.TRUST_PROXY = 'true'
 
     const { default: app } = await import('../src/index.js')
     const payload = {
