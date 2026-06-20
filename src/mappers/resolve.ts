@@ -1,18 +1,17 @@
 import type { ConstituentEvent } from '../schema/master.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
+import { mapBlackbaudToMaster } from './blackbaud.js'
 import { mapCventToMaster } from './cvent.js'
 import { mapWithArtifact } from './dynamic.js'
 import { mapGiveCampusToMaster } from './givecampus.js'
+import { mapImodulesToMaster } from './imodules.js'
+import { mapNpspToMaster } from './npsp.js'
 
-/**
- * Resolves the mapper for a vendor: admin canvas config takes precedence,
- * otherwise falls back to the built-in TypeScript mapper.
- */
-export function resolveVendorMapper(
+export async function resolveVendorMapper(
   vendor: DriftVendor,
-): (rawPayload: unknown) => ConstituentEvent {
-  const stored = getMapping(vendor)
+): Promise<(rawPayload: unknown) => ConstituentEvent> {
+  const stored = await getMapping(vendor)
 
   if (stored && stored.mappings.length > 0) {
     return (rawPayload) => mapWithArtifact(rawPayload, stored)
@@ -23,11 +22,21 @@ export function resolveVendorMapper(
       return mapCventToMaster
     case 'givecampus':
       return mapGiveCampusToMaster
+    case 'imodules':
+      return mapImodulesToMaster
+    case 'blackbaud':
+      return mapBlackbaudToMaster
+    case 'npsp':
+      return mapNpspToMaster
     default:
       throw new Error(`Unsupported vendor: ${vendor}`)
   }
 }
 
-export function mapVendorPayload(vendor: DriftVendor, rawPayload: unknown): ConstituentEvent {
-  return resolveVendorMapper(vendor)(rawPayload)
+export async function mapVendorPayload(
+  vendor: DriftVendor,
+  rawPayload: unknown,
+): Promise<ConstituentEvent> {
+  const mapper = await resolveVendorMapper(vendor)
+  return mapper(rawPayload)
 }

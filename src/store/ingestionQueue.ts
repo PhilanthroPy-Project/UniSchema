@@ -1,10 +1,17 @@
 import { randomUUID } from 'node:crypto'
 
-import { and, eq, lt, or } from 'drizzle-orm'
 import type { ZodError } from 'zod'
 
-import { getDb } from '../db/client.js'
-import { webhookIngestions } from '../db/schema.js'
+import {
+  claimWebhookIngestion,
+  completeWebhookIngestion,
+  deleteAllWebhookIngestions,
+  failWebhookIngestion,
+  insertWebhookIngestion,
+  listStaleWebhookIngestions,
+  releaseStaleProcessingIngestionRows,
+  selectWebhookIngestionById,
+} from '../db/unified.js'
 import type { ConstituentEvent } from '../schema/master.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
 
@@ -24,20 +31,20 @@ export type IngestionRecord = {
   completedAt?: string
 }
 
-export function createIngestion(vendor: DriftVendor, rawPayload: unknown): IngestionRecord {
+export async function createIngestion(
+  vendor: DriftVendor,
+  rawPayload: unknown,
+): Promise<IngestionRecord> {
   const id = randomUUID()
   const createdAt = new Date().toISOString()
 
-  getDb()
-    .insert(webhookIngestions)
-    .values({
-      id,
-      vendor,
-      rawPayloadJson: JSON.stringify(rawPayload),
-      status: 'pending',
-      createdAt,
-    })
-    .run()
+  await insertWebhookIngestion({
+    id,
+    vendor,
+    rawPayloadJson: JSON.stringify(rawPayload),
+    status: 'pending',
+    createdAt,
+  })
 
   return {
     id,
@@ -48,8 +55,8 @@ export function createIngestion(vendor: DriftVendor, rawPayload: unknown): Inges
   }
 }
 
-export function getIngestion(id: string): IngestionRecord | undefined {
-  const row = getDb().select().from(webhookIngestions).where(eq(webhookIngestions.id, id)).get()
+export async function getIngestion(id: string): Promise<IngestionRecord | undefined> {
+  const row = await selectWebhookIngestionById(id)
 
   if (!row) {
     return undefined
@@ -58,92 +65,51 @@ export function getIngestion(id: string): IngestionRecord | undefined {
   return toIngestionRecord(row)
 }
 
-/**
- * Atomically claims a pending ingestion for background processing.
- * Returns undefined when another worker already claimed or finished the row.
- */
-export function tryClaimIngestion(id: string): IngestionRecord | undefined {
-  const result = getDb()
-    .update(webhookIngestions)
-    .set({ status: 'processing' })
-    .where(and(eq(webhookIngestions.id, id), eq(webhookIngestions.status, 'pending')))
-    .run()
+export async function tryClaimIngestion(id: string): Promise<IngestionRecord | undefined> {
+  const changes = await claimWebhookIngestion(id)
 
-  if (result.changes === 0) {
+  if (changes === 0) {
     return undefined
   }
 
   return getIngestion(id)
 }
 
-/** Returns pending ingestions older than the given threshold (default: 5 minutes). */
-export function listStalePendingIngestions(
+export async function listStalePendingIngestions(
   olderThanMs = 5 * 60 * 1000,
-): IngestionRecord[] {
+): Promise<IngestionRecord[]> {
   const threshold = new Date(Date.now() - olderThanMs).toISOString()
-
-  const rows = getDb()
-    .select()
-    .from(webhookIngestions)
-    .where(and(eq(webhookIngestions.status, 'pending'), lt(webhookIngestions.createdAt, threshold)))
-    .all()
+  const rows = await listStaleWebhookIngestions(threshold)
 
   return rows.map(toIngestionRecord)
 }
 
-/** Resets stale `processing` rows back to `pending` for crash recovery. */
-export function releaseStaleProcessingIngestions(olderThanMs = 5 * 60 * 1000): number {
+export async function releaseStaleProcessingIngestions(olderThanMs = 5 * 60 * 1000): Promise<number> {
   const threshold = new Date(Date.now() - olderThanMs).toISOString()
-
-  const result = getDb()
-    .update(webhookIngestions)
-    .set({ status: 'pending' })
-    .where(
-      and(eq(webhookIngestions.status, 'processing'), lt(webhookIngestions.createdAt, threshold)),
-    )
-    .run()
-
-  return result.changes
+  return releaseStaleProcessingIngestionRows(threshold)
 }
 
-export function completeIngestion(id: string, result: ConstituentEvent): void {
-  getDb()
-    .update(webhookIngestions)
-    .set({
-      status: 'completed',
-      resultJson: JSON.stringify(result),
-      completedAt: new Date().toISOString(),
-    })
-    .where(
-      and(
-        eq(webhookIngestions.id, id),
-        or(eq(webhookIngestions.status, 'processing'), eq(webhookIngestions.status, 'pending')),
-      ),
-    )
-    .run()
+export async function completeIngestion(id: string, result: ConstituentEvent): Promise<void> {
+  await completeWebhookIngestion(id, JSON.stringify(result), new Date().toISOString())
 }
 
-export function failIngestion(
+export async function failIngestion(
   id: string,
   error: { message: string; errors?: ReturnType<ZodError['flatten']> },
-): void {
-  getDb()
-    .update(webhookIngestions)
-    .set({
-      status: 'failed',
-      errorJson: JSON.stringify(error),
-      completedAt: new Date().toISOString(),
-    })
-    .where(
-      and(
-        eq(webhookIngestions.id, id),
-        or(eq(webhookIngestions.status, 'processing'), eq(webhookIngestions.status, 'pending')),
-      ),
-    )
-    .run()
+): Promise<void> {
+  await failWebhookIngestion(id, JSON.stringify(error), new Date().toISOString())
 }
 
-function toIngestionRecord(row: typeof webhookIngestions.$inferSelect): IngestionRecord {
+function toIngestionRecord(row: {
+  id: string
+  vendor: string
+  rawPayloadJson: string
+  status: string
+  resultJson: string | null
+  errorJson: string | null
+  createdAt: string
+  completedAt: string | null
+}): IngestionRecord {
   return {
     id: row.id,
     vendor: row.vendor as DriftVendor,
@@ -158,7 +124,6 @@ function toIngestionRecord(row: typeof webhookIngestions.$inferSelect): Ingestio
   }
 }
 
-/** Test-only helper — clears ingestion rows between test cases. */
-export function clearIngestions(): void {
-  getDb().delete(webhookIngestions).run()
+export async function clearIngestions(): Promise<void> {
+  await deleteAllWebhookIngestions()
 }

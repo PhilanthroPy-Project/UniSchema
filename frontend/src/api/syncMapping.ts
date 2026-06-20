@@ -1,4 +1,5 @@
 import type { MappingArtifact } from '../types/mapping'
+import { buildAuthHeaders } from '../utils/syncToken'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
@@ -29,6 +30,7 @@ export async function fetchMappingArtifact(
 ): Promise<StoredMappingArtifact | null> {
   const response = await fetch(
     `${API_BASE}/mappings/${encodeURIComponent(vendor.toLowerCase())}`,
+    { headers: buildAuthHeaders() },
   )
 
   if (response.status === 404) {
@@ -52,7 +54,10 @@ export async function syncMappingArtifact(
 ): Promise<MappingSyncResult> {
   const response = await fetch(`${API_BASE}/mappings/sync`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildAuthHeaders(),
+    },
     body: JSON.stringify(artifact),
   })
 

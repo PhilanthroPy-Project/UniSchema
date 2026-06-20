@@ -4,8 +4,16 @@ import { ZodError } from 'zod'
 import {
   ConstituentEventSchema,
 } from '../src/schema/master.js'
+import { mapBlackbaudToMaster } from '../src/mappers/blackbaud.js'
 import { mapCventToMaster } from '../src/mappers/cvent.js'
 import { mapGiveCampusToMaster } from '../src/mappers/givecampus.js'
+import { mapImodulesToMaster } from '../src/mappers/imodules.js'
+import { mapNpspToMaster } from '../src/mappers/npsp.js'
+import {
+  validBlackbaudPayload,
+  validImodulesPayload,
+  validNpspPayload,
+} from './fixtures/payloads.js'
 
 describe('mapCventToMaster', () => {
   it('maps a valid Cvent payload to the master schema', () => {
@@ -301,5 +309,69 @@ describe('mapGiveCampusToMaster', () => {
     ).toThrow(ZodError)
 
     spy.mockRestore()
+  })
+})
+
+describe('mapImodulesToMaster', () => {
+  it('maps a valid iModules payload to the master schema', () => {
+    const result = mapImodulesToMaster(validImodulesPayload)
+
+    expect(result.constituentEmail).toBe(validImodulesPayload.email)
+    expect(result.eventType).toBe('EVENT_REGISTRATION')
+    expect(result.sourceSystem).toBe('IMODULES')
+  })
+
+  it('throws when registration_id is missing', () => {
+    expect(() => mapImodulesToMaster({ email: 'a@b.edu', event_name: 'Gala' })).toThrow(ZodError)
+  })
+})
+
+describe('mapBlackbaudToMaster', () => {
+  it('maps a valid Blackbaud payload to the master schema', () => {
+    const result = mapBlackbaudToMaster(validBlackbaudPayload)
+
+    expect(result.constituentEmail).toBe(validBlackbaudPayload.constituent_email)
+    expect(result.amount).toBe(1000)
+    expect(result.sourceSystem).toBe('BLACKBAUD')
+  })
+
+  it('coerces locale-formatted gift amounts', () => {
+    const result = mapBlackbaudToMaster({ ...validBlackbaudPayload, gift_amount: '1,000.50' })
+
+    expect(result.amount).toBe(1000.5)
+  })
+
+  it('throws when gift_amount is not numeric', () => {
+    expect(() =>
+      mapBlackbaudToMaster({ ...validBlackbaudPayload, gift_amount: 'not-a-number' }),
+    ).toThrow(ZodError)
+  })
+})
+
+describe('mapNpspToMaster', () => {
+  it('maps a valid NPSP payload to the master schema', () => {
+    const result = mapNpspToMaster(validNpspPayload)
+
+    expect(result.constituentEmail).toBe(validNpspPayload.npe01__HomeEmail__c)
+    expect(result.amount).toBe(500)
+    expect(result.sourceSystem).toBe('NPSP')
+  })
+
+  it('coerces locale-formatted numeric strings', () => {
+    const result = mapNpspToMaster({ ...validNpspPayload, Amount: '1,250.00' })
+
+    expect(result.amount).toBe(1250)
+  })
+
+  it('throws when email field is invalid', () => {
+    expect(() =>
+      mapNpspToMaster({ ...validNpspPayload, npe01__HomeEmail__c: 'not-an-email' }),
+    ).toThrow(ZodError)
+  })
+
+  it('throws when amount is not numeric', () => {
+    expect(() => mapNpspToMaster({ ...validNpspPayload, Amount: 'not-a-number' })).toThrow(
+      ZodError,
+    )
   })
 })

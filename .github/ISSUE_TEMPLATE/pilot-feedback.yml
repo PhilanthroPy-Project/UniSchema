@@ -1,0 +1,47 @@
+name: Pilot feedback
+description: Feedback from a UniSchema pilot deployment
+title: "[Pilot] "
+labels: ["pilot-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for piloting UniSchema. Anonymized feedback helps prioritize the roadmap.
+        See [docs/case-studies/pilot-feedback-template.md](https://github.com/PhilanthroPy-Project/UniSchema/blob/main/docs/case-studies/pilot-feedback-template.md).
+  - type: dropdown
+    id: role
+    attributes:
+      label: Your role
+      options:
+        - Operator / platform engineer
+        - Advancement data engineer
+        - Admin / analyst (canvas user)
+        - Developer / contributor
+  - type: checkboxes
+    id: vendors
+    attributes:
+      label: Vendors used
+      options:
+        - label: GiveCampus
+        - label: Cvent
+        - label: iModules
+        - label: Blackbaud
+        - label: Salesforce NPSP
+        - label: Other (describe below)
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked well?
+    validations:
+      required: true
+  - type: textarea
+    id: blockers
+    attributes:
+      label: What blocked adoption or production use?
+    validations:
+      required: true
+  - type: textarea
+    id: volume
+    attributes:
+      label: Approximate webhook volume (events/day or peak/min)
+      placeholder: e.g. ~500/day, peak 20/min on giving day

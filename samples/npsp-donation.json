@@ -1,0 +1,9 @@
+{
+  "Id": "a0X5g000001AbCdEFG",
+  "npe01__HomeEmail__c": "alumni@university.edu",
+  "FirstName": "Sam",
+  "LastName": "Chen",
+  "Amount": 500,
+  "CurrencyIsoCode": "USD",
+  "RecordType": "Donation"
+}

@@ -1,5 +1,6 @@
 import { processIngestion } from '../../src/middleware/webhookHandler.js'
 import { getIngestion, type IngestionRecord } from '../../src/store/ingestionQueue.js'
+import type { DriftVendor } from '../../src/utils/driftCapture.js'
 
 export async function waitForIngestion(
   ingestionId: string,
@@ -8,7 +9,7 @@ export async function waitForIngestion(
   const start = Date.now()
 
   while (Date.now() - start < timeoutMs) {
-    const record = getIngestion(ingestionId)
+    const record = await getIngestion(ingestionId)
 
     if (record && record.status !== 'pending' && record.status !== 'processing') {
       return record
@@ -20,14 +21,13 @@ export async function waitForIngestion(
   throw new Error(`Ingestion ${ingestionId} did not complete within ${timeoutMs}ms`)
 }
 
-/** Runs ingestion synchronously — useful when background scheduling ordering is flaky. */
 export async function runIngestion(
   ingestionId: string,
-  vendor: 'cvent' | 'givecampus',
+  vendor: DriftVendor,
   failureMessage: string,
 ): Promise<IngestionRecord> {
   await processIngestion(ingestionId, { vendor, failureMessage })
-  const record = getIngestion(ingestionId)
+  const record = await getIngestion(ingestionId)
 
   if (!record) {
     throw new Error(`Ingestion ${ingestionId} not found`)

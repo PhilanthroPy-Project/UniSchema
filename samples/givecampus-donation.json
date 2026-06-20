@@ -1,0 +1,7 @@
+{
+  "id": "demo-gc-001",
+  "donation_type": "donation",
+  "value": 250,
+  "currency": "USD",
+  "donor_email": "demo.alumni@university.edu"
+}

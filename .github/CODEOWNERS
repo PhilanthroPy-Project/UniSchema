@@ -1,0 +1,13 @@
+# See CODEOWNERS format: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Core maintainers
+/src/                         @PhilanthroPy-Project
+/docs/                        @PhilanthroPy-Project
+/tests/                       @PhilanthroPy-Project
+
+# Vendor mappers — assign community maintainers as they emerge
+/src/mappers/givecampus.ts    @PhilanthroPy-Project
+/src/mappers/cvent.ts         @PhilanthroPy-Project
+/src/mappers/imodules.ts      @PhilanthroPy-Project
+/src/mappers/blackbaud.ts     @PhilanthroPy-Project
+/src/mappers/npsp.ts          @PhilanthroPy-Project

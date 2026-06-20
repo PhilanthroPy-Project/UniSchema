@@ -8,8 +8,8 @@ import { persistConstituentEvent } from '../src/store/egressStore.js'
 import { validConstituentEvent } from './fixtures/payloads.js'
 
 describe('buildEgressBatchManifest', () => {
-  it('builds an Airflow-ready manifest for a flushed batch', () => {
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+  it('builds an Airflow-ready manifest for a flushed batch', async () => {
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const objectKey = 'constituent-events/batches/2026/06/20/batch-123.ndjson'
 
     const manifest = buildEgressBatchManifest([record], 'analytics-bucket', objectKey, 2048, 'batch-123')

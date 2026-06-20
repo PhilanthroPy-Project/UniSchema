@@ -65,7 +65,7 @@ describe('webhook security — HMAC enforcement', () => {
       message: 'Invalid webhook signature',
     })
     expect(countIngestions()).toBe(beforeCount)
-    expect(listPendingEgressEvents()).toHaveLength(0)
+    expect((await listPendingEgressEvents())).toHaveLength(0)
   })
 
   it('rejects payloads when the signature was computed for a different body', async () => {

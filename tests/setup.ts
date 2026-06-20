@@ -8,7 +8,7 @@ process.env.DATABASE_URL = ':memory:'
 process.env.EGRESS_TARGET = 'local'
 initDatabase()
 
-beforeEach(() => {
-  resetDatabase()
+beforeEach(async () => {
+  await resetDatabase()
   process.env.EGRESS_LOCAL_DIR = `data/test-egress/${randomUUID()}`
 })

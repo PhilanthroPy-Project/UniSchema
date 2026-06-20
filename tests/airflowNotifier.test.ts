@@ -14,8 +14,8 @@ const baseConfig = {
   s3FlushIntervalMs: 120_000,
 }
 
-function buildManifest() {
-  const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+async function buildManifest() {
+  const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
 
   return buildEgressBatchManifest(
     [record],
@@ -32,7 +32,7 @@ describe('notifyAirflowBatchReady', () => {
   })
 
   it('skips notification when no webhook URL is configured', async () => {
-    const result = await notifyAirflowBatchReady(buildManifest(), baseConfig)
+    const result = await notifyAirflowBatchReady(await buildManifest(), baseConfig)
 
     expect(result).toEqual({ notified: false, reason: 'disabled' })
   })
@@ -41,7 +41,7 @@ describe('notifyAirflowBatchReady', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201 })
     vi.stubGlobal('fetch', fetchMock)
 
-    const manifest = buildManifest()
+    const manifest = await buildManifest()
     const result = await notifyAirflowBatchReady(manifest, {
       ...baseConfig,
       airflowWebhookUrl: 'https://airflow.example.com/api/v1/dags/unischema_ingest/dagRuns',
@@ -68,7 +68,7 @@ describe('notifyAirflowBatchReady', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
     vi.stubGlobal('fetch', fetchMock)
 
-    await notifyAirflowBatchReady(buildManifest(), {
+    await notifyAirflowBatchReady(await buildManifest(), {
       ...baseConfig,
       airflowWebhookUrl: 'https://airflow.example.com/hook',
     })
@@ -86,7 +86,7 @@ describe('notifyAirflowBatchReady', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(
-      notifyAirflowBatchReady(buildManifest(), {
+      notifyAirflowBatchReady(await buildManifest(), {
         ...baseConfig,
         airflowWebhookUrl: 'https://airflow.example.com/hook',
       }),

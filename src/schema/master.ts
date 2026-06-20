@@ -8,7 +8,13 @@ export const EventTypeSchema = z.enum([
   'EMAIL_CLICK',
 ])
 
-export const SourceSystemSchema = z.enum(['CVENT', 'GIVECAMPUS'])
+export const SourceSystemSchema = z.enum([
+  'CVENT',
+  'GIVECAMPUS',
+  'IMODULES',
+  'BLACKBAUD',
+  'NPSP',
+])
 
 export type SourceSystem = z.infer<typeof SourceSystemSchema>
 

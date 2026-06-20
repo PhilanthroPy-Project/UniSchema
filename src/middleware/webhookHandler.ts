@@ -12,6 +12,7 @@ import {
 import { scheduleIngestion } from '../store/ingestionWorker.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import { captureSchemaDrift, isDriftCaptureEnabled, type DriftVendor } from '../utils/driftCapture.js'
+import { logError, logInfo } from '../utils/logger.js'
 import { resolveSignatureVerification } from '../utils/webhookAuth.js'
 import {
   readWebhookSignatureHeader,
@@ -23,9 +24,7 @@ import { publishEgressEvent } from '../egress/publisher.js'
 export type WebhookRouteConfig = {
   readonly vendor: DriftVendor
   readonly failureMessage: string
-  /** When set, verifies HMAC SHA-256 signature using `process.env[secretEnvKey]`. */
   readonly secretEnvKey?: string
-  /** Signature header name; defaults to `x-signature` with fallbacks for common vendors. */
   readonly signatureHeader?: string
 }
 
@@ -43,41 +42,43 @@ export async function processIngestion(
   ingestionId: string,
   config: WebhookRouteConfig,
 ): Promise<void> {
-  const ingestion = tryClaimIngestion(ingestionId)
+  const ingestion = await tryClaimIngestion(ingestionId)
 
   if (!ingestion) {
     return
   }
 
   try {
-    const mapped = mapVendorPayload(config.vendor, ingestion.rawPayload)
-    const record = persistConstituentEvent(mapped, config.vendor)
+    const mapped = await mapVendorPayload(config.vendor, ingestion.rawPayload)
+    const record = await persistConstituentEvent(mapped, config.vendor)
 
     if (isEgressEnabled()) {
       try {
         const published = await publishEgressEvent(record)
 
-        acknowledgeEgressEvents([record.id])
-        console.info('[egress] published constituent event', {
+        await acknowledgeEgressEvents([record.id])
+        logInfo('[egress] published constituent event', {
           eventId: record.eventId,
           vendor: record.vendor,
           location: published.location,
           target: published.target,
+          ingestionId,
         })
       } catch (error) {
-        console.error('[egress] failed to publish constituent event', {
+        logError('[egress] failed to publish constituent event', {
           eventId: record.eventId,
           vendor: record.vendor,
+          ingestionId,
           error: error instanceof Error ? error.message : String(error),
         })
       }
     }
 
-    completeIngestion(ingestionId, mapped)
+    await completeIngestion(ingestionId, mapped)
   } catch (error) {
     if (error instanceof ZodError) {
       if (isDriftCaptureEnabled()) {
-        const storedMapping = getMapping(config.vendor)
+        const storedMapping = await getMapping(config.vendor)
         const usesDynamicMapper =
           storedMapping !== undefined && storedMapping.mappings.length > 0
 
@@ -91,7 +92,7 @@ export async function processIngestion(
         )
 
         if (driftResult.captured) {
-          console.info('[drift-capture] enqueued schema drift event', {
+          logInfo('[drift-capture] enqueued schema drift event', {
             vendor: config.vendor,
             ingestionId,
             driftEventId: driftResult.driftEventId,
@@ -100,14 +101,14 @@ export async function processIngestion(
         }
       }
 
-      failIngestion(ingestionId, {
+      await failIngestion(ingestionId, {
         message: config.failureMessage,
         errors: error.flatten(),
       })
       return
     }
 
-    failIngestion(ingestionId, {
+    await failIngestion(ingestionId, {
       message: error instanceof Error ? error.message : 'Unknown mapping error',
     })
   }
@@ -161,7 +162,7 @@ export function createWebhookHandler(config: WebhookRouteConfig) {
       return c.json(body, 400)
     }
 
-    const ingestion = createIngestion(config.vendor, rawPayload)
+    const ingestion = await createIngestion(config.vendor, rawPayload)
 
     scheduleIngestion(ingestion.id, config)
 

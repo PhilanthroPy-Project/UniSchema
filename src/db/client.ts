@@ -1,6 +1,14 @@
 import Database from 'better-sqlite3'
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
+import { getDatabaseDialect } from './dialect.js'
+import {
+  deleteAllConstituentEvents,
+  deleteAllDriftEvents,
+  deleteAllVendorMappings,
+  deleteAllWebhookIngestions,
+} from './unified.js'
+import { closePostgresDatabase, initPostgresDatabase, resetPostgresDatabase } from './postgresClient.js'
 import * as schema from './schema.js'
 
 export type UniSchemaDatabase = BetterSQLite3Database<typeof schema>
@@ -96,6 +104,12 @@ function migrateDriftEventsTable(database: Database.Database): void {
 }
 
 export function initDatabase(): UniSchemaDatabase {
+  if (getDatabaseDialect() === 'postgres') {
+    throw new Error(
+      'Postgres DATABASE_URL detected — call await initPostgresDatabase() before starting the server',
+    )
+  }
+
   if (db) {
     return db
   }
@@ -120,13 +134,16 @@ export function getDb(): UniSchemaDatabase {
 }
 
 /** Test-only helper — clears all persisted rows between cases. */
-export function resetDatabase(): void {
-  const database = getDb()
+export async function resetDatabase(): Promise<void> {
+  if (getDatabaseDialect() === 'postgres') {
+    await resetPostgresDatabase()
+    return
+  }
 
-  database.delete(schema.constituentEvents).run()
-  database.delete(schema.webhookIngestions).run()
-  database.delete(schema.driftEvents).run()
-  database.delete(schema.vendorMappings).run()
+  await deleteAllConstituentEvents()
+  await deleteAllWebhookIngestions()
+  await deleteAllDriftEvents()
+  await deleteAllVendorMappings()
 }
 
 export function closeDatabase(): void {
@@ -134,3 +151,5 @@ export function closeDatabase(): void {
   sqlite = undefined
   db = undefined
 }
+
+export { getDatabaseDialect, initPostgresDatabase, closePostgresDatabase }

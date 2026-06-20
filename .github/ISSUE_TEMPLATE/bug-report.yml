@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a bug in webhook ingest, mapping, or egress
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: docker compose up, npm run demo, ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: UniSchema version or commit
+      placeholder: v0.1.0 or git sha
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Webhook ingest
+        - Mapping / canvas
+        - Egress (local / S3)
+        - Drift queue
+        - Deploy / Docker
+        - Other

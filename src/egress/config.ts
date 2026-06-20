@@ -53,3 +53,7 @@ export function isEgressEnabled(config: EgressConfig = resolveEgressConfig()): b
 
   return true
 }
+
+export function getEgressConfigSummary(): { target: EgressTarget } {
+  return { target: resolveEgressConfig().target }
+}

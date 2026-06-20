@@ -26,7 +26,7 @@ describe('recoverPendingIngestions', () => {
 
     expect(recovered).toBe(1)
 
-    const ingestion = getIngestion('stale-ingestion-1')
+    const ingestion = await getIngestion('stale-ingestion-1')
     expect(ingestion?.status).toBe('completed')
     expect(ingestion?.result?.constituentEmail).toBe(validGiveCampusPayload.donor_email)
   })
@@ -46,7 +46,7 @@ describe('recoverPendingIngestions', () => {
     const recovered = await recoverPendingIngestions()
 
     expect(recovered).toBe(0)
-    expect(getIngestion('fresh-ingestion-1')?.status).toBe('pending')
+    expect((await getIngestion('fresh-ingestion-1'))?.status).toBe('pending')
   })
 
   it('skips ingestions with unknown vendors', async () => {
@@ -66,7 +66,7 @@ describe('recoverPendingIngestions', () => {
     const recovered = await recoverPendingIngestions()
 
     expect(recovered).toBe(0)
-    expect(getIngestion('unknown-vendor-ingestion')?.status).toBe('pending')
+    expect((await getIngestion('unknown-vendor-ingestion'))?.status).toBe('pending')
   })
 
   it('releases stale processing ingestions before re-processing pending rows', async () => {
@@ -86,7 +86,7 @@ describe('recoverPendingIngestions', () => {
     const recovered = await recoverPendingIngestions()
 
     expect(recovered).toBe(1)
-    expect(getIngestion('stale-processing-recovery')?.status).toBe('completed')
+    expect((await getIngestion('stale-processing-recovery'))?.status).toBe('completed')
   })
 })
 
@@ -94,7 +94,7 @@ describe('recoverPendingEgress', () => {
   it('publishes staged events that were never pushed to object storage', async () => {
     process.env.EGRESS_TARGET = 'none'
 
-    persistConstituentEvent(
+    await persistConstituentEvent(
       {
         ...validConstituentEvent,
         eventId: '550e8400-e29b-41d4-a716-446655440099',
@@ -102,17 +102,17 @@ describe('recoverPendingEgress', () => {
       'givecampus',
     )
 
-    expect(listPendingEgressEvents()).toHaveLength(1)
+    expect((await listPendingEgressEvents())).toHaveLength(1)
 
     process.env.EGRESS_TARGET = 'local'
     const published = await recoverPendingEgress()
 
     expect(published).toBe(1)
-    expect(listPendingEgressEvents()).toHaveLength(0)
+    expect((await listPendingEgressEvents())).toHaveLength(0)
   })
 
   it('continues when an individual egress publish fails during recovery', async () => {
-    persistConstituentEvent(
+    await persistConstituentEvent(
       {
         ...validConstituentEvent,
         eventId: '550e8400-e29b-41d4-a716-446655440088',
@@ -127,7 +127,7 @@ describe('recoverPendingEgress', () => {
     const published = await recoverPendingEgress()
 
     expect(published).toBe(0)
-    expect(listPendingEgressEvents()).toHaveLength(1)
+    expect((await listPendingEgressEvents())).toHaveLength(1)
 
     publishSpy.mockRestore()
   })

@@ -1,0 +1,32 @@
+name: Add vendor mapper
+description: Propose a new advancement vendor webhook integration
+title: "[Vendor] "
+labels: ["vendor", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [docs/adding-a-vendor.md](https://github.com/PhilanthroPy-Project/UniSchema/blob/main/docs/adding-a-vendor.md) for the 6-file checklist.
+  - type: input
+    id: vendor-name
+    attributes:
+      label: Vendor name
+      placeholder: e.g. Slate, Ellucian
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why this vendor?
+      description: Which advancement teams need it?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: PR checklist
+      options:
+        - label: Sample webhook payload available (sanitized, no real PII)
+        - label: HMAC signature header documented
+        - label: Mapper + tests included
+        - label: npm run validate passes

@@ -20,6 +20,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 VENDOR_MAPPER_FILES: dict[str, str] = {
     "cvent": "src/mappers/cvent.ts",
     "givecampus": "src/mappers/givecampus.ts",
+    "imodules": "src/mappers/imodules.ts",
+    "blackbaud": "src/mappers/blackbaud.ts",
+    "npsp": "src/mappers/npsp.ts",
 }
 
 
@@ -203,13 +206,26 @@ def run(args: argparse.Namespace) -> int:
         print(f"[drift-agent] event={event.id} vendor={event.vendor}")
 
         try:
-            _process_event(event, repo_root=Path(args.repo_root), dry_run=args.dry_run)
+            patch_path = _process_event(event, repo_root=Path(args.repo_root), dry_run=args.dry_run)
         except Exception as error:  # noqa: BLE001 — top-level runner logs and continues
             print(f"[error] failed to process {event.id}: {error}", file=sys.stderr)
             continue
 
         if args.dry_run:
             continue
+
+        if args.create_pr and patch_path is not None:
+            from .github_pr import create_draft_pr
+
+            try:
+                create_draft_pr(
+                    repo_root=Path(args.repo_root),
+                    patch_path=patch_path,
+                    vendor=event.vendor,
+                    event_id=event.id,
+                )
+            except Exception as error:  # noqa: BLE001
+                print(f"[warn] draft PR failed for {event.id}: {error}", file=sys.stderr)
 
         try:
             if args.api_url and args.token:
@@ -256,6 +272,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Build prompts and log actions without writing files or acking events",
+    )
+    parser.add_argument(
+        "--create-pr",
+        action="store_true",
+        help="Open a draft GitHub PR via gh CLI after generating patch (human review required)",
     )
     return parser
 

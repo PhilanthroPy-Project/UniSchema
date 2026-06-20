@@ -1,28 +1,40 @@
 import { serve } from '@hono/node-server'
 
-import app from './index.js'
+import { getDatabaseDialect, initDatabase, initPostgresDatabase } from './db/client.js'
 import { recoverPendingEgress, recoverPendingIngestions } from './store/recoveryWorker.js'
 
 const port = Number(process.env.PORT ?? 3000)
 
-void Promise.all([recoverPendingIngestions(), recoverPendingEgress()]).then(
-  ([ingestionsRecovered, egressRecovered]) => {
-    if (ingestionsRecovered > 0) {
-      console.log(`Recovered ${ingestionsRecovered} stale pending ingestion(s)`)
-    }
+async function bootstrap(): Promise<void> {
+  if (getDatabaseDialect() === 'postgres') {
+    await initPostgresDatabase()
+  } else {
+    initDatabase()
+  }
 
-    if (egressRecovered > 0) {
-      console.log(`Recovered ${egressRecovered} pending egress event(s)`)
-    }
-  },
-)
+  const { default: app } = await import('./index.js')
 
-serve(
-  {
-    fetch: app.fetch,
-    port,
-  },
-  (info) => {
-    console.log(`Webhook Unifier listening on http://localhost:${info.port}`)
-  },
-)
+  void Promise.all([recoverPendingIngestions(), recoverPendingEgress()]).then(
+    ([ingestionsRecovered, egressRecovered]) => {
+      if (ingestionsRecovered > 0) {
+        console.log(`Recovered ${ingestionsRecovered} stale pending ingestion(s)`)
+      }
+
+      if (egressRecovered > 0) {
+        console.log(`Recovered ${egressRecovered} pending egress event(s)`)
+      }
+    },
+  )
+
+  serve(
+    {
+      fetch: app.fetch,
+      port,
+    },
+    (info) => {
+      console.log(`Webhook Unifier listening on http://localhost:${info.port}`)
+    },
+  )
+}
+
+void bootstrap()

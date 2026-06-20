@@ -17,6 +17,32 @@ export const validGiveCampusPayload = {
   donor_email: 'alumni@school.edu',
 } as const
 
+export const validImodulesPayload = {
+  registration_id: 'imod-2026-001',
+  email: 'student@university.edu',
+  event_name: 'Homecoming 2026',
+} as const
+
+export const validBlackbaudPayload = {
+  id: 'bb-gift-4421',
+  constituent_email: 'donor@university.edu',
+  gift_amount: 1000,
+  currency: 'USD',
+  first_name: 'Alex',
+  last_name: 'Rivera',
+  gift_type: 'Donation',
+} as const
+
+export const validNpspPayload = {
+  Id: 'a0X5g000001AbCdEFG',
+  npe01__HomeEmail__c: 'alumni@university.edu',
+  FirstName: 'Sam',
+  LastName: 'Chen',
+  Amount: 500,
+  CurrencyIsoCode: 'USD',
+  RecordType: 'Donation',
+} as const
+
 export const validConstituentEvent: ConstituentEvent = {
   eventId: '550e8400-e29b-41d4-a716-446655440000',
   constituentEmail: 'alumni@school.edu',

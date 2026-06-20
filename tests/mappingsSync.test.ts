@@ -51,7 +51,7 @@ describe('POST /mappings/sync', () => {
     expect(body.mappingCount).toBe(2)
     expect(body.syncedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
 
-    const stored = getMapping('givecampus')
+    const stored = await getMapping('givecampus')
     expect(stored?.mappings).toEqual(validArtifact.mappings)
     expect(stored?.metadataMappings).toEqual(validArtifact.metadataMappings)
   })

@@ -6,13 +6,18 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
+    "build": "npm run build --prefix frontend",
+    "demo": "bash scripts/demo-webhook.sh",
+    "benchmark": "bash scripts/load-benchmark.sh",
+    "docker:up": "docker compose up --build",
+    "docker:demo": "docker compose up --build -d && bash scripts/demo-webhook.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:security": "vitest run tests/security.test.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:all": "npm test && npm run test --prefix frontend",
-    "validate": "npm run typecheck && npm run test:security && npm run test:coverage && npm run typecheck --prefix frontend && npm run test --prefix frontend && npm run build --prefix frontend"
+    "validate": "npm run typecheck && npm run test:security && npm run test:coverage && npm run typecheck --prefix frontend && npm run test --prefix frontend && npm run build"
   },
   "keywords": [
     "webhook",
@@ -24,13 +29,14 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1073.0",
+    "@hono/node-server": "^2.0.5",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.26",
+    "postgres": "^3.4.9",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hono/node-server": "^2.0.5",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "^4.1.9",

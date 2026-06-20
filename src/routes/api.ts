@@ -1,7 +1,6 @@
 import type { Context } from 'hono'
 import { z } from 'zod'
 
-import { getMapping } from '../store/mappingRegistry.js'
 import {
   getDriftEvent,
   listDriftEvents,
@@ -9,6 +8,7 @@ import {
 } from '../store/driftQueue.js'
 import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egressStore.js'
 import { getIngestion } from '../store/ingestionQueue.js'
+import { getMapping } from '../store/mappingRegistry.js'
 import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
 import { isDriftAgentAuthorized } from '../utils/driftAgentAuth.js'
 import { isEgressPullAuthorized, resolveEgressPullAuth } from '../utils/egressPullAuth.js'
@@ -24,7 +24,7 @@ export async function handleMappingGet(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Vendor is required' }, 400)
   }
 
-  const stored = getMapping(vendor)
+  const stored = await getMapping(vendor)
 
   if (!stored) {
     return c.json({ success: false, message: `No mapping found for vendor "${vendor}"` }, 404)
@@ -60,7 +60,7 @@ export async function handleEgressList(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'limit must be between 1 and 500' }, 400)
   }
 
-  const events = listPendingEgressEvents(limit)
+  const events = await listPendingEgressEvents(limit)
 
   return c.json({
     success: true,
@@ -107,7 +107,7 @@ export async function handleEgressAck(c: Context): Promise<Response> {
     )
   }
 
-  const acknowledged = acknowledgeEgressEvents(parsed.data.ids)
+  const acknowledged = await acknowledgeEgressEvents(parsed.data.ids)
 
   return c.json({ success: true, acknowledged })
 }
@@ -119,7 +119,7 @@ export async function handleIngestionGet(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Ingestion id is required' }, 400)
   }
 
-  const ingestion = getIngestion(ingestionId)
+  const ingestion = await getIngestion(ingestionId)
 
   if (!ingestion) {
     return c.json({ success: false, message: 'Ingestion not found' }, 404)
@@ -157,7 +157,7 @@ export async function handleDriftList(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 
-  const events = listDriftEvents(
+  const events = await listDriftEvents(
     vendor as DriftVendor | undefined,
     50,
     statusParam as 'pending' | 'processed' | undefined,
@@ -190,13 +190,13 @@ export async function handleDriftAck(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Drift event id is required' }, 400)
   }
 
-  const event = getDriftEvent(driftEventId)
+  const event = await getDriftEvent(driftEventId)
 
   if (!event) {
     return c.json({ success: false, message: 'Drift event not found' }, 404)
   }
 
-  markDriftEventProcessed(driftEventId)
+  await markDriftEventProcessed(driftEventId)
 
   return c.json({ success: true, id: driftEventId, status: 'processed' })
 }

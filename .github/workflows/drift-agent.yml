@@ -1,5 +1,9 @@
 # Drift Agent Runner
 #
+# ⚠️  EXPERIMENTAL / HUMAN-IN-THE-LOOP — NOT auto-healing production infrastructure.
+#     Proposed patches land in agents/output/; a human must review, test, and merge.
+#     See agents/README.md
+#
 # Polls pending schema-drift events and uses an LLM (via LlamaIndex) to propose
 # mapper patches for src/mappers/. Run on a schedule or after production drift is detected.
 #

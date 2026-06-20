@@ -16,8 +16,8 @@ const sampleZodError = new ZodError([
 describe('drift agent API', () => {
   const originalToken = process.env.DRIFT_AGENT_TOKEN
 
-  beforeEach(() => {
-    clearDriftQueue()
+  beforeEach(async () => {
+    await clearDriftQueue()
     process.env.DRIFT_AGENT_TOKEN = 'test-agent-token'
   })
 
@@ -30,7 +30,7 @@ describe('drift agent API', () => {
   })
 
   it('requires auth to include raw payloads', async () => {
-    enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
+    await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
 
     const response = await app.request('/drift/events?status=pending&includePayload=true')
 
@@ -38,7 +38,7 @@ describe('drift agent API', () => {
   })
 
   it('returns pending drift payloads for authorized agents', async () => {
-    enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
+    await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
 
     const response = await app.request('/drift/events?status=pending&includePayload=true', {
       headers: { Authorization: 'Bearer test-agent-token' },
@@ -59,7 +59,7 @@ describe('drift agent API', () => {
   })
 
   it('marks drift events as processed via ack endpoint', async () => {
-    const event = enqueueDriftEvent('givecampus', { id: 'gc-1' }, sampleZodError)
+    const event = await enqueueDriftEvent('givecampus', { id: 'gc-1' }, sampleZodError)
 
     const ackResponse = await app.request(`/drift/events/${event.id}/ack`, {
       method: 'POST',
@@ -78,7 +78,7 @@ describe('drift agent API', () => {
   })
 
   it('rejects unauthorized drift ack requests', async () => {
-    const event = enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
+    const event = await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
 
     const response = await app.request(`/drift/events/${event.id}/ack`, { method: 'POST' })
 

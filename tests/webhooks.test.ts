@@ -11,6 +11,7 @@ import * as driftCapture from '../src/utils/driftCapture.js'
 import {
   validCventPayload,
   validGiveCampusPayload,
+  validImodulesPayload,
 } from './fixtures/payloads.js'
 import { runIngestion, waitForIngestion } from './helpers/ingestion.js'
 
@@ -27,12 +28,16 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 describe('GET /health', () => {
-  it('returns ok status', async () => {
+  it('returns ok status with version metadata', async () => {
     const response = await app.request('/health')
-    const body = await readJson<{ status: string }>(response)
+    const body = await readJson<{ status: string; version: string; egressTarget: string }>(
+      response,
+    )
 
     expect(response.status).toBe(200)
-    expect(body).toEqual({ status: 'ok' })
+    expect(body.status).toBe('ok')
+    expect(body.version).toBeTruthy()
+    expect(body.egressTarget).toBeTruthy()
   })
 })
 
@@ -49,7 +54,7 @@ describe('POST /webhooks/cvent', () => {
     expect(ingestion.status).toBe('completed')
     expect(ingestion.result?.constituentEmail).toBe(validCventPayload.EmailAddress)
 
-    const pending = listPendingEgressEvents()
+    const pending = await listPendingEgressEvents()
     expect(pending.some((event) => event.eventId === ingestion.result?.eventId)).toBe(false)
   })
 
@@ -74,7 +79,7 @@ describe('POST /webhooks/cvent', () => {
       | undefined
     expect(fieldErrors?.EmailAddress).toBeDefined()
 
-    const driftEvents = listDriftEvents('cvent')
+    const driftEvents = await listDriftEvents('cvent')
     expect(driftEvents.length).toBeGreaterThan(0)
 
     delete process.env.DRIFT_CAPTURE
@@ -192,7 +197,7 @@ describe('POST /webhooks/cvent — non-Zod failures', () => {
 
 describe('admin-defined mappings at runtime', () => {
   it('uses synced canvas mappings instead of built-in mappers', async () => {
-    upsertMapping(
+    await upsertMapping(
       {
         vendor: 'GiveCampus',
         exportedAt: '2026-06-20T12:00:00.000Z',
@@ -265,5 +270,62 @@ describe('drift capture observability', () => {
 
     delete process.env.DRIFT_CAPTURE
     driftSpy.mockRestore()
+  })
+})
+
+describe('POST /webhooks/imodules', () => {
+  it('accepts valid iModules payloads asynchronously', async () => {
+    const response = await postJson('/webhooks/imodules', validImodulesPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.sourceSystem).toBe('IMODULES')
+    expect(ingestion.result?.eventType).toBe('EVENT_REGISTRATION')
+  })
+})
+
+describe('POST /webhooks/blackbaud', () => {
+  it('accepts valid Blackbaud payloads asynchronously', async () => {
+    const { validBlackbaudPayload } = await import('./fixtures/payloads.js')
+    const response = await postJson('/webhooks/blackbaud', validBlackbaudPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.sourceSystem).toBe('BLACKBAUD')
+  })
+})
+
+describe('POST /webhooks/npsp', () => {
+  it('accepts valid NPSP payloads asynchronously', async () => {
+    const { validNpspPayload } = await import('./fixtures/payloads.js')
+    const response = await postJson('/webhooks/npsp', validNpspPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.sourceSystem).toBe('NPSP')
+  })
+})
+
+describe('GET /api/vendors', () => {
+  it('lists registered webhook vendors', async () => {
+    const response = await app.request('/api/vendors')
+    const body = await readJson<{ success: boolean; vendors: Array<{ slug: string }> }>(response)
+
+    expect(response.status).toBe(200)
+    expect(body.vendors.map((vendor) => vendor.slug)).toEqual(
+      expect.arrayContaining(['givecampus', 'cvent', 'imodules', 'blackbaud', 'npsp']),
+    )
   })
 })

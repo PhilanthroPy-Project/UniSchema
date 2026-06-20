@@ -1,0 +1,8 @@
+{
+  "AttendeeStub": "attendee-12345",
+  "EmailAddress": "jane.doe@university.edu",
+  "EventCode": "REG-2026-GALA",
+  "FirstName": "Jane",
+  "LastName": "Doe",
+  "RegistrationStatus": "Confirmed"
+}

@@ -1,10 +1,14 @@
 import { randomUUID } from 'node:crypto'
 
-import { and, desc, eq } from 'drizzle-orm'
 import type { ZodError } from 'zod'
 
-import { getDb } from '../db/client.js'
-import { driftEvents } from '../db/schema.js'
+import {
+  deleteAllDriftEvents,
+  insertDriftEvent,
+  listDriftEventRows,
+  markDriftEventProcessedRow,
+  selectDriftEventById,
+} from '../db/unified.js'
 import type { MappingArtifact } from '../schema/mapping.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
 
@@ -23,7 +27,18 @@ export type DriftEventRecord = {
   localTestPath?: string
 }
 
-function mapDriftRow(row: typeof driftEvents.$inferSelect): DriftEventRecord {
+function mapDriftRow(row: {
+  id: string
+  vendor: string
+  rawPayloadJson: string
+  validationErrorsJson: string
+  capturedAt: string
+  status: string
+  mapperKind: string | null
+  mappingArtifactJson: string | null
+  localFixturePath: string | null
+  localTestPath: string | null
+}): DriftEventRecord {
   return {
     id: row.id,
     vendor: row.vendor as DriftVendor,
@@ -40,7 +55,7 @@ function mapDriftRow(row: typeof driftEvents.$inferSelect): DriftEventRecord {
   }
 }
 
-export function enqueueDriftEvent(
+export async function enqueueDriftEvent(
   vendor: DriftVendor,
   rawPayload: unknown,
   validationError: ZodError,
@@ -49,28 +64,25 @@ export function enqueueDriftEvent(
     mapperKind?: DriftMapperKind
     mappingArtifact?: MappingArtifact
   },
-): DriftEventRecord {
+): Promise<DriftEventRecord> {
   const id = randomUUID()
   const capturedAt = new Date().toISOString()
   const mapperKind = options?.mapperKind ?? 'builtin'
 
-  getDb()
-    .insert(driftEvents)
-    .values({
-      id,
-      vendor,
-      rawPayloadJson: JSON.stringify(rawPayload),
-      validationErrorsJson: JSON.stringify(validationError.flatten()),
-      capturedAt,
-      status: 'pending',
-      localFixturePath: options?.localPaths?.fixturePath,
-      localTestPath: options?.localPaths?.testPath,
-      mapperKind,
-      mappingArtifactJson: options?.mappingArtifact
-        ? JSON.stringify(options.mappingArtifact)
-        : undefined,
-    })
-    .run()
+  await insertDriftEvent({
+    id,
+    vendor,
+    rawPayloadJson: JSON.stringify(rawPayload),
+    validationErrorsJson: JSON.stringify(validationError.flatten()),
+    capturedAt,
+    status: 'pending',
+    localFixturePath: options?.localPaths?.fixturePath,
+    localTestPath: options?.localPaths?.testPath,
+    mapperKind,
+    mappingArtifactJson: options?.mappingArtifact
+      ? JSON.stringify(options.mappingArtifact)
+      : undefined,
+  })
 
   return {
     id,
@@ -86,63 +98,31 @@ export function enqueueDriftEvent(
   }
 }
 
-export function getDriftEvent(id: string): DriftEventRecord | undefined {
-  const row = getDb().select().from(driftEvents).where(eq(driftEvents.id, id)).get()
+export async function getDriftEvent(id: string): Promise<DriftEventRecord | undefined> {
+  const row = await selectDriftEventById(id)
 
   return row ? mapDriftRow(row) : undefined
 }
 
-export function listDriftEvents(
+export async function listDriftEvents(
   vendor?: DriftVendor,
   limit = 50,
   status?: DriftEventRecord['status'],
-): DriftEventRecord[] {
-  const filters = []
-
-  if (vendor) {
-    filters.push(eq(driftEvents.vendor, vendor))
-  }
-
-  if (status) {
-    filters.push(eq(driftEvents.status, status))
-  }
-
-  const whereClause = filters.length > 0 ? and(...filters) : undefined
-
-  const rows = getDb()
-    .select()
-    .from(driftEvents)
-    .where(whereClause)
-    .orderBy(desc(driftEvents.capturedAt))
-    .limit(limit)
-    .all()
+): Promise<DriftEventRecord[]> {
+  const rows = await listDriftEventRows(vendor, limit, status)
 
   return rows.map(mapDriftRow)
 }
 
-export function listPendingDriftEvents(limit = 50): DriftEventRecord[] {
-  const rows = getDb()
-    .select()
-    .from(driftEvents)
-    .where(eq(driftEvents.status, 'pending'))
-    .orderBy(desc(driftEvents.capturedAt))
-    .limit(limit)
-    .all()
-
-  return rows.map(mapDriftRow)
+export async function listPendingDriftEvents(limit = 50): Promise<DriftEventRecord[]> {
+  return listDriftEvents(undefined, limit, 'pending')
 }
 
-export function markDriftEventProcessed(id: string): boolean {
-  const result = getDb()
-    .update(driftEvents)
-    .set({ status: 'processed' })
-    .where(eq(driftEvents.id, id))
-    .run()
-
-  return result.changes > 0
+export async function markDriftEventProcessed(id: string): Promise<boolean> {
+  const changes = await markDriftEventProcessedRow(id)
+  return changes > 0
 }
 
-/** Test-only helper — clears drift queue rows between test cases. */
-export function clearDriftQueue(): void {
-  getDb().delete(driftEvents).run()
+export async function clearDriftQueue(): Promise<void> {
+  await deleteAllDriftEvents()
 }

@@ -57,8 +57,8 @@ describe('publishToS3', () => {
     sendMock.mockClear()
     fetchMock.mockClear()
 
-    const firstRecord = persistConstituentEvent(validConstituentEvent, 'givecampus')
-    const secondRecord = persistConstituentEvent(
+    const firstRecord = await persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const secondRecord = await persistConstituentEvent(
       {
         ...validConstituentEvent,
         eventId: '660e8400-e29b-41d4-a716-446655440001',
@@ -103,7 +103,7 @@ describe('publishToS3', () => {
   it('flushes buffered events on demand', async () => {
     sendMock.mockClear()
 
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const config = { ...s3Config, s3BatchMaxBytes: 5 * 1024 * 1024 }
     const locationPromise = publishToS3(record, config)
 
@@ -117,7 +117,7 @@ describe('publishToS3', () => {
 
   it('throws when the S3 bucket is missing', async () => {
 
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
 
     await expect(
       publishToS3(record, {
@@ -134,7 +134,7 @@ describe('publishToS3', () => {
   it('continues uploading when the Airflow webhook fails', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Airflow unavailable'))
 
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const config = { ...s3Config, s3BatchMaxBytes: estimateRecordByteSize(record) }
 
     const location = await publishToS3(record, config)
@@ -147,7 +147,7 @@ describe('publishToS3', () => {
   it('rejects buffered records when the S3 upload fails', async () => {
     sendMock.mockRejectedValueOnce(new Error('S3 unavailable'))
 
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const config = { ...s3Config, s3BatchMaxBytes: estimateRecordByteSize(record) }
 
     await expect(publishToS3(record, config)).rejects.toThrow('S3 unavailable')
@@ -157,7 +157,7 @@ describe('publishToS3', () => {
     vi.useFakeTimers()
     sendMock.mockClear()
 
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const config = { ...s3Config, s3BatchMaxBytes: 5 * 1024 * 1024, s3FlushIntervalMs: 1_000 }
     const locationPromise = publishToS3(record, config)
 

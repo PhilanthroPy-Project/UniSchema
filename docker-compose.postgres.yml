@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: unischema
+      POSTGRES_PASSWORD: unischema
+      POSTGRES_DB: unischema
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unischema"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  unischema:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      SERVE_FRONTEND: "true"
+      EGRESS_TARGET: local
+      EGRESS_LOCAL_DIR: /app/data/egress
+      DATABASE_URL: postgres://unischema:unischema@postgres:5432/unischema
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s

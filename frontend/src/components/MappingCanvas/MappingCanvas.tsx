@@ -4,8 +4,10 @@ import type { Edge } from 'reactflow'
 
 import { fetchMappingArtifact, syncMappingArtifact } from '../../api/syncMapping'
 import {
-  GIVECAMPUS_SAMPLE_PAYLOAD,
-  GIVECAMPUS_VENDOR,
+  getVendorLabel,
+  getVendorOption,
+  VENDOR_OPTIONS,
+  type VendorOption,
 } from '../../data/samplePayloads'
 import {
   buildMappingArtifact,
@@ -14,6 +16,7 @@ import {
   serializeMappingArtifact,
 } from '../../mappingUtils'
 
+import { SyncTokenSettings } from '../SyncTokenSettings'
 import { FlowCanvas } from './FlowCanvas'
 import { MasterSchemaPanel } from './MasterSchemaPanel'
 import { ResizableThreeColumnLayout } from './ResizableThreeColumnLayout'
@@ -26,25 +29,31 @@ type ActionStatus = {
 } | null
 
 export function MappingCanvas() {
+  const [selectedVendor, setSelectedVendor] = useState<VendorOption>(VENDOR_OPTIONS[0]!)
   const [edges, setEdges] = useState<Edge[]>([])
   const [highlightedPath, setHighlightedPath] = useState<string | null>(null)
   const [actionStatus, setActionStatus] = useState<ActionStatus>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLoadingMapping, setIsLoadingMapping] = useState(true)
-  const [lastSyncedFingerprint, setLastSyncedFingerprint] = useState<string | null>(
-    null,
-  )
+  const [lastSyncedFingerprint, setLastSyncedFingerprint] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadSavedMapping() {
       setIsLoadingMapping(true)
+      setEdges([])
+      setLastSyncedFingerprint(null)
 
       try {
-        const stored = await fetchMappingArtifact(GIVECAMPUS_VENDOR)
+        const stored = await fetchMappingArtifact(selectedVendor.label)
 
-        if (cancelled || !stored) {
+        if (cancelled) {
+          return
+        }
+
+        if (!stored) {
+          setLastSyncedFingerprint(getMappingsFingerprint([]))
           return
         }
 
@@ -57,6 +66,7 @@ export function MappingCanvas() {
             tone: 'error',
             message: 'Unable to load saved mapping configuration',
           })
+          setLastSyncedFingerprint(getMappingsFingerprint([]))
         }
       } finally {
         if (!cancelled) {
@@ -70,7 +80,7 @@ export function MappingCanvas() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [selectedVendor.label])
 
   const currentFingerprint = useMemo(() => getMappingsFingerprint(edges), [edges])
 
@@ -91,15 +101,23 @@ export function MappingCanvas() {
     [edges],
   )
 
+  const handleVendorChange = useCallback((slug: string) => {
+    const option = getVendorOption(slug)
+    if (option) {
+      setSelectedVendor(option)
+      setActionStatus(null)
+    }
+  }, [])
+
   const handleExportMapping = useCallback(() => {
-    const artifact = buildMappingArtifact(GIVECAMPUS_VENDOR, edges)
+    const artifact = buildMappingArtifact(selectedVendor.label, edges)
     const serialized = serializeMappingArtifact(artifact)
 
     const blob = new Blob([serialized], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `${GIVECAMPUS_VENDOR.toLowerCase()}-mapping.json`
+    anchor.download = `${selectedVendor.slug}-mapping.json`
     anchor.click()
     URL.revokeObjectURL(url)
 
@@ -107,10 +125,10 @@ export function MappingCanvas() {
       tone: 'success',
       message: `${artifact.mappings.length} mapping(s) exported`,
     })
-  }, [edges])
+  }, [edges, selectedVendor.label, selectedVendor.slug])
 
   const handleSyncToEngine = useCallback(async () => {
-    const artifact = buildMappingArtifact(GIVECAMPUS_VENDOR, edges)
+    const artifact = buildMappingArtifact(selectedVendor.label, edges)
 
     setIsSyncing(true)
     setActionStatus(null)
@@ -119,9 +137,15 @@ export function MappingCanvas() {
       const result = await syncMappingArtifact(artifact)
 
       if (!result.success) {
+        const isUnauthorized =
+          result.message.toLowerCase().includes('unauthorized') ||
+          result.message.toLowerCase().includes('401')
+
         setActionStatus({
           tone: 'error',
-          message: result.message,
+          message: isUnauthorized
+            ? 'Sync unauthorized — set your mapping sync token (see admin guide)'
+            : result.message,
         })
         return
       }
@@ -139,10 +163,10 @@ export function MappingCanvas() {
     } finally {
       setIsSyncing(false)
     }
-  }, [currentFingerprint, edges])
+  }, [currentFingerprint, edges, selectedVendor.label])
 
   return (
-    <div className="flex h-screen flex-col bg-theme-bg font-system text-theme-ink transition-colors duration-300">
+    <div className="flex h-full flex-col bg-theme-bg font-system text-theme-ink transition-colors duration-300">
       <header className="shrink-0 bg-theme-surface px-6 py-4 shadow-sm backdrop-blur-xl transition-colors duration-300">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -173,6 +197,20 @@ export function MappingCanvas() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-theme-muted">
+              Vendor
+              <select
+                value={selectedVendor.slug}
+                onChange={(event) => handleVendorChange(event.target.value)}
+                className="rounded-full border border-theme-border bg-theme-inset px-3 py-1.5 text-sm text-theme-ink outline-none focus:ring-2 focus:ring-apple-blue-focus"
+              >
+                {VENDOR_OPTIONS.map((option) => (
+                  <option key={option.slug} value={option.slug}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {actionStatus && (
               <span
                 className={[
@@ -183,6 +221,7 @@ export function MappingCanvas() {
                 {actionStatus.message}
               </span>
             )}
+            <SyncTokenSettings />
             <ThemeToggle />
             <button
               type="button"
@@ -212,8 +251,8 @@ export function MappingCanvas() {
       <ResizableThreeColumnLayout
         left={
           <SourcePayloadPanel
-            vendor={GIVECAMPUS_VENDOR}
-            payload={GIVECAMPUS_SAMPLE_PAYLOAD}
+            vendor={getVendorLabel(selectedVendor.slug)}
+            payload={selectedVendor.samplePayload}
             highlightedPath={highlightedPath}
           />
         }
@@ -239,7 +278,7 @@ export function MappingCanvas() {
                 </div>
               ) : (
                 <FlowCanvas
-                  payload={GIVECAMPUS_SAMPLE_PAYLOAD}
+                  payload={selectedVendor.samplePayload}
                   edges={edges}
                   onEdgesChange={setEdges}
                   onActiveSourcePathChange={setHighlightedPath}

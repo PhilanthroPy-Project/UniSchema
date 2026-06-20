@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises'
 
 import { publishEgressEvent } from '../src/egress/publisher.js'
 import * as s3Publisher from '../src/egress/s3Publisher.js'
-import { persistConstituentEvent } from '../src/store/egressStore.js'
+import { acknowledgeEgressEvents, persistConstituentEvent } from '../src/store/egressStore.js'
 import { validConstituentEvent } from './fixtures/payloads.js'
 
 describe('publishEgressEvent', () => {
@@ -14,7 +14,7 @@ describe('publishEgressEvent', () => {
   })
 
   it('writes JSON events to the local egress directory', async () => {
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const result = await publishEgressEvent(record)
 
     expect(result.target).toBe('local')
@@ -23,7 +23,7 @@ describe('publishEgressEvent', () => {
   })
 
   it('delegates to S3 when the egress target is s3', async () => {
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
     const s3Spy = vi
       .spyOn(s3Publisher, 'publishToS3')
       .mockResolvedValue('s3://analytics-bucket/constituent-events/batches/batch.ndjson')
@@ -46,7 +46,7 @@ describe('publishEgressEvent', () => {
   })
 
   it('throws when egress publishing is disabled', async () => {
-    const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const record = await persistConstituentEvent(validConstituentEvent, 'givecampus')
 
     await expect(
       publishEgressEvent(record, {
@@ -60,11 +60,17 @@ describe('publishEgressEvent', () => {
     ).rejects.toThrow('Egress publishing is disabled')
   })
 
-  it('returns the existing staging row when the same eventId is persisted again', () => {
-    const first = persistConstituentEvent(validConstituentEvent, 'givecampus')
-    const second = persistConstituentEvent(validConstituentEvent, 'givecampus')
+  it('returns the existing staging row when the same eventId is persisted again', async () => {
+    const first = await persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const second = await persistConstituentEvent(validConstituentEvent, 'givecampus')
 
     expect(second.id).toBe(first.id)
     expect(second.eventId).toBe(first.eventId)
+  })
+})
+
+describe('acknowledgeEgressEvents', () => {
+  it('returns zero when no ids are provided', async () => {
+    await expect(acknowledgeEgressEvents([])).resolves.toBe(0)
   })
 })

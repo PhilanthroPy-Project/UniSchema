@@ -1,15 +1,31 @@
 import type { ZodError } from 'zod'
 
 import type { MappingArtifact } from '../schema/mapping.js'
-import { enqueueDriftEvent, type DriftMapperKind } from '../store/driftQueue.js'
+import { enqueueDriftEvent, listDriftEvents, type DriftMapperKind } from '../store/driftQueue.js'
 
-export const DRIFT_VENDORS = ['cvent', 'givecampus'] as const
+export const DRIFT_VENDORS = [
+  'cvent',
+  'givecampus',
+  'imodules',
+  'blackbaud',
+  'npsp',
+] as const
 
 export type DriftVendor = (typeof DRIFT_VENDORS)[number]
 
 type DriftVendorConfig = {
-  readonly mapperFn: 'mapCventToMaster' | 'mapGiveCampusToMaster'
-  readonly mapperModule: '../../src/mappers/cvent.js' | '../../src/mappers/givecampus.js'
+  readonly mapperFn:
+    | 'mapCventToMaster'
+    | 'mapGiveCampusToMaster'
+    | 'mapImodulesToMaster'
+    | 'mapBlackbaudToMaster'
+    | 'mapNpspToMaster'
+  readonly mapperModule:
+    | '../../src/mappers/cvent.js'
+    | '../../src/mappers/givecampus.js'
+    | '../../src/mappers/imodules.js'
+    | '../../src/mappers/blackbaud.js'
+    | '../../src/mappers/npsp.js'
 }
 
 const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
@@ -20,6 +36,18 @@ const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
   givecampus: {
     mapperFn: 'mapGiveCampusToMaster',
     mapperModule: '../../src/mappers/givecampus.js',
+  },
+  imodules: {
+    mapperFn: 'mapImodulesToMaster',
+    mapperModule: '../../src/mappers/imodules.js',
+  },
+  blackbaud: {
+    mapperFn: 'mapBlackbaudToMaster',
+    mapperModule: '../../src/mappers/blackbaud.js',
+  },
+  npsp: {
+    mapperFn: 'mapNpspToMaster',
+    mapperModule: '../../src/mappers/npsp.js',
   },
 }
 
@@ -159,7 +187,7 @@ export async function captureSchemaDrift(
   const timestamp = formatDriftTimestamp(capturedAt)
   const basename = buildDriftBasename(vendor, timestamp)
 
-  const driftEvent = enqueueDriftEvent(vendor, rawPayload, validationError, {
+  const driftEvent = await enqueueDriftEvent(vendor, rawPayload, validationError, {
     mapperKind: options?.mapperKind ?? 'builtin',
     mappingArtifact: options?.mappingArtifact,
   })
@@ -169,4 +197,9 @@ export async function captureSchemaDrift(
     driftEventId: driftEvent.id,
     basename,
   }
+}
+
+export async function countPendingDriftEvents(): Promise<number> {
+  const events = await listDriftEvents(undefined, 1000, 'pending')
+  return events.length
 }

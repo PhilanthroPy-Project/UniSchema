@@ -10,7 +10,7 @@ async function readJson<T>(response: Response): Promise<T> {
 
 describe('GET /drift/events', () => {
   it('lists persisted drift dead-letter events', async () => {
-    enqueueDriftEvent(
+    await enqueueDriftEvent(
       'cvent',
       { AttendeeStub: 'x' },
       new ZodError([
@@ -31,7 +31,7 @@ describe('GET /drift/events', () => {
   })
 
   it('lists all vendors when no vendor filter is provided', async () => {
-    enqueueDriftEvent(
+    await enqueueDriftEvent(
       'givecampus',
       { id: 'gc-1' },
       new ZodError([
@@ -95,6 +95,14 @@ describe('GET /mappings/:vendor', () => {
 
     expect(response.status).toBe(400)
     expect(body.message).toBe('Vendor is required')
+  })
+
+  it('returns 404 when no mapping exists', async () => {
+    const response = await app.request('/mappings/nonexistent-vendor')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(404)
+    expect(body.message).toContain('No mapping found')
   })
 })
 

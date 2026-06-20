@@ -317,9 +317,8 @@ describe('processIngestion', () => {
     expect(ingestion.status).toBe('completed')
 
     const { listPendingEgressEvents } = await import('../src/store/egressStore.js')
-    expect(listPendingEgressEvents().some((event) => event.eventId === ingestion.result?.eventId)).toBe(
-      true,
-    )
+    const pending = await listPendingEgressEvents()
+    expect(pending.some((event) => event.eventId === ingestion.result?.eventId)).toBe(true)
 
     publishSpy.mockRestore()
   })

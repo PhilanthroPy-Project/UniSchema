@@ -54,18 +54,16 @@ describe('drift capture helpers', () => {
       '2026-06-20T15:04:05.123Z',
       2,
     )
-    const giveCampusSource = buildDriftTestSource(
-      'givecampus',
-      'givecampus-2026-06-20T15-04-05-123Z',
+    const imodulesSource = buildDriftTestSource(
+      'imodules',
+      'imodules-2026-06-20T15-04-05-123Z',
       '2026-06-20T15:04:05.123Z',
       1,
     )
 
     expect(cventSource).toContain("import { mapCventToMaster } from '../../src/mappers/cvent.js'")
     expect(cventSource).toContain('ConstituentEventSchema.safeParse(result).success')
-    expect(giveCampusSource).toContain(
-      "import { mapGiveCampusToMaster } from '../../src/mappers/givecampus.js'",
-    )
+    expect(imodulesSource).toContain("import { mapImodulesToMaster } from '../../src/mappers/imodules.js'")
   })
 
   it('generates dynamic-mapper Vitest sources when an admin canvas artifact was active', () => {
@@ -94,8 +92,8 @@ describe('drift capture helpers', () => {
 describe('captureSchemaDrift', () => {
   const originalDriftCapture = process.env.DRIFT_CAPTURE
 
-  beforeEach(() => {
-    clearDriftQueue()
+  beforeEach(async () => {
+    await clearDriftQueue()
     delete process.env.DRIFT_CAPTURE
   })
 
@@ -139,7 +137,7 @@ describe('captureSchemaDrift', () => {
       )
     }
 
-    const queued = listDriftEvents('cvent')
+    const queued = await listDriftEvents('cvent')
     expect(queued).toHaveLength(1)
     expect(queued[0]?.rawPayload).toEqual(rawPayload)
     expect(isDriftCaptureEnabled()).toBe(true)
@@ -157,7 +155,7 @@ describe('captureSchemaDrift', () => {
 
     expect(firstResult.captured).toBe(true)
     expect(secondResult.captured).toBe(true)
-    expect(listDriftEvents('givecampus')).toHaveLength(2)
+    expect(await listDriftEvents('givecampus')).toHaveLength(2)
 
     vi.restoreAllMocks()
   })
@@ -179,7 +177,7 @@ describe('captureSchemaDrift', () => {
 
     expect(result.captured).toBe(true)
 
-    const queued = listDriftEvents('givecampus')
+    const queued = await listDriftEvents('givecampus')
     expect(queued[0]?.mapperKind).toBe('dynamic')
     expect(queued[0]?.mappingArtifact).toEqual(artifact)
   })

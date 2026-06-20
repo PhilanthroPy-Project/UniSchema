@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto'
 
-import { eq, inArray } from 'drizzle-orm'
-
-import { getDb } from '../db/client.js'
-import { constituentEvents } from '../db/schema.js'
+import {
+  acknowledgeConstituentEvents,
+  deleteAllConstituentEvents,
+  insertConstituentEvent,
+  listPendingConstituentEventRows,
+  selectConstituentEventByEventId,
+} from '../db/unified.js'
 import type { ConstituentEvent } from '../schema/master.js'
 
 export type EgressEventRecord = {
@@ -16,16 +19,12 @@ export type EgressEventRecord = {
   exportedAt?: string
 }
 
-export function persistConstituentEvent(
+export async function persistConstituentEvent(
   event: ConstituentEvent,
   vendor: string,
-): EgressEventRecord {
+): Promise<EgressEventRecord> {
   const normalizedVendor = vendor.trim().toLowerCase()
-  const existing = getDb()
-    .select()
-    .from(constituentEvents)
-    .where(eq(constituentEvents.eventId, event.eventId))
-    .get()
+  const existing = await selectConstituentEventByEventId(event.eventId)
 
   if (existing) {
     return toEgressRecord(existing)
@@ -34,17 +33,14 @@ export function persistConstituentEvent(
   const id = randomUUID()
   const createdAt = new Date().toISOString()
 
-  getDb()
-    .insert(constituentEvents)
-    .values({
-      id,
-      eventId: event.eventId,
-      vendor: normalizedVendor,
-      eventJson: JSON.stringify(event),
-      egressStatus: 'pending',
-      createdAt,
-    })
-    .run()
+  await insertConstituentEvent({
+    id,
+    eventId: event.eventId,
+    vendor: normalizedVendor,
+    eventJson: JSON.stringify(event),
+    egressStatus: 'pending',
+    createdAt,
+  })
 
   return {
     id,
@@ -56,33 +52,29 @@ export function persistConstituentEvent(
   }
 }
 
-export function listPendingEgressEvents(limit = 100): EgressEventRecord[] {
-  const rows = getDb()
-    .select()
-    .from(constituentEvents)
-    .where(eq(constituentEvents.egressStatus, 'pending'))
-    .limit(limit)
-    .all()
+export async function listPendingEgressEvents(limit = 100): Promise<EgressEventRecord[]> {
+  const rows = await listPendingConstituentEventRows(limit)
 
   return rows.map(toEgressRecord)
 }
 
-export function acknowledgeEgressEvents(ids: string[]): number {
+export async function acknowledgeEgressEvents(ids: string[]): Promise<number> {
   if (ids.length === 0) {
     return 0
   }
 
-  const exportedAt = new Date().toISOString()
-  const result = getDb()
-    .update(constituentEvents)
-    .set({ egressStatus: 'exported', exportedAt })
-    .where(inArray(constituentEvents.id, ids))
-    .run()
-
-  return result.changes
+  return acknowledgeConstituentEvents(ids, new Date().toISOString())
 }
 
-function toEgressRecord(row: typeof constituentEvents.$inferSelect): EgressEventRecord {
+function toEgressRecord(row: {
+  id: string
+  eventId: string
+  vendor: string
+  eventJson: string
+  egressStatus: string
+  createdAt: string
+  exportedAt: string | null
+}): EgressEventRecord {
   return {
     id: row.id,
     eventId: row.eventId,
@@ -94,7 +86,6 @@ function toEgressRecord(row: typeof constituentEvents.$inferSelect): EgressEvent
   }
 }
 
-/** Test-only helper — clears egress staging rows between test cases. */
-export function clearEgressEvents(): void {
-  getDb().delete(constituentEvents).run()
+export async function clearEgressEvents(): Promise<void> {
+  await deleteAllConstituentEvents()
 }

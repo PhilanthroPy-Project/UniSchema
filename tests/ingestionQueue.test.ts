@@ -11,18 +11,18 @@ import {
 import { validGiveCampusPayload } from './fixtures/payloads.js'
 
 describe('ingestion queue claims', () => {
-  it('atomically claims a pending ingestion for processing', () => {
-    const ingestion = createIngestion('givecampus', validGiveCampusPayload)
+  it('atomically claims a pending ingestion for processing', async () => {
+    const ingestion = await createIngestion('givecampus', validGiveCampusPayload)
 
-    const claimed = tryClaimIngestion(ingestion.id)
-    const secondClaim = tryClaimIngestion(ingestion.id)
+    const claimed = await tryClaimIngestion(ingestion.id)
+    const secondClaim = await tryClaimIngestion(ingestion.id)
 
     expect(claimed?.status).toBe('processing')
     expect(secondClaim).toBeUndefined()
-    expect(getIngestion(ingestion.id)?.status).toBe('processing')
+    expect((await getIngestion(ingestion.id))?.status).toBe('processing')
   })
 
-  it('releases stale processing ingestions back to pending', () => {
+  it('releases stale processing ingestions back to pending', async () => {
     const staleCreatedAt = new Date(Date.now() - 10 * 60 * 1000).toISOString()
 
     getDb()
@@ -36,9 +36,9 @@ describe('ingestion queue claims', () => {
       })
       .run()
 
-    const released = releaseStaleProcessingIngestions()
+    const released = await releaseStaleProcessingIngestions()
 
     expect(released).toBe(1)
-    expect(getIngestion('stale-processing-1')?.status).toBe('pending')
+    expect((await getIngestion('stale-processing-1'))?.status).toBe('pending')
   })
 })

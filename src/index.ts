@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 import { VENDOR_WEBHOOK_CONFIGS } from './config/webhookRoutes.js'
-import { initDatabase } from './db/client.js'
 import { createWebhookHandler } from './middleware/webhookHandler.js'
 import { createWebhookGuardMiddleware } from './middleware/webhookGuard.js'
 import {
@@ -13,43 +12,58 @@ import {
   handleIngestionGet,
   handleMappingGet,
 } from './routes/api.js'
+import { handleHealth, handleVendorsList } from './routes/health.js'
 import { handleMappingSync } from './routes/mappingsSync.js'
-
-initDatabase()
+import { registerBundledFrontend } from './staticFrontend.js'
 
 const app = new Hono()
 
-app.use(
-  '/mappings/*',
-  cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-  }),
-)
+const corsOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]
+
+function registerAdminRoutes(target: Hono): void {
+  target.use(
+    '/mappings/*',
+    cors({
+      origin: corsOrigins,
+      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    }),
+  )
+
+  target.get('/webhooks/ingestions/:id', handleIngestionGet)
+
+  target.post('/mappings/sync', handleMappingSync)
+  target.get('/mappings/:vendor', handleMappingGet)
+
+  /** Legacy pull-based egress — prefer push via S3/local publisher in production. */
+  target.get('/egress/events', handleEgressList)
+  target.post('/egress/ack', handleEgressAck)
+
+  target.get('/drift/events', handleDriftList)
+  target.post('/drift/events/:id/ack', handleDriftAck)
+
+  target.get('/vendors', handleVendorsList)
+  target.get('/health', handleHealth)
+}
+
+const adminApi = new Hono()
+registerAdminRoutes(adminApi)
+
+app.route('/', adminApi)
+/** Prefix for the bundled admin UI (Vite dev proxy and production build use /api). */
+app.route('/api', adminApi)
 
 const webhookGuard = createWebhookGuardMiddleware()
 
-app.post('/webhooks/cvent', webhookGuard, createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.cvent))
+for (const config of Object.values(VENDOR_WEBHOOK_CONFIGS)) {
+  app.post(`/webhooks/${config.vendor}`, webhookGuard, createWebhookHandler(config))
+}
 
-app.post(
-  '/webhooks/givecampus',
-  webhookGuard,
-  createWebhookHandler(VENDOR_WEBHOOK_CONFIGS.givecampus),
-)
-
-app.get('/webhooks/ingestions/:id', handleIngestionGet)
-
-app.post('/mappings/sync', handleMappingSync)
-app.get('/mappings/:vendor', handleMappingGet)
-
-/** Legacy pull-based egress — prefer push via S3/local publisher in production. */
-app.get('/egress/events', handleEgressList)
-app.post('/egress/ack', handleEgressAck)
-
-app.get('/drift/events', handleDriftList)
-app.post('/drift/events/:id/ack', handleDriftAck)
-
-app.get('/health', (c) => c.json({ status: 'ok' }))
+registerBundledFrontend(app)
 
 export default app
