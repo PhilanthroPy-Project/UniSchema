@@ -5,6 +5,7 @@ import { VENDOR_WEBHOOK_CONFIGS } from './config/webhookRoutes.js'
 import { initDatabase } from './db/client.js'
 import { createWebhookHandler } from './middleware/webhookHandler.js'
 import {
+  handleDriftAck,
   handleDriftList,
   handleEgressAck,
   handleEgressList,
@@ -22,7 +23,7 @@ app.use(
   cors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type'],
+    allowHeaders: ['Content-Type', 'Authorization'],
   }),
 )
 
@@ -43,6 +44,7 @@ app.get('/egress/events', handleEgressList)
 app.post('/egress/ack', handleEgressAck)
 
 app.get('/drift/events', handleDriftList)
+app.post('/drift/events/:id/ack', handleDriftAck)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 

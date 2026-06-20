@@ -4,6 +4,7 @@ import {
   ConstituentEventSchema,
   type ConstituentEvent,
 } from '../schema/master.js'
+import { toPrimitiveRecord } from '../schema/primitives.js'
 import { deterministicEventId } from '../utils/deterministicEventId.js'
 import { parseLocaleNumber } from '../utils/parseLocaleNumber.js'
 
@@ -35,14 +36,6 @@ export const GiveCampusPayloadSchema = z.object({
 
 export type GiveCampusPayload = z.infer<typeof GiveCampusPayloadSchema>
 
-function toPayloadRecord(rawPayload: unknown): Record<string, unknown> {
-  if (typeof rawPayload !== 'object' || rawPayload === null || Array.isArray(rawPayload)) {
-    throw new Error('GiveCampus payload must be a JSON object')
-  }
-
-  return rawPayload as Record<string, unknown>
-}
-
 export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
   const parsed = GiveCampusPayloadSchema.safeParse(rawPayload)
 
@@ -59,7 +52,7 @@ export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
     sourceSystem: 'GIVECAMPUS',
     amount: giveCampus.value,
     currency: giveCampus.currency,
-    payload: toPayloadRecord(rawPayload),
+    payload: toPrimitiveRecord(rawPayload),
     createdAt: new Date().toISOString(),
   }
 

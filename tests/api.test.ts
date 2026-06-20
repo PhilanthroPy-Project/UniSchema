@@ -58,6 +58,14 @@ describe('GET /drift/events', () => {
     expect(response.status).toBe(400)
     expect(body.message).toBe('Invalid vendor')
   })
+
+  it('rejects invalid drift status filters', async () => {
+    const response = await app.request('/drift/events?status=archived')
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(400)
+    expect(body.message).toBe('status must be pending or processed')
+  })
 })
 
 describe('GET /webhooks/ingestions/:id', () => {

@@ -9,6 +9,11 @@ describe('getValueAtPath', () => {
 
     expect(getValueAtPath(payload, 'donor.email')).toBe('a@b.edu')
   })
+
+  it('returns undefined for missing or invalid paths', () => {
+    expect(getValueAtPath({ donor: { email: 'a@b.edu' } }, 'donor.missing')).toBeUndefined()
+    expect(getValueAtPath({ tags: ['a'] }, 'tags.extra')).toBeUndefined()
+  })
 })
 
 describe('mapWithArtifact', () => {
@@ -57,5 +62,53 @@ describe('mapWithArtifact', () => {
         metadataMappings: [],
       }),
     ).toThrow('Webhook payload must be a JSON object')
+  })
+
+  it('defaults unknown vendors to EVENT_REGISTRATION and resolves fallback vendor ids', () => {
+    const result = mapWithArtifact(
+      { custom_field: 'abc123', donor_email: 'alumni@school.edu' },
+      {
+        vendor: 'NewVendor',
+        exportedAt: '2026-06-20T12:00:00.000Z',
+        mappings: [{ source: 'donor_email', target: 'constituentEmail' }],
+        metadataMappings: [{ source: 'custom_field', key: 'customField' }],
+      },
+    )
+
+    expect(result.eventType).toBe('EVENT_REGISTRATION')
+    expect(result.sourceSystem).toBe('NEWVENDOR')
+    expect(result.normalizedMetadata).toEqual({ customField: 'abc123' })
+  })
+
+  it('rejects invalid mapped amounts and event types', () => {
+    expect(() =>
+      mapWithArtifact(
+        { ...validGiveCampusPayload, value: 'not-a-number' },
+        {
+          vendor: 'GiveCampus',
+          exportedAt: '2026-06-20T12:00:00.000Z',
+          mappings: [
+            { source: 'donor_email', target: 'constituentEmail' },
+            { source: 'value', target: 'amount' },
+          ],
+          metadataMappings: [],
+        },
+      ),
+    ).toThrow()
+
+    expect(() =>
+      mapWithArtifact(
+        { ...validGiveCampusPayload, donation_type: 'UNKNOWN' },
+        {
+          vendor: 'GiveCampus',
+          exportedAt: '2026-06-20T12:00:00.000Z',
+          mappings: [
+            { source: 'donor_email', target: 'constituentEmail' },
+            { source: 'donation_type', target: 'eventType' },
+          ],
+          metadataMappings: [],
+        },
+      ),
+    ).toThrow()
   })
 })

@@ -9,6 +9,7 @@ import {
   failIngestion,
   getIngestion,
 } from '../store/ingestionQueue.js'
+import { getMapping } from '../store/mappingRegistry.js'
 import { captureSchemaDrift, isDriftCaptureEnabled, type DriftVendor } from '../utils/driftCapture.js'
 import { resolveSignatureVerification } from '../utils/webhookAuth.js'
 import {
@@ -75,14 +76,25 @@ export async function processIngestion(
   } catch (error) {
     if (error instanceof ZodError) {
       if (isDriftCaptureEnabled()) {
-        const driftResult = await captureSchemaDrift(config.vendor, ingestion.rawPayload, error)
+        const storedMapping = getMapping(config.vendor)
+        const usesDynamicMapper =
+          storedMapping !== undefined && storedMapping.mappings.length > 0
+
+        const driftResult = await captureSchemaDrift(
+          config.vendor,
+          ingestion.rawPayload,
+          error,
+          usesDynamicMapper
+            ? { mapperKind: 'dynamic', mappingArtifact: storedMapping }
+            : { mapperKind: 'builtin' },
+        )
 
         if (driftResult.captured) {
           console.info('[drift-capture] enqueued schema drift event', {
             vendor: config.vendor,
             ingestionId,
             driftEventId: driftResult.driftEventId,
-            localWriteSkipped: driftResult.localWriteSkipped,
+            basename: driftResult.basename,
           })
         }
       }

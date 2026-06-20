@@ -1,6 +1,6 @@
-import { rm } from 'node:fs/promises'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { rm } from 'node:fs/promises'
 
 import { publishEgressEvent } from '../src/egress/publisher.js'
 import * as s3Publisher from '../src/egress/s3Publisher.js'
@@ -26,7 +26,7 @@ describe('publishEgressEvent', () => {
     const record = persistConstituentEvent(validConstituentEvent, 'givecampus')
     const s3Spy = vi
       .spyOn(s3Publisher, 'publishToS3')
-      .mockResolvedValue('s3://analytics-bucket/constituent-events/event.json')
+      .mockResolvedValue('s3://analytics-bucket/constituent-events/batches/batch.ndjson')
 
     const result = await publishEgressEvent(record, {
       target: 's3',
@@ -34,11 +34,13 @@ describe('publishEgressEvent', () => {
       s3Bucket: 'analytics-bucket',
       s3Prefix: 'constituent-events',
       s3Region: 'us-east-1',
+      s3BatchMaxBytes: 5 * 1024 * 1024,
+      s3FlushIntervalMs: 120_000,
     })
 
     expect(result).toEqual({
       target: 's3',
-      location: 's3://analytics-bucket/constituent-events/event.json',
+      location: 's3://analytics-bucket/constituent-events/batches/batch.ndjson',
     })
     expect(s3Spy).toHaveBeenCalledOnce()
   })
@@ -52,7 +54,17 @@ describe('publishEgressEvent', () => {
         localDir: 'data/test-egress',
         s3Prefix: 'constituent-events',
         s3Region: 'us-east-1',
+        s3BatchMaxBytes: 5 * 1024 * 1024,
+        s3FlushIntervalMs: 120_000,
       }),
     ).rejects.toThrow('Egress publishing is disabled')
+  })
+
+  it('returns the existing staging row when the same eventId is persisted again', () => {
+    const first = persistConstituentEvent(validConstituentEvent, 'givecampus')
+    const second = persistConstituentEvent(validConstituentEvent, 'givecampus')
+
+    expect(second.id).toBe(first.id)
+    expect(second.eventId).toBe(first.eventId)
   })
 })

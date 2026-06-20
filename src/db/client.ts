@@ -11,19 +11,21 @@ let db: UniSchemaDatabase | undefined
 function resolveDatabasePath(): string {
   const url = process.env.DATABASE_URL
 
-  if (url === ':memory:' || url === 'memory:') {
+  if (!url) {
+    return 'data/unischema.db'
+  }
+
+  // Normalize all in-memory SQLite URLs — bare `:memory:?cache=shared` would
+  // otherwise create a literal file on disk named ":memory:?cache=shared".
+  if (url.startsWith(':memory:') || url === 'memory:') {
     return ':memory:'
   }
 
-  if (url?.startsWith('file:')) {
+  if (url.startsWith('file:')) {
     return url.slice('file:'.length)
   }
 
-  if (url) {
-    return url
-  }
-
-  return 'data/unischema.db'
+  return url
 }
 
 function createTables(database: Database.Database): void {
@@ -44,7 +46,9 @@ function createTables(database: Database.Database): void {
       captured_at TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'pending',
       local_fixture_path TEXT,
-      local_test_path TEXT
+      local_test_path TEXT,
+      mapper_kind TEXT NOT NULL DEFAULT 'builtin',
+      mapping_artifact_json TEXT
     );
 
     CREATE INDEX IF NOT EXISTS drift_events_vendor_idx ON drift_events (vendor);
@@ -74,6 +78,23 @@ function createTables(database: Database.Database): void {
   `)
 }
 
+function migrateDriftEventsTable(database: Database.Database): void {
+  const columns = database
+    .prepare('PRAGMA table_info(drift_events)')
+    .all() as Array<{ name: string }>
+  const columnNames = new Set(columns.map((column) => column.name))
+
+  if (!columnNames.has('mapper_kind')) {
+    database.exec(
+      "ALTER TABLE drift_events ADD COLUMN mapper_kind TEXT NOT NULL DEFAULT 'builtin'",
+    )
+  }
+
+  if (!columnNames.has('mapping_artifact_json')) {
+    database.exec('ALTER TABLE drift_events ADD COLUMN mapping_artifact_json TEXT')
+  }
+}
+
 export function initDatabase(): UniSchemaDatabase {
   if (db) {
     return db
@@ -84,6 +105,7 @@ export function initDatabase(): UniSchemaDatabase {
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')
   createTables(sqlite)
+  migrateDriftEventsTable(sqlite)
   db = drizzle(sqlite, { schema })
 
   return db

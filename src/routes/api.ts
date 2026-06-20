@@ -2,10 +2,15 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import { getMapping } from '../store/mappingRegistry.js'
-import { listDriftEvents } from '../store/driftQueue.js'
+import {
+  getDriftEvent,
+  listDriftEvents,
+  markDriftEventProcessed,
+} from '../store/driftQueue.js'
 import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egressStore.js'
 import { getIngestion } from '../store/ingestionQueue.js'
 import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
+import { isDriftAgentAuthorized } from '../utils/driftAgentAuth.js'
 
 const EgressAckSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
@@ -115,12 +120,27 @@ export async function handleIngestionGet(c: Context): Promise<Response> {
 
 export async function handleDriftList(c: Context): Promise<Response> {
   const vendor = c.req.query('vendor')
+  const statusParam = c.req.query('status')
+  const includePayload = c.req.query('includePayload') === 'true'
+  const agentAuthorized = isDriftAgentAuthorized(c)
 
   if (vendor && !isDriftVendor(vendor)) {
     return c.json({ success: false, message: 'Invalid vendor' }, 400)
   }
 
-  const events = listDriftEvents(vendor as DriftVendor | undefined)
+  if (statusParam && statusParam !== 'pending' && statusParam !== 'processed') {
+    return c.json({ success: false, message: 'status must be pending or processed' }, 400)
+  }
+
+  if (includePayload && !agentAuthorized) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
+  const events = listDriftEvents(
+    vendor as DriftVendor | undefined,
+    50,
+    statusParam as 'pending' | 'processed' | undefined,
+  )
 
   return c.json({
     success: true,
@@ -131,7 +151,31 @@ export async function handleDriftList(c: Context): Promise<Response> {
       capturedAt: event.capturedAt,
       status: event.status,
       validationErrors: event.validationErrors,
+      mapperKind: event.mapperKind,
       localFixturePath: event.localFixturePath,
+      ...(includePayload ? { rawPayload: event.rawPayload } : {}),
     })),
   })
+}
+
+export async function handleDriftAck(c: Context): Promise<Response> {
+  if (!isDriftAgentAuthorized(c)) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
+  const driftEventId = c.req.param('id')
+
+  if (!driftEventId) {
+    return c.json({ success: false, message: 'Drift event id is required' }, 400)
+  }
+
+  const event = getDriftEvent(driftEventId)
+
+  if (!event) {
+    return c.json({ success: false, message: 'Drift event not found' }, 404)
+  }
+
+  markDriftEventProcessed(driftEventId)
+
+  return c.json({ success: true, id: driftEventId, status: 'processed' })
 }

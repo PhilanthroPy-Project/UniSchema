@@ -174,6 +174,7 @@ describe('createWebhookHandler', () => {
     const driftSpy = vi.spyOn(driftCapture, 'captureSchemaDrift').mockResolvedValue({
       captured: true,
       driftEventId: 'drift-123',
+      basename: 'cvent-2026-06-20T15-04-05-123Z',
     })
     const mapSpy = vi
       .spyOn(await import('../src/mappers/resolve.js'), 'mapVendorPayload')

@@ -19,6 +19,8 @@ export const driftEvents = sqliteTable(
     status: text('status').notNull().default('pending'),
     localFixturePath: text('local_fixture_path'),
     localTestPath: text('local_test_path'),
+    mapperKind: text('mapper_kind').notNull().default('builtin'),
+    mappingArtifactJson: text('mapping_artifact_json'),
   },
   (table) => [index('drift_events_vendor_idx').on(table.vendor)],
 )

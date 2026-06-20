@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import app from '../src/index.js'
 import { getMapping } from '../src/store/mappingRegistry.js'
@@ -26,6 +26,16 @@ const validArtifact = {
 }
 
 describe('POST /mappings/sync', () => {
+  const originalToken = process.env.MAPPING_SYNC_TOKEN
+
+  afterEach(() => {
+    if (originalToken === undefined) {
+      delete process.env.MAPPING_SYNC_TOKEN
+    } else {
+      process.env.MAPPING_SYNC_TOKEN = originalToken
+    }
+  })
+
   it('accepts a valid mapping artifact and stores it in the registry', async () => {
     const response = await postJson('/mappings/sync', validArtifact)
     const body = await readJson<{
@@ -82,6 +92,34 @@ describe('POST /mappings/sync', () => {
 
     expect(response.status).toBe(400)
     expect(body.message).toBe('Request body must be valid JSON')
+  })
+
+  it('returns 401 when MAPPING_SYNC_TOKEN is configured but Authorization is missing', async () => {
+    process.env.MAPPING_SYNC_TOKEN = 'mapping-sync-test-token'
+
+    const response = await postJson('/mappings/sync', validArtifact)
+    const body = await readJson<{ success: boolean; message: string }>(response)
+
+    expect(response.status).toBe(401)
+    expect(body.message).toBe('Unauthorized')
+  })
+
+  it('accepts sync requests with a valid Bearer token', async () => {
+    const syncToken = 'mapping-sync-test-token'
+    process.env.MAPPING_SYNC_TOKEN = syncToken
+
+    const response = await app.request('/mappings/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: ['Bearer', syncToken].join(' '),
+      },
+      body: JSON.stringify(validArtifact),
+    })
+    const body = await readJson<{ success: boolean }>(response)
+
+    expect(response.status).toBe(200)
+    expect(body.success).toBe(true)
   })
 })
 

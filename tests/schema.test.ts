@@ -68,11 +68,20 @@ describe('ConstituentEventSchema', () => {
     ).toThrow(ZodError)
   })
 
-  it('rejects non-object payloads', () => {
+  it('rejects nested payload values that are not flat primitives', () => {
     expect(() =>
       ConstituentEventSchema.parse({
         ...validConstituentEvent,
-        payload: 'invalid',
+        payload: { nested: { value: 1 } },
+      }),
+    ).toThrow(ZodError)
+  })
+
+  it('rejects nested normalizedMetadata values', () => {
+    expect(() =>
+      ConstituentEventSchema.parse({
+        ...validConstituentEvent,
+        normalizedMetadata: { campaign: { id: 'abc' } },
       }),
     ).toThrow(ZodError)
   })

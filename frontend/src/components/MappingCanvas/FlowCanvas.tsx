@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react'
+import dagre from '@dagrejs/dagre'
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -32,10 +33,15 @@ const nodeTypes = {
   [TARGET_FIELD_NODE_TYPE]: TargetFieldNode,
 }
 
-const SOURCE_NODE_X = 48
-const TARGET_NODE_X = 420
-const NODE_VERTICAL_GAP = 88
-const CANVAS_TOP_OFFSET = 32
+const NODE_WIDTH = 252
+const NODE_HEIGHT = 88
+const SOURCE_COLUMN_X = 48
+const TARGET_COLUMN_X = 480
+
+const defaultEdgeOptions = {
+  animated: true,
+  style: { stroke: '#007AFF', strokeWidth: 2 },
+}
 
 type FlowCanvasProps = {
   payload: Record<string, unknown>
@@ -45,19 +51,54 @@ type FlowCanvasProps = {
   readOnly?: boolean
 }
 
+function layoutNodeColumn(nodes: Node[], x: number): Node[] {
+  if (nodes.length === 0) {
+    return []
+  }
+
+  const graph = new dagre.graphlib.Graph()
+  graph.setDefaultEdgeLabel(() => ({}))
+  graph.setGraph({
+    rankdir: 'TB',
+    nodesep: 36,
+    ranksep: 28,
+    marginx: 0,
+    marginy: 20,
+  })
+
+  nodes.forEach((node) => {
+    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+  })
+
+  for (let index = 0; index < nodes.length - 1; index += 1) {
+    graph.setEdge(nodes[index].id, nodes[index + 1].id)
+  }
+
+  dagre.layout(graph)
+
+  return nodes.map((node) => {
+    const position = graph.node(node.id)
+
+    return {
+      ...node,
+      position: {
+        x,
+        y: position.y - NODE_HEIGHT / 2,
+      },
+    }
+  })
+}
+
 function buildFlowNodes(payload: Record<string, unknown>): Node[] {
   const sourcePaths = flattenLeafPaths(buildPayloadTree(payload))
 
-  const sourceNodes: Node[] = sourcePaths.map((path, index) => {
+  const sourceNodes: Node[] = sourcePaths.map((path) => {
     const value = getValueAtPath(payload, path)
 
     return {
       id: `source-${path}`,
       type: SOURCE_FIELD_NODE_TYPE,
-      position: {
-        x: SOURCE_NODE_X,
-        y: CANVAS_TOP_OFFSET + index * NODE_VERTICAL_GAP,
-      },
+      position: { x: 0, y: 0 },
       data: {
         fieldKey: path,
         value,
@@ -66,18 +107,18 @@ function buildFlowNodes(payload: Record<string, unknown>): Node[] {
     }
   })
 
-  const targetNodes: Node[] = MAPPABLE_TARGET_FIELDS.map((field, index) => ({
+  const targetNodes: Node[] = MAPPABLE_TARGET_FIELDS.map((field) => ({
     id: `target-${field.key}`,
     type: TARGET_FIELD_NODE_TYPE,
-    position: {
-      x: TARGET_NODE_X,
-      y: CANVAS_TOP_OFFSET + index * NODE_VERTICAL_GAP,
-    },
+    position: { x: 0, y: 0 },
     data: { field },
     draggable: false,
   }))
 
-  return [...sourceNodes, ...targetNodes]
+  return [
+    ...layoutNodeColumn(sourceNodes, SOURCE_COLUMN_X),
+    ...layoutNodeColumn(targetNodes, TARGET_COLUMN_X),
+  ]
 }
 
 export function FlowCanvas({
@@ -89,6 +130,16 @@ export function FlowCanvas({
 }: FlowCanvasProps) {
   const { isDark } = useTheme()
   const nodes = useMemo(() => buildFlowNodes(payload), [payload])
+
+  const styledEdges = useMemo(
+    () =>
+      edges.map((edge) => ({
+        ...edge,
+        animated: true,
+        style: { stroke: '#007AFF', strokeWidth: 2, ...edge.style },
+      })),
+    [edges],
+  )
 
   const isValidConnection = useCallback(
     (connection: Connection) => isSourceToTargetConnection(connection, nodes),
@@ -127,12 +178,13 @@ export function FlowCanvas({
       )}
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={styledEdges}
         nodeTypes={nodeTypes}
         onConnect={onConnect}
         isValidConnection={isValidConnection}
+        defaultEdgeOptions={defaultEdgeOptions}
         fitView
-        fitViewOptions={{ padding: 0.25 }}
+        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
@@ -145,13 +197,16 @@ export function FlowCanvas({
           size={1.5}
           color={isDark ? '#48484a' : '#E5E5EA'}
         />
-        <Controls showInteractive={false} />
+        <Controls showInteractive={false} position="top-right" />
         <MiniMap
+          className="!bottom-4 !left-4 !right-auto !top-auto !h-24 !w-36 origin-bottom-left scale-[0.72]"
           nodeColor={(node) =>
             node.type === SOURCE_FIELD_NODE_TYPE ? '#007AFF' : '#34C759'
           }
           maskColor={isDark ? 'rgba(20, 20, 22, 0.75)' : 'rgba(245, 245, 247, 0.85)'}
           maskStrokeColor={isDark ? '#48484a' : '#E5E5EA'}
+          zoomable={false}
+          pannable={false}
         />
       </ReactFlow>
     </div>

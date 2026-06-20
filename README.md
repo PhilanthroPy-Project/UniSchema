@@ -16,6 +16,7 @@ UniSchema/
 │   ├── store/            # Mappings, ingestions, drift queue, recovery workers
 │   └── utils/            # Drift capture, webhook auth, signature helpers
 ├── tests/                # Vitest — mappers, security, webhooks, egress, recovery
+├── agents/drift_runner/  # Python LLM agent for schema-drift mapper patches
 ├── frontend/             # React Flow visual schema mapper (Vite + Tailwind)
 └── .github/workflows/    # CI validation pipeline
 ```
@@ -52,6 +53,7 @@ SQLite data is stored at `data/unischema.db` by default (`DATABASE_URL` to overr
 | `POST` | `/mappings/sync` | Persist admin canvas mapping configuration |
 | `GET` | `/mappings/:vendor` | Load saved mapping configuration |
 | `GET` | `/drift/events` | List schema-drift dead-letter queue entries |
+| `POST` | `/drift/events/:id/ack` | Mark drift event processed (agent auth required) |
 | `GET` | `/egress/events` | Legacy pull-based staging (dev/fallback) |
 | `POST` | `/egress/ack` | Acknowledge exported staging rows |
 
@@ -92,15 +94,38 @@ UniSchema pushes validated `ConstituentEvent` objects to a datastore on successf
 | `EGRESS_TARGET` | Behavior |
 |-----------------|----------|
 | `local` (default) | Writes JSON to `data/egress/constituent-events/{vendor}/{date}/{eventId}.json` |
-| `s3` | Pushes NDJSON to `s3://{bucket}/{prefix}/{vendor}/{date}/{eventId}.json` |
+| `s3` | Micro-batches NDJSON to `s3://{bucket}/{prefix}/batches/{YYYY}/{MM}/{DD}/{batchId}.ndjson` |
 | `none` | SQLite staging only (legacy pull via `/egress/events`) |
+
+S3 egress buffers events in memory and flushes when either threshold is reached:
+
+- **Size:** `EGRESS_S3_BATCH_MAX_BYTES` (default 5 MB)
+- **Time:** `EGRESS_S3_FLUSH_INTERVAL_MS` (default 2 minutes)
+
+Each flush writes two objects:
+
+1. `{batchId}.ndjson` — newline-delimited `ConstituentEvent` records
+2. `{batchId}.manifest.json` — batch metadata for downstream orchestration
 
 ```bash
 EGRESS_TARGET=s3
 EGRESS_S3_BUCKET=your-data-lake-bucket
 EGRESS_S3_PREFIX=constituent-events
+EGRESS_S3_BATCH_MAX_BYTES=5242880
+EGRESS_S3_FLUSH_INTERVAL_MS=120000
 AWS_REGION=us-east-1
 ```
+
+#### Airflow integration
+
+After each batch upload, UniSchema can notify your Airflow environment via webhook:
+
+```bash
+AIRFLOW_WEBHOOK_URL=https://airflow.example.com/api/v1/dags/unischema_ingest/dagRuns
+AIRFLOW_WEBHOOK_SECRET=shared-secret-for-airflow-rest-api
+```
+
+The POST body includes `event: egress.batch.ready`, the `s3Uri`, record count, byte size, and vendor list — suitable for Airflow `conf` passthrough. Alternatively, configure an **S3 event notification** on `*.manifest.json` objects to trigger the same DAG without a webhook.
 
 ### Master schema
 
@@ -122,11 +147,31 @@ Built-in mappers live in `src/mappers/`. Admin-defined canvas mappings take prec
 
 ### Schema drift capture
 
-When Zod validation fails on a production payload, UniSchema enqueues the failure to a **dead-letter table** (`drift_events`) for observability and agent-driven mapper patches. In development, it may also write Vitest fixtures locally.
+When Zod validation fails on a production payload, UniSchema enqueues the failure to a **dead-letter table** (`drift_events`). The edge API never writes to the local filesystem — test generation and mapper patches are handled by isolated workers.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/drift/events?status=pending` | List drift events (metadata only) |
+| `GET` | `/drift/events?status=pending&includePayload=true` | Full payloads — requires `Authorization: Bearer $DRIFT_AGENT_TOKEN` |
+| `POST` | `/drift/events/:id/ack` | Mark a drift event as processed (agent auth required) |
+
+#### Drift agent runner
+
+The Python agent in `agents/drift_runner/` polls pending drift events, writes Vitest fixtures, and uses LlamaIndex + OpenAI to propose mapper patches under `agents/output/`.
 
 ```bash
-DRIFT_CAPTURE=queue-only   # production — DB queue only, no filesystem writes
+pip install -r agents/drift_runner/requirements.txt
+
+# Against a local SQLite copy
+python -m agents.drift_runner --database data/unischema.db
+
+# Against production API
+python -m agents.drift_runner \
+  --api-url https://unischema.example.com \
+  --token "$DRIFT_AGENT_TOKEN"
 ```
+
+GitHub Actions runs this hourly via `.github/workflows/drift-agent.yml`. Configure repository secrets: `DRIFT_AGENT_TOKEN`, `UNISCHEMA_API_URL`, and `OPENAI_API_KEY`.
 
 ## Frontend — Visual Schema Mapper
 
@@ -157,7 +202,8 @@ UniSchema enforces a multi-layer test contract with **security as the first CI g
 | **Webhook handler** | `tests/webhookHandler.test.ts` | Signature verification, async ingestions, drift on failure |
 | **Webhooks (integration)** | `tests/webhooks.test.ts` | Full route integration, egress push, admin mappings |
 | **Recovery** | `tests/recoveryWorker.test.ts` | Stale ingestion + egress recovery |
-| **Egress** | `tests/egressPublisher.test.ts`, `tests/s3Publisher.test.ts` | Local and S3 push paths |
+| **Egress** | `tests/egressPublisher.test.ts`, `tests/s3Publisher.test.ts`, `tests/batchManifest.test.ts`, `tests/airflowNotifier.test.ts` | Local/S3 micro-batching and Airflow notifications |
+| **Drift agent API** | `tests/driftAgentApi.test.ts` | Agent auth, payload export, ack flow |
 | **Mapper tests** | `tests/mappers.test.ts` | Vendor payload → master schema mapping |
 | **Schema tests** | `tests/schema.test.ts` | `ConstituentEvent` Zod invariants |
 | **Frontend tests** | `frontend/tests/` | Visual mapper utility logic |

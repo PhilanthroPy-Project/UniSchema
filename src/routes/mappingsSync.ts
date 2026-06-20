@@ -6,6 +6,7 @@ import {
   type MappingSyncResponse,
 } from '../schema/mapping.js'
 import { upsertMapping } from '../store/mappingRegistry.js'
+import { isMappingSyncAuthorized } from '../utils/mappingSyncAuth.js'
 
 type MappingSyncErrorBody = {
   success: false
@@ -14,6 +15,14 @@ type MappingSyncErrorBody = {
 }
 
 export async function handleMappingSync(c: Context): Promise<Response> {
+  if (!isMappingSyncAuthorized(c)) {
+    const body: MappingSyncErrorBody = {
+      success: false,
+      message: 'Unauthorized',
+    }
+    return c.json(body, 401)
+  }
+
   let rawBody: unknown
 
   try {

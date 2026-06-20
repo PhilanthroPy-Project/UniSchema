@@ -20,6 +20,17 @@ export function persistConstituentEvent(
   event: ConstituentEvent,
   vendor: string,
 ): EgressEventRecord {
+  const normalizedVendor = vendor.trim().toLowerCase()
+  const existing = getDb()
+    .select()
+    .from(constituentEvents)
+    .where(eq(constituentEvents.eventId, event.eventId))
+    .get()
+
+  if (existing) {
+    return toEgressRecord(existing)
+  }
+
   const id = randomUUID()
   const createdAt = new Date().toISOString()
 
@@ -28,7 +39,7 @@ export function persistConstituentEvent(
     .values({
       id,
       eventId: event.eventId,
-      vendor: vendor.trim().toLowerCase(),
+      vendor: normalizedVendor,
       eventJson: JSON.stringify(event),
       egressStatus: 'pending',
       createdAt,
@@ -38,7 +49,7 @@ export function persistConstituentEvent(
   return {
     id,
     eventId: event.eventId,
-    vendor: vendor.trim().toLowerCase(),
+    vendor: normalizedVendor,
     event,
     egressStatus: 'pending',
     createdAt,

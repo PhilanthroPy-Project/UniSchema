@@ -4,6 +4,7 @@ import {
   ConstituentEventSchema,
   type ConstituentEvent,
 } from '../schema/master.js'
+import { toPrimitiveRecord } from '../schema/primitives.js'
 import { deterministicEventId } from '../utils/deterministicEventId.js'
 
 export const CventPayloadSchema = z.object({
@@ -34,14 +35,6 @@ function resolveEventType(eventCode: string): ConstituentEvent['eventType'] {
   return 'EVENT_REGISTRATION'
 }
 
-function toPayloadRecord(rawPayload: unknown): Record<string, unknown> {
-  if (typeof rawPayload !== 'object' || rawPayload === null || Array.isArray(rawPayload)) {
-    throw new Error('Cvent payload must be a JSON object')
-  }
-
-  return rawPayload as Record<string, unknown>
-}
-
 export function mapCventToMaster(rawPayload: unknown): ConstituentEvent {
   const parsed = CventPayloadSchema.safeParse(rawPayload)
 
@@ -58,7 +51,7 @@ export function mapCventToMaster(rawPayload: unknown): ConstituentEvent {
     lastName: cvent.LastName,
     eventType: resolveEventType(cvent.EventCode),
     sourceSystem: 'CVENT',
-    payload: toPayloadRecord(rawPayload),
+    payload: toPrimitiveRecord(rawPayload),
     createdAt: new Date().toISOString(),
   }
 

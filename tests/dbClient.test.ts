@@ -24,4 +24,11 @@ describe('database client', () => {
 
     expect(() => initDatabase()).not.toThrow()
   })
+
+  it('normalizes :memory:?cache=shared to an in-memory database (no disk file)', () => {
+    closeDatabase()
+    process.env.DATABASE_URL = ':memory:?cache=shared'
+
+    expect(() => initDatabase()).not.toThrow()
+  })
 })

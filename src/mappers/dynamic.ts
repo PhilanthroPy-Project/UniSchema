@@ -5,17 +5,10 @@ import {
   EventTypeSchema,
   type ConstituentEvent,
 } from '../schema/master.js'
+import { coerceToPrimitive, toPrimitiveRecord } from '../schema/primitives.js'
 import type { MappingArtifact, MappableTargetField } from '../schema/mapping.js'
 import { deterministicEventId } from '../utils/deterministicEventId.js'
 import { parseLocaleNumber } from '../utils/parseLocaleNumber.js'
-
-function toPayloadRecord(rawPayload: unknown): Record<string, unknown> {
-  if (typeof rawPayload !== 'object' || rawPayload === null || Array.isArray(rawPayload)) {
-    throw new Error('Webhook payload must be a JSON object')
-  }
-
-  return rawPayload as Record<string, unknown>
-}
 
 export function getValueAtPath(payload: Record<string, unknown>, path: string): unknown {
   const segments = path.split('.').filter(Boolean)
@@ -111,13 +104,18 @@ export function mapWithArtifact(
   rawPayload: unknown,
   artifact: MappingArtifact,
 ): ConstituentEvent {
-  const payload = toPayloadRecord(rawPayload)
+  if (typeof rawPayload !== 'object' || rawPayload === null || Array.isArray(rawPayload)) {
+    throw new Error('Webhook payload must be a JSON object')
+  }
+
+  const rawRecord = rawPayload as Record<string, unknown>
+  const payload = toPrimitiveRecord(rawPayload)
   const vendorKey = artifact.vendor.trim().toLowerCase()
   const sourceSystem = artifact.vendor.trim().toUpperCase()
-  const normalizedMetadata: Record<string, unknown> = {}
+  const normalizedMetadata: Record<string, string | number | boolean | null> = {}
 
   const candidate: Record<string, unknown> = {
-    eventId: deterministicEventId(sourceSystem, resolveVendorId(payload, vendorKey)),
+    eventId: deterministicEventId(sourceSystem, resolveVendorId(rawRecord, vendorKey)),
     sourceSystem,
     payload,
     normalizedMetadata,
@@ -125,12 +123,14 @@ export function mapWithArtifact(
   }
 
   for (const mapping of artifact.mappings) {
-    const rawValue = getValueAtPath(payload, mapping.source)
+    const rawValue = getValueAtPath(rawRecord, mapping.source)
     candidate[mapping.target] = coerceTargetValue(mapping.target, rawValue)
   }
 
   for (const metadataMapping of artifact.metadataMappings ?? []) {
-    normalizedMetadata[metadataMapping.key] = getValueAtPath(payload, metadataMapping.source)
+    normalizedMetadata[metadataMapping.key] = coerceToPrimitive(
+      getValueAtPath(rawRecord, metadataMapping.source),
+    )
   }
 
   if (candidate.eventType === undefined) {
