@@ -45,8 +45,8 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.26",
     "postgres": "^3.4.9",
-    "pg-boss": "^10.1.5",
-    "redis": "^4.7.0",
+    "pg-boss": "^12.20.0",
+    "redis": "^6.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
