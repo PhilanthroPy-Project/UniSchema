@@ -30,4 +30,18 @@ describe('mappingRegistry', () => {
 
     expect(await getMapping('givecampus')).toBeUndefined()
   })
+
+  it('defaults metadataMappings to an empty array when omitted', async () => {
+    const artifactWithoutMetadata = {
+      vendor: 'cvent',
+      exportedAt: '2026-06-01T00:00:00.000Z',
+      mappings: [{ source: 'AttendeeEmail', target: 'constituentEmail' as const }],
+    }
+
+    await upsertMapping(artifactWithoutMetadata as MappingArtifact, '2026-06-01T00:00:00.000Z')
+
+    const stored = await getMapping('cvent')
+
+    expect(stored?.metadataMappings).toEqual([])
+  })
 })

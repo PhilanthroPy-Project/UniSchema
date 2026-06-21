@@ -15,6 +15,7 @@ export const SourceSystemSchema = z.enum([
   'BLACKBAUD',
   'NPSP',
   'SLATE',
+  'ELLUCIAN',
 ])
 
 export type SourceSystem = z.infer<typeof SourceSystemSchema>
@@ -25,6 +26,8 @@ export const ConstituentEventSchema = z.object({
   schemaVersion: z.literal(1).optional(),
   eventId: z.string().uuid(),
   constituentEmail: z.string().email(),
+  /** Optional CRM or vendor-native constituent identifier for golden-record joins. */
+  externalConstituentId: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   eventType: EventTypeSchema,

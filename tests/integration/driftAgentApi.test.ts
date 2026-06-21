@@ -93,6 +93,20 @@ describe('drift agent API', () => {
     expect(response.status).toBe(401)
   })
 
+  it('honors the limit query parameter', async () => {
+    await enqueueDriftEvent('cvent', { AttendeeStub: '1' }, sampleZodError)
+    await enqueueDriftEvent('givecampus', { id: '2' }, sampleZodError)
+
+    const response = await app.request('/drift/events?status=pending&limit=1', {
+      headers: { Authorization: 'Bearer test-agent-token' },
+    })
+
+    const body = (await response.json()) as { count: number }
+
+    expect(response.status).toBe(200)
+    expect(body.count).toBe(1)
+  })
+
   it('returns 404 when acknowledging an unknown drift event', async () => {
     const response = await app.request('/drift/events/missing-id/ack', {
       method: 'POST',

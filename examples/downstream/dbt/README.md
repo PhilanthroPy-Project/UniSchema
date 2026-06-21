@@ -1,31 +1,30 @@
-# Minimal dbt project stub for UniSchema S3 NDJSON egress
+# Minimal dbt project for UniSchema S3 NDJSON egress
 
-This folder demonstrates how to stage ConstituentEvent batches in a warehouse after UniSchema S3 push.
+Stages ConstituentEvent batches after UniSchema S3 push.
 
 ## Layout
 
 ```
 dbt/
 ├── dbt_project.yml
-└── models/staging/stg_constituent_events.sql
+├── models/
+│   ├── sources.yml
+│   ├── staging/
+│   │   ├── stg_constituent_events.sql
+│   │   └── schema.yml
+│   └── marts/
+│       ├── mart_constituent_engagement_daily.sql
+│       └── schema.yml
 ```
-
-## Assumptions
-
-- S3 prefix: `s3://your-bucket/constituent-events/` (matches `EGRESS_S3_PREFIX`)
-- Files: NDJSON batches + `.manifest.json` sidecars from UniSchema egress
 
 ## Quick start
 
-1. Copy this folder to your dbt project or use as a submodule.
-2. Configure `profiles.yml` with your warehouse (Snowflake, BigQuery, Redshift).
-3. Create an external table or stage pointing at the S3 prefix.
-4. Run:
+1. Create the Snowflake external table from [../snowflake_external_table.sql](../snowflake_external_table.sql).
+2. Configure `profiles.yml` for your warehouse.
+3. Run:
 
 ```bash
-dbt run --select stg_constituent_events
+dbt run
 ```
 
-## Model
-
-See [models/staging/stg_constituent_events.sql](./models/staging/stg_constituent_events.sql) for column mapping aligned with `ConstituentEvent` v0.2.
+See [../../docs/downstream-pipeline.md](../../docs/downstream-pipeline.md) for the full pilot → warehouse path.

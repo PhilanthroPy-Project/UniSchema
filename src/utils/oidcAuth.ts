@@ -1,60 +1,38 @@
 import { createHash, randomUUID } from 'node:crypto'
 
+import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { Context } from 'hono'
 
+let jwks: JWTVerifyGetKey | undefined
+
 /**
- * Optional OIDC JWT validation for admin routes.
- * When OIDC_ISSUER and OIDC_AUDIENCE are set, Bearer tokens are validated
- * as JWTs from the issuer's JWKS endpoint (simplified: decode + audience check).
- *
- * For production, use a full OIDC library or reverse-proxy auth (oauth2-proxy).
+ * Optional OIDC JWT validation for admin routes (JWKS signature verification).
  */
 export function isOidcConfigured(): boolean {
   return Boolean(process.env.OIDC_ISSUER?.trim() && process.env.OIDC_AUDIENCE?.trim())
 }
 
-export function isOidcAuthorized(c: Context): boolean {
+export async function initOidcJwks(): Promise<void> {
   if (!isOidcConfigured()) {
-    return false
+    jwks = undefined
+    return
   }
 
-  const authHeader = c.req.header('authorization')
+  const issuer = process.env.OIDC_ISSUER!.trim().replace(/\/$/, '')
+  const jwksUri = process.env.OIDC_JWKS_URI?.trim() ?? `${issuer}/.well-known/jwks.json`
+  jwks = createRemoteJWKSet(new URL(jwksUri))
+}
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.slice('Bearer '.length).trim()
-  const parts = token.split('.')
-
-  if (parts.length !== 3) {
+async function verifyBearerToken(token: string): Promise<boolean> {
+  if (!isOidcConfigured() || !jwks) {
     return false
   }
 
   try {
-    const payload = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf8')) as {
-      iss?: string
-      aud?: string | string[]
-      exp?: number
-    }
-
-    const issuer = process.env.OIDC_ISSUER!.trim()
-    const audience = process.env.OIDC_AUDIENCE!.trim()
-
-    if (payload.iss !== issuer) {
-      return false
-    }
-
-    const aud = payload.aud
-    const audMatch = Array.isArray(aud) ? aud.includes(audience) : aud === audience
-
-    if (!audMatch) {
-      return false
-    }
-
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      return false
-    }
+    await jwtVerify(token, jwks, {
+      issuer: process.env.OIDC_ISSUER!.trim(),
+      audience: process.env.OIDC_AUDIENCE!.trim(),
+    })
 
     return true
   } catch {
@@ -62,14 +40,38 @@ export function isOidcAuthorized(c: Context): boolean {
   }
 }
 
-export function resolveMappingActor(c: Context): string {
-  if (isOidcAuthorized(c)) {
-    const authHeader = c.req.header('authorization')
-    const token = authHeader?.slice('Bearer '.length).trim() ?? ''
+function extractBearerToken(c: Context): string | undefined {
+  const authHeader = c.req.header('authorization')
 
+  if (!authHeader?.startsWith('Bearer ')) {
+    return undefined
+  }
+
+  return authHeader.slice('Bearer '.length).trim()
+}
+
+export async function isOidcAuthorized(c: Context): Promise<boolean> {
+  const token = extractBearerToken(c)
+
+  if (!token) {
+    return false
+  }
+
+  return verifyBearerToken(token)
+}
+
+export async function resolveMappingActor(c: Context): Promise<string> {
+  const token = extractBearerToken(c)
+
+  if (token && (await verifyBearerToken(token))) {
     try {
+      const payloadPart = token.split('.')[1]
+      if (!payloadPart) {
+        return 'oidc-user'
+      }
+
       const payload = JSON.parse(
-        Buffer.from(token.split('.')[1]!, 'base64url').toString('utf8'),
+        Buffer.from(payloadPart, 'base64url').toString('utf8'),
       ) as { email?: string; sub?: string }
 
       return payload.email ?? payload.sub ?? 'oidc-user'

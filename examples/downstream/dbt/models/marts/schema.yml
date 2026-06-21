@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: mart_constituent_engagement_daily
+    description: Daily per-constituent engagement metrics derived from ConstituentEvent stream
+    columns:
+      - name: event_date
+        tests:
+          - not_null
+      - name: constituent_email
+        tests:
+          - not_null

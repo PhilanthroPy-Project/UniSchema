@@ -88,4 +88,44 @@ describe('POST /mappings/preview', () => {
 
     expect(response.status).toBe(500)
   })
+
+  it('returns 400 when the request body is not valid JSON', async () => {
+    const response = await app.request('/mappings/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{not-json',
+    })
+
+    const body = (await response.json()) as { success: boolean; message: string }
+
+    expect(response.status).toBe(400)
+    expect(body.message).toBe('Request body must be valid JSON')
+  })
+
+  it('returns 400 when the mapping artifact fails validation', async () => {
+    const response = await postJson('/mappings/preview', {
+      vendor: 'GiveCampus',
+      samplePayload: previewBody.samplePayload,
+    })
+    const body = (await response.json()) as {
+      success: boolean
+      message: string
+      errors?: unknown
+    }
+
+    expect(response.status).toBe(400)
+    expect(body.message).toBe('Mapping artifact failed validation')
+    expect(body.errors).toBeDefined()
+  })
+
+  it('returns 422 with a generic message when preview mapping throws a non-Zod error', async () => {
+    const response = await postJson('/mappings/preview', {
+      ...previewBody,
+      samplePayload: [],
+    })
+    const body = (await response.json()) as { success: boolean; message: string }
+
+    expect(response.status).toBe(422)
+    expect(body.message).toBe('Webhook payload must be a JSON object')
+  })
 })

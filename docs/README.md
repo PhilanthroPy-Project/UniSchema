@@ -9,7 +9,8 @@ Pick the guide that matches your role — you don't need to read everything.
 | **Admin / analyst** | [admin-guide.md](./admin-guide.md) | Draw mapping lines on the canvas, sync to engine |
 | **Operator** | [operator-guide.md](./operator-guide.md) | Set `EGRESS_TARGET`, webhook secrets, deploy to cloud |
 | **Developer** | [adding-a-vendor.md](./adding-a-vendor.md) | Add a vendor in 6 files |
-| **Data engineer** | [../examples/downstream/README.md](../examples/downstream/README.md) | Read NDJSON batches, prove downstream value |
+| **Data engineer** | [downstream-pipeline.md](./downstream-pipeline.md) | Pilot → S3 → dbt → analytics |
+| **New adopter** | [adoption-checklist.md](./adoption-checklist.md) | Week-by-week pilot → production |
 | **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.2.0 scope |
 | **Security / privacy** | [security-and-privacy.md](./security-and-privacy.md) | FERPA-adjacent guidance, retention, rotation |
 
@@ -34,7 +35,8 @@ Community-tier vendors (Blackbaud, NPSP, Slate): submit redacted real payload PR
 | Blackbaud RENXT | 3 | `/webhooks/blackbaud` | Gift webhooks — verify payload shape |
 | Salesforce NPSP | 3 | `/webhooks/npsp` | Donation objects — verify field API names |
 | Slate | 3 | `/webhooks/slate` | Form webhooks — verify field API names |
-| Ellucian, etc. | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
+| Ellucian | 3 | `/webhooks/ellucian` | Reference bootstrap — verify with your payloads |
+| Other CRMs | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
 
 ## Additional references
 

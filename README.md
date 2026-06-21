@@ -2,7 +2,7 @@
 
 **v0.2.0** — Open-source webhook unification for university advancement teams.
 
-Turn GiveCampus, Cvent, iModules, Blackbaud, NPSP (and vendors you add) into one **ConstituentEvent** schema, with a visual mapper UI and push-to-storage egress for analytics.
+Turn GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate (and vendors you add) into one **ConstituentEvent** schema, with a visual mapper UI and push-to-storage egress for analytics.
 
 > **Pilot-ready, not forgettable yet.** Six built-in vendors, SQLite or Postgres, self-hosted.  
 > Read [docs/limitations-and-roadmap.md](./docs/limitations-and-roadmap.md) before production donor data.
@@ -75,8 +75,8 @@ npm run demo
 
 | ✅ Today (v0.2.0) | ⚠️ Limits |
 |----------|------------------|
-| 5 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP | Slate, Ellucian — [add your own](./docs/adding-a-vendor.md) |
-| Tier 1 (prod-tested): GiveCampus, Cvent · Tier 3 (community): Blackbaud, NPSP | Verify community mappers with your real payloads |
+| 6 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate | Ellucian — [add your own](./docs/adding-a-vendor.md) |
+| Tier 1 (prod-tested): GiveCampus, Cvent · Tier 2: iModules · Tier 3 (community): Blackbaud, NPSP, Slate | Verify Tier 3 mappers with your real payloads — [certification](./docs/README.md) |
 | SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis (see [deploy guide](./deploy/README.md)) |
 | HMAC webhook verification | ~120 req/min/IP default; tune for peak giving day |
 | Visual canvas + metadata mappings + import/export | Core master schema is opinionated — [details](./docs/limitations-and-roadmap.md) |
@@ -130,7 +130,7 @@ Board of Trustee engagement ML starter → [examples/downstream/bot_engagement_c
 |--------|------|-------------|
 | `GET` | `/health` | Health check (version, egress, drift count) |
 | `GET` | `/api/vendors` | Vendor registry |
-| `POST` | `/webhooks/{vendor}` | Vendor webhooks (**202**) — givecampus, cvent, imodules, blackbaud, npsp |
+| `POST` | `/webhooks/{vendor}` | Vendor webhooks (**202**) — givecampus, cvent, imodules, blackbaud, npsp, slate |
 | `GET` | `/webhooks/ingestions/:id` | Poll async status (Bearer auth in production) |
 | `POST` | `/api/mappings/sync` | Save canvas mapping (Bearer auth in production) |
 | `POST` | `/api/mappings/preview` | Preview ConstituentEvent from artifact (no persist) |

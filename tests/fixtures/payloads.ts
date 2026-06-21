@@ -52,6 +52,15 @@ export const validSlatePayload = {
   event_title: 'Open House 2026',
 } as const
 
+export const validEllucianPayload = {
+  id: 'ellucian-evt-001',
+  email: 'student@university.edu',
+  first_name: 'Taylor',
+  last_name: 'Nguyen',
+  event_type: 'registration',
+  person_id: 'P-12345',
+} as const
+
 export const validConstituentEvent: ConstituentEvent = {
   eventId: '550e8400-e29b-41d4-a716-446655440000',
   constituentEmail: 'alumni@school.edu',

@@ -9,6 +9,7 @@ import { getEgressConfigSummary } from '../egress/config.js'
 import { getDatabaseDialect } from '../db/dialect.js'
 import { countPendingIngestions } from '../store/ingestQueue.js'
 import { countPendingDriftEvents } from '../utils/driftCapture.js'
+import { isOidcConfigured } from '../utils/oidcAuth.js'
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -41,20 +42,15 @@ export async function handleHealth(c: Context): Promise<Response> {
 }
 
 export function handleVendorsList(c: Context): Response {
-  const labels: Record<string, string> = {
-    givecampus: 'GiveCampus',
-    cvent: 'Cvent',
-    imodules: 'iModules',
-    blackbaud: 'Blackbaud',
-    npsp: 'NPSP',
-    slate: 'Slate',
-  }
-
   return c.json({
     success: true,
-    vendors: VENDOR_REGISTRY.map((entry) => ({
-      ...entry,
-      label: labels[entry.slug] ?? entry.label,
-    })),
+    vendors: VENDOR_REGISTRY,
+  })
+}
+
+export function handlePublicConfig(c: Context): Response {
+  return c.json({
+    oidcEnabled: isOidcConfigured(),
+    vendors: VENDOR_REGISTRY,
   })
 }

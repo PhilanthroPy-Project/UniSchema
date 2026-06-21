@@ -43,7 +43,8 @@ fly deploy --config deploy/fly.toml
 ## Limitations (v0.2)
 
 - Postgres and SQLite share the same Drizzle schema; migrations are `CREATE TABLE IF NOT EXISTS` on startup
-- Rate limiting remains in-process (use sticky sessions or Redis for multi-instance — future work)
+- Rate limiting uses in-process counters by default; set **`REDIS_URL`** for shared rate limits across instances (see [docker-compose.scale.yml](../docker-compose.scale.yml))
+- Optional **pg-boss** ingest queue activates when `DATABASE_URL` is Postgres and `INGEST_QUEUE_ENABLED` is not `false`
 - Tests run against SQLite `:memory:` by default
 
 ## Switching from SQLite

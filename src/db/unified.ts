@@ -433,3 +433,28 @@ export async function insertMappingAuditLog(
 
   getDb().insert(mappingAuditLog).values(values).run()
 }
+
+export async function listMappingAuditLogRows(
+  vendor: string,
+  limit = 50,
+): Promise<Array<typeof import('./schema.js').mappingAuditLog.$inferSelect>> {
+  const { mappingAuditLog } = await import('./schema.js')
+  const normalizedVendor = vendor.trim().toLowerCase()
+
+  if (isPostgres()) {
+    return pgDb()
+      .select()
+      .from(mappingAuditLog)
+      .where(eq(mappingAuditLog.vendor, normalizedVendor))
+      .orderBy(desc(mappingAuditLog.syncedAt))
+      .limit(limit)
+  }
+
+  return getDb()
+    .select()
+    .from(mappingAuditLog)
+    .where(eq(mappingAuditLog.vendor, normalizedVendor))
+    .orderBy(desc(mappingAuditLog.syncedAt))
+    .limit(limit)
+    .all()
+}

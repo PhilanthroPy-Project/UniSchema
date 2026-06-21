@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: unischema
+    description: ConstituentEvent NDJSON from UniSchema S3 egress batches
+    database: "{{ target.database }}"
+    schema: raw
+    tables:
+      - name: constituent_events_raw
+        description: >
+          Snowflake external table over s3://bucket/constituent-events/batches/.
+          See examples/downstream/snowflake_external_table.sql for DDL.
+        columns:
+          - name: eventId
+            description: UUID event identifier (camelCase in source JSON)
+          - name: constituentEmail
+            description: Primary constituent email
+          - name: eventType
+            description: EVENT_REGISTRATION | DONATION | EMAIL_CLICK
+          - name: sourceSystem
+            description: Vendor source system enum
+          - name: amount
+            description: Donation amount when applicable
+          - name: createdAt
+            description: ISO 8601 ingestion timestamp

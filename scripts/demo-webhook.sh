@@ -23,8 +23,11 @@ case "$VENDOR" in
   npsp)
     PAYLOAD_FILE="${PAYLOAD_FILE:-$ROOT/samples/npsp-donation.json}"
     ;;
+  slate)
+    PAYLOAD_FILE="${PAYLOAD_FILE:-$ROOT/samples/slate-registration.json}"
+    ;;
   *)
-    echo "Unknown VENDOR=${VENDOR}. Supported: givecampus, cvent, imodules, blackbaud, npsp" >&2
+    echo "Unknown VENDOR=${VENDOR}. Supported: givecampus, cvent, imodules, blackbaud, npsp, slate" >&2
     exit 1
     ;;
 esac

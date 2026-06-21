@@ -18,7 +18,7 @@ export async function handleMappingPreview(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
   }
 
-  if (!isMappingSyncAuthorized(c)) {
+  if (!(await isMappingSyncAuthorized(c))) {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 

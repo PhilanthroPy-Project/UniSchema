@@ -12,6 +12,8 @@ type MasterSchemaPanelProps = {
   sourcePaths: string[]
   metadataMappings: MetadataMapping[]
   onMetadataMappingsChange: (mappings: MetadataMapping[]) => void
+  /** When true, renders without the outer aside shell (used inside RightSidebarPanel). */
+  embedded?: boolean
 }
 
 function RequirementIndicator({
@@ -93,20 +95,23 @@ export function MasterSchemaPanel({
   sourcePaths,
   metadataMappings,
   onMetadataMappingsChange,
+  embedded = false,
 }: MasterSchemaPanelProps) {
-  return (
-    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
-      <div className="px-4 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-theme-inset">
-            <Database className="h-4 w-4 text-theme-muted" strokeWidth={2} />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-theme-ink">Master Schema</h2>
-            <p className="text-xs text-theme-muted">ConstituentEvent (locked)</p>
+  const content = (
+    <>
+      {!embedded && (
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-theme-inset">
+              <Database className="h-4 w-4 text-theme-muted" strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-theme-ink">Master Schema</h2>
+              <p className="text-xs text-theme-muted">ConstituentEvent (locked)</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <ul className="flex flex-col gap-1.5 overflow-y-auto px-3 pb-1">
         {CONSTITUENT_EVENT_FIELDS.map((field) => (
           <SchemaFieldRow
@@ -121,6 +126,16 @@ export function MasterSchemaPanel({
         sourcePaths={sourcePaths}
         onChange={onMetadataMappingsChange}
       />
+    </>
+  )
+
+  if (embedded) {
+    return <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{content}</div>
+  }
+
+  return (
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
+      {content}
     </aside>
   )
 }

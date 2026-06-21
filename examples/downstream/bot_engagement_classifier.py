@@ -44,6 +44,7 @@ def build_feature_table(events: list[dict]) -> tuple[list[list[float]], list[str
         "registration_count": 0.0,
         "email_click_count": 0.0,
         "total_amount": 0.0,
+        "metadata_key_count": 0.0,
     })
 
     for event in events:
@@ -62,23 +63,30 @@ def build_feature_table(events: list[dict]) -> tuple[list[list[float]], list[str
         elif et == "EMAIL_CLICK":
             row["email_click_count"] += 1
 
+        metadata = event.get("normalizedMetadata") or {}
+        if isinstance(metadata, dict):
+            row["metadata_key_count"] += float(len(metadata))
+
     X: list[list[float]] = []
     emails: list[str] = []
     y: list[int] = []
 
     for email, feats in by_email.items():
+        # Demo proxy label — replace with CRM engagement_tier from crm-golden-record.csv
         score = (
             feats["donation_count"] * 3
             + feats["registration_count"] * 2
             + feats["email_click_count"]
+            + feats["metadata_key_count"] * 0.5
             + (1 if feats["total_amount"] >= 500 else 0)
         )
-        label = 1 if score >= 4 else 0  # demo proxy for "high engagement"
+        label = 1 if score >= 4 else 0
         X.append([
             feats["donation_count"],
             feats["registration_count"],
             feats["email_click_count"],
             feats["total_amount"],
+            feats["metadata_key_count"],
         ])
         emails.append(email)
         y.append(label)

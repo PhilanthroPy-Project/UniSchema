@@ -1,0 +1,56 @@
+# Multi-instance reference stack: Postgres + Redis + 2 UniSchema app replicas.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: unischema
+      POSTGRES_PASSWORD: unischema
+      POSTGRES_DB: unischema
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  unischema-a:
+    build: .
+    environment:
+      DATABASE_URL: postgres://unischema:unischema@postgres:5432/unischema
+      REDIS_URL: redis://redis:6379
+      EGRESS_TARGET: local
+      EGRESS_LOCAL_DIR: /app/data/egress
+      SERVE_FRONTEND: "true"
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - egress_data:/app/data/egress
+    depends_on:
+      - postgres
+      - redis
+
+  unischema-b:
+    build: .
+    environment:
+      DATABASE_URL: postgres://unischema:unischema@postgres:5432/unischema
+      REDIS_URL: redis://redis:6379
+      EGRESS_TARGET: local
+      EGRESS_LOCAL_DIR: /app/data/egress
+      SERVE_FRONTEND: "true"
+      NODE_ENV: development
+      PORT: "3000"
+    ports:
+      - "3001:3000"
+    volumes:
+      - egress_data:/app/data/egress
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+  egress_data:

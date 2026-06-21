@@ -73,7 +73,7 @@ export const CONSTITUENT_EVENT_FIELDS: ConstituentEventFieldMeta[] = [
     valueType: 'enum',
     requirement: 'system',
     mappable: false,
-    description: 'CVENT | GIVECAMPUS | IMODULES | BLACKBAUD | NPSP',
+    description: 'CVENT | GIVECAMPUS | IMODULES | BLACKBAUD | NPSP | SLATE',
   },
   {
     key: 'amount',

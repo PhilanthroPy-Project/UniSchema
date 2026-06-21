@@ -61,9 +61,17 @@ describe('drift capture helpers', () => {
       1,
     )
 
+    const ellucianSource = buildDriftTestSource(
+      'ellucian',
+      'ellucian-2026-06-20T15-04-05-123Z',
+      '2026-06-20T15:04:05.123Z',
+      1,
+    )
+
     expect(cventSource).toContain("import { mapCventToMaster } from '../../src/mappers/cvent.js'")
     expect(cventSource).toContain('ConstituentEventSchema.safeParse(result).success')
     expect(imodulesSource).toContain("import { mapImodulesToMaster } from '../../src/mappers/imodules.js'")
+    expect(ellucianSource).toContain("import { mapEllucianToMaster } from '../../src/mappers/ellucian.js'")
   })
 
   it('generates dynamic-mapper Vitest sources when an admin canvas artifact was active', () => {

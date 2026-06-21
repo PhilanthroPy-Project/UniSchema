@@ -22,26 +22,26 @@ describe('isDriftAgentAuthorized', () => {
     }
   })
 
-  it('rejects requests when the agent token is not configured', () => {
+  it('rejects requests when the agent token is not configured', async () => {
     delete process.env.DRIFT_AGENT_TOKEN
 
-    expect(isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer test-agent-token' }))).toBe(
-      false,
-    )
+    expect(
+      await isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer test-agent-token' })),
+    ).toBe(false)
   })
 
-  it('accepts a valid bearer token', () => {
+  it('accepts a valid bearer token', async () => {
     process.env.DRIFT_AGENT_TOKEN = 'test-agent-token'
 
-    expect(isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer test-agent-token' }))).toBe(
-      true,
-    )
+    expect(
+      await isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer test-agent-token' })),
+    ).toBe(true)
   })
 
-  it('rejects malformed bearer tokens', () => {
+  it('rejects malformed bearer tokens', async () => {
     process.env.DRIFT_AGENT_TOKEN = 'test-agent-token'
 
-    expect(isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer wrong-token' }))).toBe(
+    expect(await isDriftAgentAuthorized(mockContext({ Authorization: 'Bearer wrong-token' }))).toBe(
       false,
     )
   })

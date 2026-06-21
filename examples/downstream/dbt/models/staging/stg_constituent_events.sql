@@ -1,18 +1,17 @@
--- Staging model for UniSchema ConstituentEvent NDJSON in S3
--- Adjust source() to match your external table / stage definition.
+-- Staging: camelCase ConstituentEvent JSON → snake_case analytics columns
 
 {{ config(materialized='view') }}
 
 select
-  event_id,
-  constituent_email,
-  first_name,
-  last_name,
-  event_type,
-  source_system,
+  eventId as event_id,
+  constituentEmail as constituent_email,
+  firstName as first_name,
+  lastName as last_name,
+  eventType as event_type,
+  sourceSystem as source_system,
   amount,
   currency,
-  normalized_metadata,
+  normalizedMetadata as normalized_metadata,
   payload,
-  created_at
+  createdAt as created_at
 from {{ source('unischema', 'constituent_events_raw') }}

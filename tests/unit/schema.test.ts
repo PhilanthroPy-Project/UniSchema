@@ -22,9 +22,12 @@ describe('EventTypeSchema', () => {
 })
 
 describe('SourceSystemSchema', () => {
-  it.each(['CVENT', 'GIVECAMPUS'] as const)('accepts valid source system %s', (sourceSystem) => {
-    expect(SourceSystemSchema.parse(sourceSystem)).toBe(sourceSystem)
-  })
+  it.each(['CVENT', 'GIVECAMPUS', 'ELLUCIAN', 'SLATE'] as const)(
+    'accepts valid source system %s',
+    (sourceSystem) => {
+      expect(SourceSystemSchema.parse(sourceSystem)).toBe(sourceSystem)
+    },
+  )
 
   it('rejects unknown source systems', () => {
     expect(() => SourceSystemSchema.parse('NEWVENDOR')).toThrow(ZodError)
@@ -36,6 +39,15 @@ describe('ConstituentEventSchema', () => {
     const result = ConstituentEventSchema.parse(validConstituentEvent)
 
     expect(result).toEqual(validConstituentEvent)
+  })
+
+  it('accepts optional externalConstituentId for CRM joins', () => {
+    const result = ConstituentEventSchema.parse({
+      ...validConstituentEvent,
+      externalConstituentId: 'CRM-1001',
+    })
+
+    expect(result.externalConstituentId).toBe('CRM-1001')
   })
 
   it('accepts events without optional name and donation fields', () => {

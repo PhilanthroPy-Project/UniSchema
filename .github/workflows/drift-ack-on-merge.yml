@@ -1,0 +1,31 @@
+# Ack drift events after a drift-fix PR merges
+
+name: Drift Ack on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  ack-drift-events:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'drift-fix')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ack pending drift events via API
+        env:
+          DRIFT_AGENT_TOKEN: ${{ secrets.DRIFT_AGENT_TOKEN }}
+          UNISCHEMA_API_URL: ${{ secrets.UNISCHEMA_API_URL }}
+        run: |
+          if [ -z "$DRIFT_AGENT_TOKEN" ] || [ -z "$UNISCHEMA_API_URL" ]; then
+            echo "Skipping drift ack — secrets not configured."
+            exit 0
+          fi
+
+          events="$(curl -sf -H "Authorization: Bearer $DRIFT_AGENT_TOKEN" \
+            "$UNISCHEMA_API_URL/api/drift/events?status=pending&limit=10")"
+
+          echo "$events" | jq -r '.events[].id' | while read -r id; do
+            curl -sf -X POST -H "Authorization: Bearer $DRIFT_AGENT_TOKEN" \
+              "$UNISCHEMA_API_URL/api/drift/events/$id/ack"
+            echo "Acked $id"
+          done

@@ -1,7 +1,28 @@
 import type { WebhookRouteConfig } from '../middleware/webhookHandler.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
 
-/** Webhook route registry — adding a vendor? See docs/adding-a-vendor.md */
+export type VendorTier = 1 | 2 | 3
+
+/** Vendor maturity tier — see docs/README.md for certification criteria. */
+export const VENDOR_TIERS: Record<DriftVendor, VendorTier> = {
+  givecampus: 1,
+  cvent: 1,
+  imodules: 2,
+  blackbaud: 3,
+  npsp: 3,
+  slate: 3,
+  ellucian: 3,
+}
+
+const VENDOR_LABELS: Record<DriftVendor, string> = {
+  givecampus: 'GiveCampus',
+  cvent: 'Cvent',
+  imodules: 'iModules',
+  blackbaud: 'Blackbaud',
+  npsp: 'NPSP',
+  slate: 'Slate',
+  ellucian: 'Ellucian',
+}
 export const VENDOR_WEBHOOK_CONFIGS: Record<DriftVendor, WebhookRouteConfig> = {
   cvent: {
     vendor: 'cvent',
@@ -39,11 +60,18 @@ export const VENDOR_WEBHOOK_CONFIGS: Record<DriftVendor, WebhookRouteConfig> = {
     secretEnvKey: 'SLATE_WEBHOOK_SECRET',
     signatureHeader: 'x-slate-signature',
   },
+  ellucian: {
+    vendor: 'ellucian',
+    failureMessage: 'Failed to map Ellucian payload to master schema',
+    secretEnvKey: 'ELLUCIAN_WEBHOOK_SECRET',
+    signatureHeader: 'x-ellucian-signature',
+  },
 }
 
 export const VENDOR_REGISTRY = Object.values(VENDOR_WEBHOOK_CONFIGS).map((config) => ({
   slug: config.vendor,
-  label: config.vendor.charAt(0).toUpperCase() + config.vendor.slice(1),
+  label: VENDOR_LABELS[config.vendor],
+  tier: VENDOR_TIERS[config.vendor],
   webhookPath: `/webhooks/${config.vendor}`,
   hasSample: true,
 }))

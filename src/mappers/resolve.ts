@@ -4,6 +4,7 @@ import type { DriftVendor } from '../utils/driftCapture.js'
 import { mapBlackbaudToMaster } from './blackbaud.js'
 import { mapCventToMaster } from './cvent.js'
 import { mapWithArtifact } from './dynamic.js'
+import { mapEllucianToMaster } from './ellucian.js'
 import { mapGiveCampusToMaster } from './givecampus.js'
 import { mapImodulesToMaster } from './imodules.js'
 import { mapNpspToMaster } from './npsp.js'
@@ -31,6 +32,8 @@ export async function resolveVendorMapper(
       return mapNpspToMaster
     case 'slate':
       return mapSlateToMaster
+    case 'ellucian':
+      return mapEllucianToMaster
     default:
       throw new Error(`Unsupported vendor: ${vendor}`)
   }

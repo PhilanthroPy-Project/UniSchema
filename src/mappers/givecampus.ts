@@ -48,6 +48,7 @@ export function mapGiveCampusToMaster(rawPayload: unknown): ConstituentEvent {
   const masterCandidate = {
     eventId: deterministicEventId('GIVECAMPUS', giveCampus.id),
     constituentEmail: giveCampus.donor_email,
+    externalConstituentId: giveCampus.id,
     eventType: 'DONATION' as const,
     sourceSystem: 'GIVECAMPUS',
     amount: giveCampus.value,

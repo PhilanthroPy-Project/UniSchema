@@ -4,7 +4,7 @@ UniSchema is **v0.2.0** — strong for pilots and webhook normalization proofs; 
 
 ## What works well today
 
-- Five built-in vendors → **ConstituentEvent** with HMAC verification
+- Six built-in vendors → **ConstituentEvent** with HMAC verification
 - Async ingest with crash recovery
 - Local or S3 egress push
 - Visual mapping canvas for field overrides + `normalizedMetadata`
@@ -18,14 +18,14 @@ UniSchema is **v0.2.0** — strong for pilots and webhook normalization proofs; 
 |------|---------|--------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures, primary support |
 | **Tier 2** | iModules | Reference vendor #3 implementation |
-| **Tier 3** | Blackbaud, NPSP | Community mappers — verify with your real payloads |
-| **Planned** | Slate, Ellucian | Open an issue or PR via [adding-a-vendor.md](./adding-a-vendor.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate | Community mappers — verify with your real payloads; [certification criteria](./README.md) |
+| **Planned** | Ellucian | Open an issue or PR via [adding-a-vendor.md](./adding-a-vendor.md) |
 
 ## Honest limitations (v0.2.0)
 
 ### Not every advancement vendor is built-in
 
-Slate, Ellucian, and niche CRMs still require the [6-file vendor checklist](./adding-a-vendor.md). You're not blocked, but you're not plug-and-play for every shop.
+Ellucian and niche CRMs still require the [6-file vendor checklist](./adding-a-vendor.md). Slate is built-in (Tier 3) — verify payloads against your instance before production.
 
 ### Fixed master schema
 
@@ -121,7 +121,7 @@ Node process(es)
 ## Roadmap themes (not committed dates)
 
 1. **Adoption** — GHCR releases, compose profiles, downstream ML kit ✅ in progress
-2. **Vendors** — Slate (#6), community certification for Blackbaud/NPSP
+2. **Vendors** — Slate Tier 1 certification, community certification for Blackbaud/NPSP, Ellucian bootstrap
 3. **Scale** — Redis rate limit, pg-boss queue, published benchmarks ✅ in progress
 4. **Product** — metadata canvas, import mapping, drift UI actions ✅ in progress
 5. **Trust (v1.0)** — OIDC admin auth, mapping audit log, compliance docs

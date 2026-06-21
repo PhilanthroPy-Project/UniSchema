@@ -333,6 +333,21 @@ describe('POST /webhooks/slate', () => {
   })
 })
 
+describe('POST /webhooks/ellucian', () => {
+  it('accepts valid Ellucian payloads asynchronously', async () => {
+    const { validEllucianPayload } = await import('../fixtures/payloads.js')
+    const response = await postJson('/webhooks/ellucian', validEllucianPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.sourceSystem).toBe('ELLUCIAN')
+  })
+})
+
 describe('GET /api/vendors', () => {
   it('lists registered webhook vendors', async () => {
     const response = await app.request('/api/vendors')
@@ -340,7 +355,15 @@ describe('GET /api/vendors', () => {
 
     expect(response.status).toBe(200)
     expect(body.vendors.map((vendor) => vendor.slug)).toEqual(
-      expect.arrayContaining(['givecampus', 'cvent', 'imodules', 'blackbaud', 'npsp', 'slate']),
+      expect.arrayContaining([
+        'givecampus',
+        'cvent',
+        'imodules',
+        'blackbaud',
+        'npsp',
+        'slate',
+        'ellucian',
+      ]),
     )
   })
 })

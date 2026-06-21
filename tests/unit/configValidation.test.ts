@@ -38,11 +38,13 @@ describe('validateProductionConfig', () => {
     process.env.BLACKBAUD_WEBHOOK_SECRET = 'secret'
     process.env.NPSP_WEBHOOK_SECRET = 'secret'
     process.env.SLATE_WEBHOOK_SECRET = 'secret'
+    process.env.ELLUCIAN_WEBHOOK_SECRET = 'secret'
+    process.env.ELLUCIAN_WEBHOOK_SECRET = 'secret'
     process.env.EGRESS_TARGET = 's3'
     delete process.env.EGRESS_S3_BUCKET
     delete process.env.AWS_REGION
-    process.env.MAPPING_SYNC_REQUIRED = 'true'
     delete process.env.MAPPING_SYNC_TOKEN
+    delete process.env.DRIFT_AGENT_TOKEN
     process.env.REQUIRE_TRUST_PROXY = 'true'
     delete process.env.TRUST_PROXY
 
@@ -52,6 +54,7 @@ describe('validateProductionConfig', () => {
         'EGRESS_S3_BUCKET_MISSING',
         'AWS_REGION_MISSING',
         'MAPPING_SYNC_TOKEN_MISSING',
+        'DRIFT_AGENT_TOKEN_MISSING',
         'TRUST_PROXY_REQUIRED',
       ]),
     )

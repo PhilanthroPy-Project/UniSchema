@@ -33,4 +33,4 @@ Full operator checklist: [docs/operator-guide.md](../../docs/operator-guide.md)
 
 ## Full AWS stack (ECS + RDS)
 
-Not included in v0.1.0 — open an issue if you need it. Most advancement pilots use **Fly/Railway + this S3 module**.
+Not included in v0.2.0 — open an issue if you need it. Most advancement pilots use **Fly/Railway + this S3 module**.

@@ -8,7 +8,7 @@ UniSchema ships as a **single Docker image** (API + admin UI). Pick a platform t
 | **Railway** | [`railway.toml`](./railway.toml) | Railway volume mount |
 | **Any container host** | [`Dockerfile`](../Dockerfile) | Bind-mount or volume |
 
-There is **no official managed UniSchema SaaS** in v0.1.0. These templates reduce ops burden; you still own secrets, S3, and vendor webhook URLs.
+There is **no official managed UniSchema SaaS** in v0.2.0. These templates reduce ops burden; you still own secrets, S3, and vendor webhook URLs.
 
 ## Minimum viable cloud (1–2 person advancement shop)
 
@@ -105,7 +105,7 @@ Railway auto-assigns `PORT`; the Dockerfile respects `PORT=3000`.
 
 ## Terraform
 
-Full Terraform modules (VPC, RDS, etc.) are **not** included in v0.1.0 — most advancement pilots start with Fly/Railway + S3.
+Full Terraform modules (VPC, RDS, etc.) are **not** included in v0.2.0 — most advancement pilots start with Fly/Railway + S3.
 
 If you need IaC for AWS (ECS + RDS + S3), open an issue with your constraints; community contributions welcome.
 

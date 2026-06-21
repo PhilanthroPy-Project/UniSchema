@@ -31,8 +31,8 @@ export function resolveMappingSyncAuth(): MappingSyncAuthDecision {
   return { action: 'allow' }
 }
 
-export function isMappingSyncAuthorized(c: Context): boolean {
-  if (isOidcAuthorized(c)) {
+export async function isMappingSyncAuthorized(c: Context): Promise<boolean> {
+  if (await isOidcAuthorized(c)) {
     return true
   }
 
@@ -57,8 +57,8 @@ export function isMappingSyncAuthorized(c: Context): boolean {
 }
 
 /** True only when a valid Bearer mapping sync or OIDC token is present (not dev allow mode). */
-export function hasVerifiedAdminAuth(c: Context): boolean {
-  if (isOidcAuthorized(c)) {
+export async function hasVerifiedAdminAuth(c: Context): Promise<boolean> {
+  if (await isOidcAuthorized(c)) {
     return true
   }
 

@@ -102,6 +102,7 @@ const DEFAULT_EVENT_TYPES: Record<string, ConstituentEvent['eventType']> = {
   blackbaud: 'DONATION',
   npsp: 'DONATION',
   slate: 'EVENT_REGISTRATION',
+  ellucian: 'EVENT_REGISTRATION',
 }
 
 /**

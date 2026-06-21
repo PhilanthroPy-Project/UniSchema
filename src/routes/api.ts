@@ -9,6 +9,7 @@ import {
 import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egressStore.js'
 import { getIngestion } from '../store/ingestionQueue.js'
 import { getMapping } from '../store/mappingRegistry.js'
+import { listMappingAuditLogRows } from '../db/unified.js'
 import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
 import { isDriftAgentAuthorized, isDriftListAuthorized, resolveDriftListAuth } from '../utils/driftAgentAuth.js'
 import { isEgressPullAuthorized, resolveEgressPullAuth } from '../utils/egressPullAuth.js'
@@ -25,7 +26,7 @@ export async function handleMappingGet(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
   }
 
-  if (!isMappingSyncAuthorized(c)) {
+  if (!(await isMappingSyncAuthorized(c))) {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 
@@ -130,7 +131,7 @@ export async function handleIngestionGet(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
   }
 
-  if (!isMappingSyncAuthorized(c)) {
+  if (!(await isMappingSyncAuthorized(c))) {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 
@@ -167,14 +168,14 @@ export async function handleDriftList(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Drift agent token not configured' }, 500)
   }
 
-  if (!isDriftListAuthorized(c)) {
+  if (!(await isDriftListAuthorized(c))) {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 
   const vendor = c.req.query('vendor')
   const statusParam = c.req.query('status')
   const includePayload = c.req.query('includePayload') === 'true'
-  const agentAuthorized = isDriftAgentAuthorized(c)
+  const agentAuthorized = await isDriftAgentAuthorized(c)
 
   if (vendor && !isDriftVendor(vendor)) {
     return c.json({ success: false, message: 'Invalid vendor' }, 400)
@@ -188,9 +189,13 @@ export async function handleDriftList(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 
+  const limitParam = c.req.query('limit')
+  const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : 50
+  const limit = Number.isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 500)
+
   const events = await listDriftEvents(
     vendor as DriftVendor | undefined,
-    50,
+    limit,
     statusParam as 'pending' | 'processed' | undefined,
   )
 
@@ -210,8 +215,44 @@ export async function handleDriftList(c: Context): Promise<Response> {
   })
 }
 
+export async function handleMappingAudit(c: Context): Promise<Response> {
+  const authDecision = resolveMappingSyncAuth()
+
+  if (authDecision.action === 'misconfigured') {
+    return c.json({ success: false, message: 'Mapping sync token not configured' }, 500)
+  }
+
+  if (!(await isMappingSyncAuthorized(c))) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401)
+  }
+
+  const vendor = c.req.param('vendor')
+
+  if (!vendor?.trim()) {
+    return c.json({ success: false, message: 'Vendor is required' }, 400)
+  }
+
+  const limitParam = c.req.query('limit')
+  const parsedLimit = limitParam ? Number.parseInt(limitParam, 10) : 50
+  const limit = Number.isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 500)
+
+  const rows = await listMappingAuditLogRows(vendor, limit)
+
+  return c.json({
+    success: true,
+    vendor: vendor.trim().toLowerCase(),
+    count: rows.length,
+    entries: rows.map((row) => ({
+      id: row.id,
+      actor: row.actor,
+      diffHash: row.diffHash,
+      syncedAt: row.syncedAt,
+    })),
+  })
+}
+
 export async function handleDriftAck(c: Context): Promise<Response> {
-  if (!isDriftAgentAuthorized(c)) {
+  if (!(await isDriftAgentAuthorized(c))) {
     return c.json({ success: false, message: 'Unauthorized' }, 401)
   }
 

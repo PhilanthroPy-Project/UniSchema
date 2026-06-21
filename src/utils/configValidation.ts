@@ -41,6 +41,20 @@ export function validateProductionConfig(): ConfigValidationIssue[] {
     })
   }
 
+  if (process.env.NODE_ENV === 'production' && !process.env.MAPPING_SYNC_TOKEN?.trim()) {
+    issues.push({
+      code: 'MAPPING_SYNC_TOKEN_MISSING',
+      message: 'Set MAPPING_SYNC_TOKEN for production admin API access',
+    })
+  }
+
+  if (process.env.NODE_ENV === 'production' && !process.env.DRIFT_AGENT_TOKEN?.trim()) {
+    issues.push({
+      code: 'DRIFT_AGENT_TOKEN_MISSING',
+      message: 'Set DRIFT_AGENT_TOKEN for production drift queue API access',
+    })
+  }
+
   const egress = getEgressConfigSummary()
 
   if (egress.target === 's3') {

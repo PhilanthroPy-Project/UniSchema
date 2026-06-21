@@ -10,9 +10,10 @@ import {
   handleEgressAck,
   handleEgressList,
   handleIngestionGet,
+  handleMappingAudit,
   handleMappingGet,
 } from './api.js'
-import { handleHealth, handleVendorsList } from './health.js'
+import { handleHealth, handlePublicConfig, handleVendorsList } from './health.js'
 import { handleMappingPreview } from './mappingPreview.js'
 import { handleMappingSync } from './mappingsSync.js'
 
@@ -37,6 +38,7 @@ function registerAdminRoutes(target: Hono): void {
 
   target.post('/mappings/sync', handleMappingSync)
   target.post('/mappings/preview', handleMappingPreview)
+  target.get('/mappings/:vendor/audit', handleMappingAudit)
   target.get('/mappings/:vendor', handleMappingGet)
 
   /** Legacy pull-based egress — prefer push via S3/local publisher in production. */
@@ -47,6 +49,7 @@ function registerAdminRoutes(target: Hono): void {
   target.post('/drift/events/:id/ack', handleDriftAck)
 
   target.get('/vendors', handleVendorsList)
+  target.get('/config/public', handlePublicConfig)
   target.get('/health', handleHealth)
 }
 

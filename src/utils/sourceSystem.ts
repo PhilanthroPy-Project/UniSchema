@@ -9,6 +9,7 @@ const VENDOR_TO_SOURCE_SYSTEM: Record<string, SourceSystem> = {
   blackbaud: 'BLACKBAUD',
   npsp: 'NPSP',
   slate: 'SLATE',
+  ellucian: 'ELLUCIAN',
 }
 
 /** Maps a vendor slug to a strict `SourceSystem` enum value. */

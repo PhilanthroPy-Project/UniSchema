@@ -33,7 +33,7 @@ export async function upsertMapping(
     syncedAt,
   })
 
-  const actor = actorContext ? resolveMappingActor(actorContext) : 'system'
+  const actor = actorContext ? await resolveMappingActor(actorContext) : 'system'
   const artifactJson = JSON.stringify({
     mappings: artifact.mappings,
     metadataMappings: artifact.metadataMappings ?? [],

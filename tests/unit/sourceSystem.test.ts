@@ -11,6 +11,7 @@ describe('sourceSystem registry', () => {
     expect(resolveSourceSystem('blackbaud')).toBe('BLACKBAUD')
     expect(resolveSourceSystem('npsp')).toBe('NPSP')
     expect(resolveSourceSystem('slate')).toBe('SLATE')
+    expect(resolveSourceSystem('ellucian')).toBe('ELLUCIAN')
   })
 
   it('rejects unknown vendors', () => {
@@ -24,5 +25,6 @@ describe('drift vendor registry', () => {
     expect(isDriftVendor('blackbaud')).toBe(true)
     expect(isDriftVendor('npsp')).toBe(true)
     expect(isDriftVendor('slate')).toBe(true)
+    expect(isDriftVendor('ellucian')).toBe(true)
   })
 })

@@ -1,0 +1,16 @@
+constituent_id,email,first_name,last_name,engagement_tier,lifetime_giving
+CRM-1001,demo.alumni@university.edu,Alex,Demo,high,12500
+CRM-1002,jane.doe@university.edu,Jane,Doe,high,8200
+CRM-1003,john.smith@university.edu,John,Smith,standard,450
+CRM-1004,mary.jones@university.edu,Mary,Jones,standard,0
+CRM-1005,pat.lee@university.edu,Pat,Lee,high,15000
+CRM-1006,sam.wong@university.edu,Sam,Wong,standard,250
+CRM-1007,taylor.brown@university.edu,Taylor,Brown,high,9800
+CRM-1008,casey.nguyen@university.edu,Casey,Nguyen,standard,100
+CRM-1009,riley.martinez@university.edu,Riley,Martinez,high,6200
+CRM-1010,jordan.kim@university.edu,Jordan,Kim,standard,75
+CRM-1011,quinn.patel@university.edu,Quinn,Patel,high,11000
+CRM-1012,avery.chen@university.edu,Avery,Chen,standard,300
+CRM-1013,blake.wilson@university.edu,Blake,Wilson,high,7400
+CRM-1014,cameron.davis@university.edu,Cameron,Davis,standard,0
+CRM-1015,drew.anderson@university.edu,Drew,Anderson,high,5600

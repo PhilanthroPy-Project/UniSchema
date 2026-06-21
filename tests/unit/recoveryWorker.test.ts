@@ -111,6 +111,31 @@ describe('recoverPendingEgress', () => {
     expect((await listPendingEgressEvents())).toHaveLength(0)
   })
 
+  it('returns zero when egress is disabled', async () => {
+    process.env.EGRESS_TARGET = 'none'
+
+    await persistConstituentEvent(
+      {
+        ...validConstituentEvent,
+        eventId: '550e8400-e29b-41d4-a716-446655440077',
+      },
+      'givecampus',
+    )
+
+    const published = await recoverPendingEgress()
+
+    expect(published).toBe(0)
+    expect((await listPendingEgressEvents())).toHaveLength(1)
+  })
+
+  it('returns zero when there are no pending egress events', async () => {
+    process.env.EGRESS_TARGET = 'local'
+
+    const published = await recoverPendingEgress()
+
+    expect(published).toBe(0)
+  })
+
   it('continues when an individual egress publish fails during recovery', async () => {
     await persistConstituentEvent(
       {

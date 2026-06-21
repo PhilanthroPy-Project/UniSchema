@@ -10,8 +10,10 @@ import { mapGiveCampusToMaster } from '../../src/mappers/givecampus.js'
 import { mapImodulesToMaster } from '../../src/mappers/imodules.js'
 import { mapNpspToMaster } from '../../src/mappers/npsp.js'
 import { mapSlateToMaster } from '../../src/mappers/slate.js'
+import { mapEllucianToMaster } from '../../src/mappers/ellucian.js'
 import {
   validBlackbaudPayload,
+  validEllucianPayload,
   validImodulesPayload,
   validNpspPayload,
   validSlatePayload,
@@ -163,6 +165,7 @@ describe('mapGiveCampusToMaster', () => {
     const result = mapGiveCampusToMaster(rawPayload)
 
     expect(result.constituentEmail).toBe('alumni@school.edu')
+    expect(result.externalConstituentId).toBe('gc-999')
     expect(result.amount).toBe(500)
     expect(result.currency).toBe('USD')
     expect(result.eventType).toBe('DONATION')
@@ -411,5 +414,55 @@ describe('mapSlateToMaster', () => {
 
   it('throws when email is invalid', () => {
     expect(() => mapSlateToMaster({ ...validSlatePayload, email: 'not-an-email' })).toThrow(ZodError)
+  })
+
+  it('maps donation amount and currency when form indicates gift', () => {
+    const result = mapSlateToMaster({
+      ...validSlatePayload,
+      form: 'annual_gift',
+      amount: 750,
+      currency: 'USD',
+    })
+
+    expect(result.eventType).toBe('DONATION')
+    expect(result.amount).toBe(750)
+    expect(result.currency).toBe('USD')
+  })
+})
+
+describe('mapEllucianToMaster', () => {
+  it('maps a valid Ellucian payload to the master schema', () => {
+    const result = mapEllucianToMaster(validEllucianPayload)
+
+    expect(result.constituentEmail).toBe(validEllucianPayload.email)
+    expect(result.externalConstituentId).toBe('P-12345')
+    expect(result.eventType).toBe('EVENT_REGISTRATION')
+    expect(result.sourceSystem).toBe('ELLUCIAN')
+  })
+
+  it('maps donation payloads with amount parsing', () => {
+    const result = mapEllucianToMaster({
+      ...validEllucianPayload,
+      event_type: 'donation',
+      amount: '1,250.50',
+      currency: 'USD',
+    })
+
+    expect(result.eventType).toBe('DONATION')
+    expect(result.amount).toBe(1250.5)
+    expect(result.currency).toBe('USD')
+  })
+
+  it('maps email click events', () => {
+    const result = mapEllucianToMaster({
+      ...validEllucianPayload,
+      event_type: 'email_click',
+    })
+
+    expect(result.eventType).toBe('EMAIL_CLICK')
+  })
+
+  it('throws on invalid payloads', () => {
+    expect(() => mapEllucianToMaster({ id: 'x' })).toThrow()
   })
 })

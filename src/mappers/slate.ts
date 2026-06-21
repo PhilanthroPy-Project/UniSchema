@@ -6,6 +6,7 @@ import {
 } from '../schema/master.js'
 import { toPrimitiveRecord } from '../schema/primitives.js'
 import { deterministicEventId } from '../utils/deterministicEventId.js'
+import { parseLocaleNumber } from '../utils/parseLocaleNumber.js'
 
 export const SlatePayloadSchema = z.object({
   id: z.string().min(1),
@@ -14,6 +15,8 @@ export const SlatePayloadSchema = z.object({
   last: z.string().optional(),
   form: z.string().min(1),
   event_title: z.string().optional(),
+  amount: z.union([z.number(), z.string()]).optional(),
+  currency: z.string().optional(),
 })
 
 export type SlatePayload = z.infer<typeof SlatePayloadSchema>
@@ -40,14 +43,25 @@ export function mapSlateToMaster(rawPayload: unknown): ConstituentEvent {
   }
 
   const row = parsed.data
+  const eventType = inferEventType(row.form)
+  let amount: number | undefined
+
+  if (typeof row.amount === 'number') {
+    amount = row.amount
+  } else if (typeof row.amount === 'string') {
+    amount = parseLocaleNumber(row.amount) ?? undefined
+  }
 
   const masterCandidate = {
     eventId: deterministicEventId('SLATE', row.id),
     constituentEmail: row.email,
+    externalConstituentId: row.id,
     firstName: row.first,
     lastName: row.last,
-    eventType: inferEventType(row.form),
+    eventType,
     sourceSystem: 'SLATE' as const,
+    amount: eventType === 'DONATION' ? amount : undefined,
+    currency: eventType === 'DONATION' ? row.currency : undefined,
     normalizedMetadata: {
       form: row.form,
       ...(row.event_title ? { event_title: row.event_title } : {}),

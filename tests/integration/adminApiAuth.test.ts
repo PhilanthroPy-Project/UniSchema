@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import app from '../helpers/app.js'
-import { resolveEgressPullAuth } from '../../src/utils/egressPullAuth.js'
+import {
+  isEgressPullAuthorized,
+  resolveEgressPullAuth,
+} from '../../src/utils/egressPullAuth.js'
 import { resolveMappingSyncAuth } from '../../src/utils/mappingSyncAuth.js'
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -71,6 +74,20 @@ describe('resolveEgressPullAuth', () => {
     process.env.NODE_ENV = 'production'
 
     expect(resolveEgressPullAuth()).toEqual({ action: 'misconfigured' })
+  })
+
+  it('rejects Bearer tokens with the wrong length before timing-safe comparison', () => {
+    process.env.EGRESS_PULL_TOKEN = 'correct-token'
+
+    const makeContext = (authorization?: string) =>
+      ({
+        req: {
+          header: (name: string) => (name === 'Authorization' ? authorization : undefined),
+        },
+      }) as never
+
+    expect(isEgressPullAuthorized(makeContext('Bearer x'))).toBe(false)
+    expect(isEgressPullAuthorized(makeContext('Bearer wrong-token-value'))).toBe(false)
   })
 })
 

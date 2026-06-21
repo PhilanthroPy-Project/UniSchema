@@ -6,7 +6,7 @@ import { SyncTokenSettings } from './SyncTokenSettings'
 import { ThemeToggle } from './ThemeToggle'
 
 type DriftQueuePanelProps = {
-  onNavigateMapping?: (vendorSlug: string) => void
+  onNavigateMapping?: (vendorSlug: string, payload?: Record<string, unknown>) => void
 }
 
 export function DriftQueuePanel({ onNavigateMapping }: DriftQueuePanelProps) {
@@ -144,6 +144,22 @@ export function DriftQueuePanel({ onNavigateMapping }: DriftQueuePanelProps) {
                     <span className="text-xs text-theme-muted">{event.mapperKind}</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {onNavigateMapping && event.rawPayload && (
+                      <button
+                        type="button"
+                        data-testid="drift-load-canvas"
+                        onClick={() =>
+                          onNavigateMapping(
+                            event.vendor,
+                            event.rawPayload as Record<string, unknown>,
+                          )
+                        }
+                        className="inline-flex items-center gap-1 rounded-full bg-apple-blue-focus/10 px-3 py-1 text-xs text-apple-blue hover:bg-apple-blue-focus/20"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Load into canvas
+                      </button>
+                    )}
                     {onNavigateMapping && (
                       <button
                         type="button"
@@ -167,6 +183,7 @@ export function DriftQueuePanel({ onNavigateMapping }: DriftQueuePanelProps) {
                     {event.status === 'pending' && (
                       <button
                         type="button"
+                        data-testid="drift-ack-button"
                         disabled={ackingId === event.id}
                         onClick={() => void handleAck(event.id)}
                         className="inline-flex items-center gap-1 rounded-full bg-apple-green/10 px-3 py-1 text-xs text-apple-green hover:bg-apple-green/20 disabled:opacity-50"

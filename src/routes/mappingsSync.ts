@@ -25,7 +25,7 @@ export async function handleMappingSync(c: Context): Promise<Response> {
     return c.json(body, 500)
   }
 
-  if (!isMappingSyncAuthorized(c)) {
+  if (!(await isMappingSyncAuthorized(c))) {
     const body: MappingSyncErrorBody = {
       success: false,
       message: 'Unauthorized',

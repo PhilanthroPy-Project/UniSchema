@@ -28,8 +28,8 @@ export function resolveDriftListAuth(): DriftListAuthDecision {
   return { action: 'allow' }
 }
 
-export function isDriftListAuthorized(c: Context): boolean {
-  if (hasVerifiedAdminAuth(c)) {
+export async function isDriftListAuthorized(c: Context): Promise<boolean> {
+  if (await hasVerifiedAdminAuth(c)) {
     return true
   }
 
@@ -53,8 +53,8 @@ export function isDriftListAuthorized(c: Context): boolean {
   return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
 }
 
-export function isDriftAgentAuthorized(c: Context): boolean {
-  if (hasVerifiedAdminAuth(c)) {
+export async function isDriftAgentAuthorized(c: Context): Promise<boolean> {
+  if (await hasVerifiedAdminAuth(c)) {
     return true
   }
 

@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_constituent_events
+    description: Staged ConstituentEvent records with snake_case column names
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: constituent_email
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EVENT_REGISTRATION', 'DONATION', 'EMAIL_CLICK']
+      - name: source_system
+        tests:
+          - not_null
+      - name: created_at
+        tests:
+          - not_null

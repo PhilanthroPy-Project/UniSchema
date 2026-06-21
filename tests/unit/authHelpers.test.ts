@@ -34,7 +34,9 @@ describe('resolveDriftListAuth', () => {
     process.env.NODE_ENV = 'production'
 
     const app = new Hono()
-    app.get('/drift-auth', (c) => c.json({ authorized: isDriftListAuthorized(c) }))
+    app.get('/drift-auth', async (c) =>
+      c.json({ authorized: await isDriftListAuthorized(c) }),
+    )
 
     const response = await app.request('/drift-auth')
     expect((await response.json()) as { authorized: boolean }).toEqual({ authorized: false })
@@ -66,7 +68,9 @@ describe('resolveMappingSyncAuth helpers', () => {
     expect(resolveMappingSyncAuth()).toEqual({ action: 'misconfigured' })
 
     const app = new Hono()
-    app.get('/mapping-auth', (c) => c.json({ authorized: isMappingSyncAuthorized(c) }))
+    app.get('/mapping-auth', async (c) =>
+      c.json({ authorized: await isMappingSyncAuthorized(c) }),
+    )
 
     const response = await app.request('/mapping-auth')
     expect((await response.json()) as { authorized: boolean }).toEqual({ authorized: false })

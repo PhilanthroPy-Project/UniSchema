@@ -11,7 +11,7 @@ This guide is for the **person who runs UniSchema**: platform engineer, devops, 
 | **Railway** | Git-push deploy, managed secrets | [deploy/README.md](../deploy/README.md) |
 | **Self-built Docker image** | Your own K8s / VM | `Dockerfile` + [README](../README.md#production-deployment) |
 
-There is **no hosted UniSchema SaaS yet**. v0.1.0 expects you to run the container or Node process yourself.
+There is **no hosted UniSchema SaaS yet**. v0.2.0 expects you to run the container or Node process yourself.
 
 ## Architecture (one URL)
 
@@ -96,7 +96,7 @@ S3 micro-batch thresholds (defaults): 5 MB or 2 minutes idle — see `.env.examp
 
 ## Persistence & backups
 
-**Pilot (v0.1.0):** SQLite at `DATABASE_URL` + local/S3 egress files.
+**Pilot (v0.2.0):** SQLite at `DATABASE_URL` + local/S3 egress files.
 
 - Mount `data/` as a Docker volume (see `docker-compose.yml`).
 - Back up `unischema.db` and your S3 prefix on a schedule.

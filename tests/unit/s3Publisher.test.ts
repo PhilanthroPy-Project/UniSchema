@@ -80,7 +80,7 @@ describe('publishToS3', () => {
 
     expect(firstLocation).toBe(secondLocation)
     expect(firstLocation).toMatch(
-      /^s3:\/\/analytics-bucket\/constituent-events\/batches\/2026\/06\/20\/[0-9a-f-]+\.ndjson$/,
+      /^s3:\/\/analytics-bucket\/constituent-events\/batches\/\d{4}\/\d{2}\/\d{2}\/[0-9a-f-]+\.ndjson$/,
     )
     expect(sendMock).toHaveBeenCalledTimes(2)
 
