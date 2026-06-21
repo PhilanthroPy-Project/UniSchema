@@ -140,22 +140,8 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - name: Start server with bundled UI
-        env:
-          SERVE_FRONTEND: 'true'
-          NODE_ENV: development
-        run: |
-          npm run build
-          npm start &
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:3000/health && break
-            sleep 1
-          done
-
       - name: Run Playwright smoke tests
         working-directory: frontend
-        env:
-          PLAYWRIGHT_BASE_URL: http://localhost:3000
         run: npm run test:e2e
 
   quality-gate:

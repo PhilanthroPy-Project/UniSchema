@@ -4,6 +4,36 @@ All notable changes to UniSchema are documented here. The project follows [Seman
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-21
+
+### Added
+
+- PhilanthroPy downstream bridge: `unischema_features.py`, `philanthropy_pipeline.py`, `philanthropy_crm_pipeline.py`
+- Documentation: `philanthropy-integration.md`, `ecosystem.md`, `canvas-vs-code.md`, `competitive-positioning.md`, `ai-agent-loop.md`, `vendor-certification.md`
+- Reference pilot case study: `docs/case-studies/reference-givecampus-cvent-pilot.md`
+- dbt `mart_constituent_rfm_features` for PhilanthroPy batch scoring
+- `npm run demo:multi` — multi-vendor webhook demo
+- Feature column contract tests: `examples/downstream/tests/test_feature_contract.py`
+- CI job `downstream-ml` for Python feature contract tests
+- GitHub issue template: certify-vendor
+- `externalConstituentId` preferred in `crm_join_example.py`
+
+### Changed
+
+- README restructured for ecosystem positioning (UniSchema + PhilanthroPy)
+- `docs/README.md` vendor registry as single source of truth (7 vendors)
+- `downstream-demo.sh` uses PhilanthroPy pipeline when installed
+- Removed deprecated `bot_engagement_classifier.py` in favor of PhilanthroPy integration
+- Operator guide documents `driftPendingCount` on `/health`
+
+### Documentation
+
+- All guides updated for 7-vendor consistency (GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian)
+- `downstream-pipeline.md` recommends PhilanthroPy as primary ML path
+- `schema-governance.md` adds `VOLUNTEER_SHIFT` RFC (documentation only)
+
+## [0.2.0] - 2026-06-20
+
 ### Added
 
 - Ellucian vendor mapper (tier 3 bootstrap) and Slate donation support
@@ -19,8 +49,6 @@ All notable changes to UniSchema are documented here. The project follows [Seman
 ### Changed
 
 - Seven built-in vendors with tier metadata on `/api/vendors`
-- Documentation reconciled for adoption flywheel and agent loop (7 vendors, Redis docs fix)
+- Documentation reconciled for adoption flywheel and agent loop
 
-## [0.2.0] - 2026-06-20
-
-See git history for the v0.2.0 release notes.
+See git history for full v0.2.0 release notes.

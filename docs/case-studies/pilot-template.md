@@ -42,6 +42,7 @@ What fragmented webhook / integration pain existed before UniSchema?
 - Events normalized per week (pilot volume)
 - Fields mapped via canvas vs built-in mapper
 - Downstream artifact produced (table, model, dashboard)
+- **ML outcomes:** models run (e.g. PhilanthroPy `DonorPropensityModel`), affinity score distribution, CRM join rate
 - Blockers encountered (Tier 3 payloads, schema mismatch, ops)
 
 ## Recommendations for similar institutions

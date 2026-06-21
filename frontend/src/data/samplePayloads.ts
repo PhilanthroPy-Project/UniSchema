@@ -63,6 +63,16 @@ export const SLATE_SAMPLE_PAYLOAD: Record<string, unknown> = {
 }
 
 export const SLATE_VENDOR = 'Slate'
+export const ELLUCIAN_VENDOR = 'Ellucian'
+
+export const ELLUCIAN_SAMPLE_PAYLOAD: Record<string, unknown> = {
+  id: 'ellucian-evt-001',
+  email: 'student@university.edu',
+  first_name: 'Taylor',
+  last_name: 'Nguyen',
+  event_type: 'registration',
+  person_id: 'P-12345',
+}
 
 export const VENDOR_OPTIONS: VendorOption[] = [
   { slug: 'givecampus', label: GIVECAMPUS_VENDOR, samplePayload: GIVECAMPUS_SAMPLE_PAYLOAD },
@@ -71,6 +81,7 @@ export const VENDOR_OPTIONS: VendorOption[] = [
   { slug: 'blackbaud', label: BLACKBAUD_VENDOR, samplePayload: BLACKBAUD_SAMPLE_PAYLOAD },
   { slug: 'npsp', label: NPSP_VENDOR, samplePayload: NPSP_SAMPLE_PAYLOAD },
   { slug: 'slate', label: SLATE_VENDOR, samplePayload: SLATE_SAMPLE_PAYLOAD },
+  { slug: 'ellucian', label: ELLUCIAN_VENDOR, samplePayload: ELLUCIAN_SAMPLE_PAYLOAD },
 ]
 
 export function getVendorOption(slug: string): VendorOption | undefined {

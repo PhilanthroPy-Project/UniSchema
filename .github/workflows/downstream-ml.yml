@@ -1,0 +1,59 @@
+name: Downstream ML
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'examples/downstream/**'
+      - '.github/workflows/downstream-ml.yml'
+  pull_request:
+    paths:
+      - 'examples/downstream/**'
+      - '.github/workflows/downstream-ml.yml'
+
+jobs:
+  feature-contract:
+    name: Python feature contract tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas pytest
+          pip install -r examples/downstream/requirements-philanthropy.txt || pip install pandas pytest
+
+      - name: Run feature contract tests
+        working-directory: examples/downstream
+        run: pytest tests/test_feature_contract.py -q
+
+  philanthropy-smoke:
+    name: PhilanthroPy pipeline smoke (optional)
+    runs-on: ubuntu-latest
+    needs:
+      - feature-contract
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PhilanthroPy stack
+        run: pip install -r examples/downstream/requirements-philanthropy.txt
+
+      - name: Smoke test unischema_features import
+        working-directory: examples/downstream
+        run: python3 -c "from unischema_features import REQUIRED_FEATURE_COLUMNS; print(len(REQUIRED_FEATURE_COLUMNS), 'columns')"

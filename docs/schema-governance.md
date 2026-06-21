@@ -46,3 +46,28 @@ Open a GitHub Discussion with:
 - Migration notes for existing S3 batches
 
 Maintainers label `rfc/schema` and decide before merge.
+
+## Community RFC: `VOLUNTEER_SHIFT` (documentation only)
+
+**Status:** Not implemented — awaiting pilot institution request.
+
+### Motivation
+
+Advancement teams track volunteer shifts separately from event registrations. Today these map awkwardly to `EVENT_REGISTRATION`.
+
+### Proposed change
+
+Add `VOLUNTEER_SHIFT` to `EventTypeSchema` in `src/schema/master.ts`.
+
+### Downstream impact
+
+| Component | Action |
+|-----------|--------|
+| dbt `mart_constituent_engagement_daily` | Add `volunteer_shift_count` column |
+| dbt `mart_constituent_rfm_features` | Optional engagement feature |
+| `unischema_features.py` | Add `volunteer_shift_count` to contract |
+| PhilanthroPy pipelines | Map to engagement features or separate model |
+
+### Do not implement until
+
+At least one pilot institution confirms the enum name and provides sample webhook payloads.

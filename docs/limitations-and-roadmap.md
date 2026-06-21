@@ -1,16 +1,17 @@
 # Limitations & roadmap (read before production)
 
-UniSchema is **v0.2.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
+UniSchema is **v0.3.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
 
 ## What works well today
 
-- Six built-in vendors → **ConstituentEvent** with HMAC verification
+- Seven built-in vendors → **ConstituentEvent** with HMAC verification
 - Async ingest with crash recovery
 - Local or S3 egress push
 - Visual mapping canvas for field overrides + `normalizedMetadata`
+- **PhilanthroPy integration** — [philanthropy-integration.md](./philanthropy-integration.md)
 - SQLite default or optional Postgres ([postgres.md](./postgres.md))
 - Docker Compose + single-URL bundled UI
-- 15-minute demo script (`npm run demo`)
+- 15-minute demo (`npm run demo:multi`)
 
 ## Vendor maturity tiers
 
@@ -18,14 +19,15 @@ UniSchema is **v0.2.0** — strong for pilots and webhook normalization proofs; 
 |------|---------|--------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures, primary support |
 | **Tier 2** | iModules | Reference vendor #3 implementation |
-| **Tier 3** | Blackbaud, NPSP, Slate | Community mappers — verify with your real payloads; [certification criteria](./README.md) |
-| **Planned** | Ellucian | Open an issue or PR via [adding-a-vendor.md](./adding-a-vendor.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian | Community mappers — verify with your real payloads; [certification](./vendor-certification.md) |
 
-## Honest limitations (v0.2.0)
+See [vendor registry](./README.md#vendor-registry) for the canonical list.
+
+## Honest limitations (v0.3.0)
 
 ### Not every advancement vendor is built-in
 
-Ellucian and niche CRMs still require the [6-file vendor checklist](./adding-a-vendor.md). Slate is built-in (Tier 3) — verify payloads against your instance before production.
+Niche CRMs still require the [6-file vendor checklist](./adding-a-vendor.md). Tier 3 vendors (including Ellucian) — verify payloads against your instance before production.
 
 ### Fixed master schema
 
@@ -40,7 +42,7 @@ Use `normalizedMetadata` for org-specific fields. Changing core fields requires 
 
 `EVENT_REGISTRATION`, `DONATION`, `EMAIL_CLICK`
 
-Email opens, volunteer shifts, membership renewals, etc. must map to the nearest type or wait for enum extensions via RFC.
+Email opens, volunteer shifts, membership renewals, etc. must map to the nearest type or wait for enum extensions via RFC — see [schema-governance.md](./schema-governance.md#community-rfc-volunteer_shift).
 
 ### Scale characteristics
 
@@ -75,7 +77,7 @@ The LLM drift runner (`agents/drift_runner/`) is **human-in-the-loop assistive t
 | Propose patches under `agents/output/` | Self-heal production without review |
 | Generate Vitest fixture scaffolding | Replace your change management |
 
-**Do not** enable unsupervised agent loops against production. See [agents/README.md](../agents/README.md).
+**Do not** enable unsupervised agent loops against production. See [ai-agent-loop.md](./ai-agent-loop.md) and [agents/README.md](../agents/README.md).
 
 ### No managed SaaS (yet)
 
@@ -120,8 +122,8 @@ Node process(es)
 
 ## Roadmap themes (not committed dates)
 
-1. **Adoption** — GHCR releases, compose profiles, downstream ML kit ✅ in progress
-2. **Vendors** — Slate Tier 1 certification, community certification for Blackbaud/NPSP, Ellucian bootstrap
+1. **Adoption** — GHCR releases, compose profiles, PhilanthroPy bridge ✅ v0.3
+2. **Vendors** — Slate/NPSP Tier 1 certification, community certification for Blackbaud/Ellucian
 3. **Scale** — Redis rate limit, pg-boss queue, published benchmarks ✅ in progress
 4. **Product** — metadata canvas, import mapping, drift UI actions ✅ in progress
 5. **Trust (v1.0)** — OIDC admin auth, mapping audit log, compliance docs

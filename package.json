@@ -1,6 +1,6 @@
 {
   "name": "unischema",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Webhook Unifier for university advancement teams",
   "type": "module",
   "private": true,
@@ -19,6 +19,7 @@
     "start": "tsx src/server.ts",
     "build": "npm run build -w unischema-frontend",
     "demo": "bash scripts/demo-webhook.sh",
+    "demo:multi": "bash scripts/demo-webhook.sh --multi",
     "downstream-demo": "bash scripts/downstream-demo.sh",
     "benchmark": "bash scripts/load-benchmark.sh",
     "docker:up": "docker compose up --build",

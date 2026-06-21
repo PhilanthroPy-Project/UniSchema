@@ -1,30 +1,58 @@
 # Downstream pipeline examples
 
-These scripts answer **"why UniSchema?"** — they consume normalized **ConstituentEvent** output and produce a report your stakeholders can understand.
+These scripts answer **"why UniSchema?"** — they consume normalized **ConstituentEvent** output and feed [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) ML pipelines.
+
+**Primary guide:** [docs/philanthropy-integration.md](../../docs/philanthropy-integration.md)
+
+## Install
+
+```bash
+# Basic analytics
+pip install -r examples/downstream/requirements.txt
+
+# PhilanthroPy ML bridge (optional)
+pip install -r examples/downstream/requirements-philanthropy.txt
+```
 
 ## Local egress (pilot / Docker Compose)
 
-After `npm run demo`:
+After `npm run demo:multi`:
 
 ```bash
 python3 examples/downstream/read_local_egress.py data/egress
+python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm-golden-record.csv
 ```
 
-**Notebook:** [egress_report.ipynb](./egress_report.ipynb) — same data, bar chart for stakeholders (`pip install pandas matplotlib`).
+Or run the full chain:
 
-Sample output:
-
+```bash
+npm run downstream-demo
 ```
-UniSchema egress report (local JSON)
-====================================
-Files read: 1
 
-Events by sourceSystem:
-  GIVECAMPUS               1 events  $250.00 total donations
+**Notebook:** [egress_report.ipynb](./egress_report.ipynb) — egress summary + optional PhilanthroPy histogram.
 
-Events by eventType:
-  DONATION                      1
-```
+## Feature column contract
+
+`unischema_features.py` aggregates egress JSON to a per-constituent DataFrame. Required columns are tested in `tests/test_feature_contract.py`.
+
+| Column | PhilanthroPy use |
+|--------|------------------|
+| `total_gift_amount` | `DonorPropensityModel` input |
+| `years_active` | `DonorPropensityModel` input |
+| `event_attendance_count` | `DonorPropensityModel` input |
+
+Full contract → [philanthropy-integration.md](../../docs/philanthropy-integration.md#feature-column-contract)
+
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `unischema_features.py` | Egress → feature DataFrame |
+| `philanthropy_crm_pipeline.py` | **Recommended** ML path with CRM labels |
+| `philanthropy_pipeline.py` | Demo with proxy labels |
+| `crm_join_example.py` | CRM join (`externalConstituentId` or email) |
+| `read_local_egress.py` | Stakeholder text report |
+| `read_s3_ndjson_batch.py` | Production S3 batch reader |
 
 ## S3 NDJSON batches (production)
 
@@ -35,39 +63,17 @@ s3://{bucket}/{prefix}/batches/{YYYY}/{MM}/{DD}/{batchId}.ndjson
 s3://{bucket}/{prefix}/batches/{YYYY}/{MM}/{DD}/{batchId}.manifest.json
 ```
 
-Read a batch:
-
 ```bash
 pip install boto3
 python3 examples/downstream/read_s3_ndjson_batch.py \
   s3://your-bucket/constituent-events/batches/2026/06/20/abc123.ndjson
 ```
 
-Each NDJSON line is one `ConstituentEvent` JSON object.
+## dbt
 
-## Airflow
+See [dbt/README.md](./dbt/README.md) — includes `mart_constituent_rfm_features` for PhilanthroPy batch scoring.
 
-[`airflow_dag_stub.py`](./airflow_dag_stub.py) shows a trigger-only DAG that:
+## Related
 
-1. Receives `s3Uri` from UniSchema's `AIRFLOW_WEBHOOK_URL` POST (event `egress.batch.ready`)
-2. Downloads the NDJSON batch
-3. Prints aggregation (replace with warehouse load)
-
-Wire in `.env`:
-
-```bash
-AIRFLOW_WEBHOOK_URL=https://airflow.example.com/api/v1/dags/unischema_ingest/dagRuns
-AIRFLOW_WEBHOOK_SECRET=...
-```
-
-Alternatively, S3 event notifications on `*.manifest.json` can trigger the same DAG without HTTP.
-
-## Jupyter / notebook
-
-Open **[egress_report.ipynb](./egress_report.ipynb)** in JupyterLab or VS Code. It loads local egress JSON and plots donation totals by `sourceSystem`.
-
-## Next steps
-
-- Join `constituentEmail` to your CRM golden record
-- Feed `normalizedMetadata` features into an engagement model
-- See [docs/operator-guide.md](../../docs/operator-guide.md) for egress configuration
+- [docs/downstream-pipeline.md](../../docs/downstream-pipeline.md)
+- [docs/ecosystem.md](../../docs/ecosystem.md)

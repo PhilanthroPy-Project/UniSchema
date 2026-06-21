@@ -1,0 +1,5 @@
+# PhilanthroPy + downstream ML dependencies (optional)
+git+https://github.com/PhilanthroPy-Project/PhilanthroPy.git
+pandas>=2.0
+scikit-learn>=1.3
+pytest>=7.0

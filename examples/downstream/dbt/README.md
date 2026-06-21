@@ -1,6 +1,6 @@
 # Minimal dbt project for UniSchema S3 NDJSON egress
 
-Stages ConstituentEvent batches after UniSchema S3 push.
+Stages ConstituentEvent batches after UniSchema S3 push. The `mart_constituent_rfm_features` model outputs columns compatible with PhilanthroPy batch scoring.
 
 ## Layout
 
@@ -14,6 +14,7 @@ dbt/
 │   │   └── schema.yml
 │   └── marts/
 │       ├── mart_constituent_engagement_daily.sql
+│       ├── mart_constituent_rfm_features.sql
 │       └── schema.yml
 ```
 
@@ -26,5 +27,16 @@ dbt/
 ```bash
 dbt run
 ```
+
+## PhilanthroPy consumption
+
+Export `mart_constituent_rfm_features` to CSV or query via Python:
+
+```python
+# Warehouse export columns align with unischema_features.py contract
+# See docs/philanthropy-integration.md
+```
+
+Column contract documented in `models/marts/schema.yml`.
 
 See [../../docs/downstream-pipeline.md](../../docs/downstream-pipeline.md) for the full pilot → warehouse path.

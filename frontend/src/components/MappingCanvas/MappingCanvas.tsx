@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowRightLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 import { fetchMappingArtifact, syncMappingArtifact } from '../../api/syncMapping'
 import { getVendorLabel, getVendorOption, type VendorOption } from '../../data/samplePayloads'
@@ -10,9 +10,9 @@ import { runMappingPreview } from '../../utils/previewMapping'
 
 import { FirstRunWizard, useFirstRunWizard } from './FirstRunWizard'
 import { FlowCanvas } from './FlowCanvas'
+import { MainLayout } from './MainLayout'
 import { MappingPreviewModal } from './MappingPreviewModal'
-import { MappingToolbar, loadVendorOptions, resolveVendorOption } from './MappingToolbar'
-import { ResizableThreeColumnLayout } from './ResizableThreeColumnLayout'
+import { loadVendorOptions, resolveVendorOption } from './MappingToolbar'
 import { RightSidebarPanel } from './RightSidebarPanel'
 import { SourcePayloadPanel } from './SourcePayloadPanel'
 import { TestWebhookPanel } from './TestWebhookPanel'
@@ -294,8 +294,8 @@ export function MappingCanvas({ initialVendorSlug, initialPayload }: MappingCanv
   )
 
   return (
-    <div className="flex h-full flex-col bg-theme-bg font-system text-theme-ink transition-colors duration-300">
-      <MappingToolbar
+    <div className="relative flex h-full flex-col">
+      <MainLayout
         vendorOptions={vendorOptions.length > 0 ? vendorOptions : [selectedVendor]}
         selectedVendorSlug={selectedVendor.slug}
         status={status}
@@ -312,11 +312,8 @@ export function MappingCanvas({ initialVendorSlug, initialPayload }: MappingCanv
         onDeploy={() => void handleDeploy()}
         onImport={handleImportMapping}
         onExport={handleExportMapping}
-      />
-
-      <ResizableThreeColumnLayout
-        left={
-          <div className="flex h-full flex-col gap-3">
+        leftPanel={
+          <>
             <SourcePayloadPanel
               vendor={getVendorLabel(selectedVendor.slug)}
               payload={activePayload}
@@ -324,52 +321,25 @@ export function MappingCanvas({ initialVendorSlug, initialPayload }: MappingCanv
               onPayloadChange={handlePayloadChange}
             />
             <TestWebhookPanel vendorSlug={selectedVendor.slug} payload={activePayload} />
+          </>
+        }
+        centerPanel={
+          <div className="relative min-h-0 flex-1 bg-zinc-950">
+            {isLoadingMapping ? (
+              <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading saved mapping…
+              </div>
+            ) : (
+              <FlowCanvas
+                onActiveSourcePathChange={setHighlightedPath}
+                readOnly={status === 'deployed' && isCanvasSynced}
+              />
+            )}
           </div>
         }
-        center={
-          <section className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <h2 className="text-sm font-semibold text-theme-ink">Mapping Canvas</h2>
-                <p className="text-xs text-theme-muted">
-                  Connect vendor fields to master schema targets
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-theme-inset px-3 py-1.5 text-xs text-theme-muted">
-                <ArrowRightLeft className="h-3.5 w-3.5" />
-                Vendor → Master Schema
-              </div>
-            </div>
-            <div className="relative min-h-0 flex-1 rounded-b-2xl bg-theme-canvas transition-colors duration-300">
-              {isLoadingMapping ? (
-                <div className="flex h-full items-center justify-center text-sm text-theme-muted">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading saved mapping…
-                </div>
-              ) : (
-                <FlowCanvas
-                  onActiveSourcePathChange={setHighlightedPath}
-                  readOnly={status === 'deployed' && isCanvasSynced}
-                />
-              )}
-            </div>
-          </section>
-        }
-        right={<RightSidebarPanel />}
+        rightPanel={<RightSidebarPanel />}
       />
-
-      <footer className="shrink-0 bg-theme-surface px-6 py-2.5 shadow-sm backdrop-blur-xl transition-colors duration-300">
-        <div className="flex items-center justify-between text-xs text-theme-muted">
-          <span>Click a node or edge to edit properties · Press Backspace to remove a connection</span>
-          <span>
-            Active connections:{' '}
-            <span className="font-medium text-theme-ink">{edges.length}</span>
-            {' · '}
-            Metadata:{' '}
-            <span className="font-medium text-theme-ink">{metadataMappings.length}</span>
-          </span>
-        </div>
-      </footer>
 
       <MappingPreviewModal
         open={previewOpen}

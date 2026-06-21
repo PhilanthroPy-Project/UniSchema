@@ -41,6 +41,9 @@ repomix-output.xml
 
 # Local-only test artifacts
 data/
+examples/downstream/.venv/
+**/__pycache__/
+frontend/test-results/
 :memory:*
 tests/__fixtures__/drift/*
 !tests/__fixtures__/drift/seed/**

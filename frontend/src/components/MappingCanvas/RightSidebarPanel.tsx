@@ -21,7 +21,7 @@ export function RightSidebarPanel() {
   )
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden rounded-2xl bg-theme-surface shadow-sm backdrop-blur-xl transition-colors duration-300">
+    <aside className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/60">
       {selection ? (
         <PropertiesPanel onBack={clearSelection} />
       ) : (

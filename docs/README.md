@@ -10,22 +10,32 @@ Pick the guide that matches your role — you don't need to read everything.
 | **Operator** | [operator-guide.md](./operator-guide.md) | Set `EGRESS_TARGET`, webhook secrets, deploy to cloud |
 | **Developer** | [adding-a-vendor.md](./adding-a-vendor.md) | Add a vendor in 6 files |
 | **Data engineer** | [downstream-pipeline.md](./downstream-pipeline.md) | Pilot → S3 → dbt → analytics |
+| **Data scientist / ML engineer** | [philanthropy-integration.md](./philanthropy-integration.md) | ConstituentEvent → PhilanthroPy propensity scoring |
 | **New adopter** | [adoption-checklist.md](./adoption-checklist.md) | Week-by-week pilot → production |
-| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.2.0 scope |
+| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.3 scope |
 | **Security / privacy** | [security-and-privacy.md](./security-and-privacy.md) | FERPA-adjacent guidance, retention, rotation |
 
-## Vendor maturity tiers
+## Ecosystem and positioning
+
+| Topic | Guide |
+|-------|-------|
+| UniSchema + PhilanthroPy stack | [ecosystem.md](./ecosystem.md) |
+| Canvas vs code deploy boundary | [canvas-vs-code.md](./canvas-vs-code.md) |
+| vs Lambdas, Zapier, Fivetran | [competitive-positioning.md](./competitive-positioning.md) |
+| AI agent + drift loop | [ai-agent-loop.md](./ai-agent-loop.md) |
+| Reference pilot case study | [case-studies/reference-givecampus-cvent-pilot.md](./case-studies/reference-givecampus-cvent-pilot.md) |
+
+## Vendor registry
+
+**Single source of truth** for built-in vendors. Other docs link here instead of duplicating tier tables.
 
 | Tier | Vendors | Expectation |
 |------|---------|-------------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures; primary support |
 | **Tier 2** | iModules | Reference implementation for new vendors |
-| **Tier 3** | Blackbaud, NPSP | Community — submit real (redacted) payload PRs to certify |
-| **Tier 3** | Slate | Community mapper — verify form field names with your Slate instance |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian | Community — verify with your real payloads; [certification](./vendor-certification.md) |
 
-Community-tier vendors (Blackbaud, NPSP, Slate): submit redacted real payload PRs to certify field names against your instance.
-
-## Vendor compatibility matrix
+### Compatibility matrix
 
 | Vendor | Tier | Webhook route | Notes |
 |--------|------|---------------|-------|
@@ -35,8 +45,10 @@ Community-tier vendors (Blackbaud, NPSP, Slate): submit redacted real payload PR
 | Blackbaud RENXT | 3 | `/webhooks/blackbaud` | Gift webhooks — verify payload shape |
 | Salesforce NPSP | 3 | `/webhooks/npsp` | Donation objects — verify field API names |
 | Slate | 3 | `/webhooks/slate` | Form webhooks — verify field API names |
-| Ellucian | 3 | `/webhooks/ellucian` | Reference bootstrap — verify with your payloads |
+| Ellucian | 3 | `/webhooks/ellucian` | Bootstrap mapper — verify with your payloads |
 | Other CRMs | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
+
+Promote Tier 3 → Tier 1 → [vendor-certification.md](./vendor-certification.md)
 
 ## Additional references
 
@@ -66,8 +78,10 @@ Community-tier vendors (Blackbaud, NPSP, Slate): submit redacted real payload PR
 
 ## Quick answers
 
-**Do we need Airflow?** No for a pilot. S3 egress + a Python script or notebook is enough.
+**Do we need Airflow?** No for a pilot. S3 egress + PhilanthroPy or a notebook is enough.
 
-**Do we need Postgres?** Not for a pilot. Use Postgres when you need 2+ instances or shared state — [postgres.md](./postgres.md).
+**Do we need Postgres?** Not for a pilot. Use Postgres when you need 2+ instances — [postgres.md](./postgres.md).
 
-**Is there a hosted SaaS?** Not yet — self-host with Docker or Fly/Railway templates.
+**Do we need PhilanthroPy?** Optional for ingest-only pilots. Recommended for propensity/lapse scoring — [philanthropy-integration.md](./philanthropy-integration.md).
+
+**Is there a hosted SaaS?** Not yet — [hosted-tier-rfc.md](./hosted-tier-rfc.md).

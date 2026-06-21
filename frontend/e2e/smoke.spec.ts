@@ -1,4 +1,12 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+async function dismissFirstRunWizard(page: Page) {
+  const wizard = page.getByTestId('first-run-wizard')
+  if (await wizard.isVisible()) {
+    await page.getByRole('button', { name: /Dismiss wizard/i }).click()
+    await expect(wizard).not.toBeVisible()
+  }
+}
 
 test.describe('UniSchema admin UI smoke', () => {
   test('mapping canvas loads with vendor select', async ({ page }) => {
@@ -15,6 +23,7 @@ test.describe('UniSchema admin UI smoke', () => {
 
   test('drift queue tab navigates', async ({ page }) => {
     await page.goto('/')
+    await dismissFirstRunWizard(page)
     await page.getByRole('button', { name: /Drift Queue/i }).click()
     await expect(page.getByRole('heading', { name: /Drift Queue/i })).toBeVisible()
   })
@@ -22,9 +31,8 @@ test.describe('UniSchema admin UI smoke', () => {
   test('first-run wizard can be dismissed', async ({ page }) => {
     await page.goto('/')
     const wizard = page.getByTestId('first-run-wizard')
-    if (await wizard.isVisible()) {
-      await page.getByRole('button', { name: /Get started/i }).click()
-      await expect(wizard).not.toBeVisible()
-    }
+    await expect(wizard).toBeVisible()
+    await page.getByRole('button', { name: /Dismiss wizard/i }).click()
+    await expect(wizard).not.toBeVisible()
   })
 })

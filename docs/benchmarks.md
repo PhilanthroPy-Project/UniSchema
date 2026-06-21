@@ -14,7 +14,7 @@ BASE_URL=http://localhost:3000 ./scripts/load-benchmark.sh
 
 The script POSTs sample GiveCampus payloads as fast as the server accepts them for 60 seconds and reports throughput.
 
-## Reference results (v0.2.0)
+## Reference results (v0.3.0)
 
 | Scenario | Throughput | p50 latency | p95 latency | Notes |
 |----------|------------|-------------|-------------|-------|

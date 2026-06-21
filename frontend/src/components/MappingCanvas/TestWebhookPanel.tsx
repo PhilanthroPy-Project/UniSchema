@@ -91,7 +91,7 @@ export function TestWebhookPanel({ vendorSlug, payload }: TestWebhookPanelProps)
   }, [payload, vendorSlug])
 
   return (
-    <div className="rounded-2xl border border-theme-border bg-theme-inset p-3">
+    <div className="rounded-xl border border-zinc-800/50 bg-zinc-950/80 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-medium text-theme-ink">Test webhook</p>

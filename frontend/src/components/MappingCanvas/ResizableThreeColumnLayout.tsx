@@ -91,7 +91,7 @@ export function ResizableThreeColumnLayout({
   }
 
   return (
-    <div ref={containerRef} className="flex min-h-0 flex-1 p-3">
+    <div ref={containerRef} className="flex min-h-0 flex-1 gap-1 p-3">
       <div className="min-w-0 shrink-0 overflow-hidden" style={{ width: `${leftPct}%` }}>
         {left}
       </div>

@@ -1,47 +1,57 @@
 # UniSchema
 
-**v0.2.0** — Open-source webhook unification for university advancement teams.
+**v0.3.0** — Open-source webhook unification for university advancement teams.
 
-Turn GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate (and vendors you add) into one **ConstituentEvent** schema, with a visual mapper UI and push-to-storage egress for analytics.
+UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) scores propensity, lapse, and engagement on the features you build from that stream.
 
-> **Pilot-ready, not forgettable yet.** Six built-in vendors, SQLite or Postgres, self-hosted.  
+> **Pilot-ready, not forgettable yet.** Seven built-in vendors, SQLite or Postgres, self-hosted.  
 > Read [docs/limitations-and-roadmap.md](./docs/limitations-and-roadmap.md) before production donor data.
 
 **One URL:** API + admin UI on the same port.
 
-[![Deploy on Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7c3aed?style=for-the-badge&logo=fly.io)](https://fly.io/docs/languages-and-frameworks/docker/)
-[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://docs.railway.com/guides/dockerfiles)
+---
 
-Docker image: `ghcr.io/PhilanthroPy-Project/unischema:latest`
+## Who this is for
+
+- Advancement analytics teams ingesting **2–4 webhook vendors** (GiveCampus, Cvent, Slate, NPSP, etc.)
+- Shops that want a **single normalized event stream** for warehouse, dashboards, or ML
+- Teams comfortable **self-hosting** Node + secrets + S3 (or local egress for pilots)
+
+## Who this is not for (today)
+
+- Teams that need a **fully managed SaaS** with vendor SLAs — [hosted tier RFC](./docs/hosted-tier-rfc.md)
+- **Full CRM sync** (bi-directional Slate/Salesforce) — UniSchema is webhook ingest + normalize, not a CRM
+- **Fully no-code vendor onboarding** — new vendors require a one-time code deploy; see [canvas vs code](./docs/canvas-vs-code.md)
+- Orgs whose canonical constituent model **differs significantly** from `ConstituentEvent` — use `normalizedMetadata` or fork via RFC
 
 ---
 
-## Adoption paths
+## Ecosystem
 
-| Stage | Stack | Guide |
-|-------|-------|-------|
-| **Pilot** (~15 min) | Docker + SQLite + local egress | [Quick start](#quick-start-15-minutes) |
-| **Production** | Fly/Railway + S3 + Postgres optional | [Operator guide](./docs/operator-guide.md) |
-| **Scale** | Postgres + benchmarks + multi-instance | [Benchmarks](./docs/benchmarks.md) · [Postgres](./docs/postgres.md) |
+```mermaid
+flowchart LR
+  Vendors[VendorWebhooks] --> UniSchema[UniSchema]
+  UniSchema --> Egress[LocalOrS3Egress]
+  Egress --> Features[FeatureTable]
+  Features --> PhilanthroPy[PhilanthroPy]
+  Features --> CRM[CRMGoldenRecord]
+  CRM --> PhilanthroPy
+  PhilanthroPy --> Scores[AffinityAndLapseScores]
+```
 
----
+| Project | Role |
+|---------|------|
+| **UniSchema** (this repo) | Ingest webhooks → validate → map → egress `ConstituentEvent` |
+| **[PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy)** | sklearn-native ML for advancement (RFM, propensity, lapse) |
+| **dbt / Airflow** (optional) | Warehouse staging and orchestration — [downstream guide](./docs/downstream-pipeline.md) |
 
-## Choose your guide
-
-| I am… | Start here |
-|-------|------------|
-| **New adopter** — first webhook in ~15 min | [Quick start](#quick-start-15-minutes) below |
-| **Admin / analyst** — drawing mapping lines on the canvas | [docs/admin-guide.md](./docs/admin-guide.md) |
-| **Operator** — secrets, S3 egress, cloud deploy | [docs/operator-guide.md](./docs/operator-guide.md) |
-| **Developer** — adding Slate, Ellucian, vendor #7 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
-| **Data engineer** — prove downstream value | [examples/downstream/](examples/downstream/README.md) (notebook + scripts) |
-| **All docs** | [docs/README.md](docs/README.md) |
+Full stack map → [docs/ecosystem.md](./docs/ecosystem.md)
 
 ---
 
 ## Quick start (~15 minutes)
 
-**Requires:** [Docker](https://docs.docker.com/get-docker/) + Docker Compose. The demo script uses `curl` and `jq` (included in the Docker image).
+**Requires:** [Docker](https://docs.docker.com/get-docker/) + Docker Compose. Demo scripts use `curl` and `jq`.
 
 ```bash
 git clone https://github.com/PhilanthroPy-Project/UniSchema.git
@@ -50,8 +60,9 @@ docker compose -f docker-compose.pilot.yml up --build
 ```
 
 1. Open [http://localhost:3000](http://localhost:3000) — mapping canvas + API together  
-2. In another terminal: `npm run demo`  
-3. See a **ConstituentEvent** JSON file under `data/egress/`
+2. In another terminal: `npm run demo` (single webhook) or `npm run demo:multi` (all vendors)  
+3. See **ConstituentEvent** JSON under `data/egress/`  
+4. Prove downstream value: `npm run downstream-demo`
 
 ```
 GiveCampus POST → 202 Accepted → background map → data/egress/.../eventId.json
@@ -64,63 +75,81 @@ GiveCampus POST → 202 Accepted → background map → data/egress/.../eventId.
 npm install && cd frontend && npm install && cd ..
 npm run build
 SERVE_FRONTEND=true npm start
-npm run demo
+npm run demo:multi
 ```
 
 </details>
 
 ---
 
+## Choose your guide
+
+| I am… | Start here |
+|-------|------------|
+| **New adopter** — first webhook in ~15 min | [Quick start](#quick-start-15-minutes) above |
+| **Admin / analyst** — drawing mapping lines on the canvas | [docs/admin-guide.md](./docs/admin-guide.md) |
+| **Operator** — secrets, S3 egress, cloud deploy | [docs/operator-guide.md](./docs/operator-guide.md) |
+| **Developer** — adding vendor #8 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
+| **Data engineer** — warehouse + dbt | [docs/downstream-pipeline.md](./docs/downstream-pipeline.md) |
+| **Data scientist / ML engineer** — PhilanthroPy scoring | [docs/philanthropy-integration.md](./docs/philanthropy-integration.md) |
+| **All docs** | [docs/README.md](docs/README.md) |
+
+---
+
+## Canvas vs code (read before buying)
+
+The visual mapper **overrides fields** on registered vendors — it does **not** create new webhook routes.
+
+| Task | Canvas | Requires deploy |
+|------|--------|-----------------|
+| Remap fields → `normalizedMetadata` | Yes | No |
+| Override built-in field wiring | Yes | No |
+| New `POST /webhooks/{vendor}` route | No | Yes ([6-file checklist](./docs/adding-a-vendor.md)) |
+| HMAC secret + Zod payload schema | No | Yes |
+
+Details → [docs/canvas-vs-code.md](./docs/canvas-vs-code.md)
+
+---
+
+## Maturity (honest)
+
+| Stage | Stack | Throughput (typical) | Guide |
+|-------|-------|----------------------|-------|
+| **Pilot** (~15 min) | Docker + SQLite + local egress | ~600–900 req/min (Docker, limit raised) | [Quick start](#quick-start-15-minutes) |
+| **Production** | Fly/Railway + S3 + Postgres optional | ~120 req/min/IP default; tune for giving day | [Operator guide](./docs/operator-guide.md) |
+| **Scale** | Postgres + Redis + multi-instance | Benchmark before peak — `npm run benchmark` | [Benchmarks](./docs/benchmarks.md) |
+
+Vendor registry (7 built-in) → [docs/README.md#vendor-registry](docs/README.md#vendor-registry)
+
+---
+
 ## What UniSchema is (and isn't)
 
-| ✅ Today (v0.2.0) | ⚠️ Limits |
-|----------|------------------|
-| 6 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate | Ellucian — [add your own](./docs/adding-a-vendor.md) |
-| Tier 1 (prod-tested): GiveCampus, Cvent · Tier 2: iModules · Tier 3 (community): Blackbaud, NPSP, Slate | Verify Tier 3 mappers with your real payloads — [certification](./docs/README.md) |
-| SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis (see [deploy guide](./deploy/README.md)) |
-| HMAC webhook verification | ~120 req/min/IP default; tune for peak giving day |
-| Visual canvas + metadata mappings + import/export | Core master schema is opinionated — [details](./docs/limitations-and-roadmap.md) |
-| Local + S3 egress push | No managed SaaS yet — [Fly / Railway / Terraform S3](deploy/README.md) |
-| 3 event types: registration, donation, email click | Extending enums needs RFC + pipeline coordination |
-| Drift queue + experimental LLM agent | **Human review required** — [agents/README.md](./agents/README.md) |
+| Today (v0.3.0) | Limits |
+|----------------|--------|
+| 7 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian | Tier 3 — verify with real payloads; [certification](./docs/vendor-certification.md) |
+| Tier 1: GiveCampus, Cvent · Tier 2: iModules · Tier 3: Blackbaud, NPSP, Slate, Ellucian | Ellucian is bootstrap Tier 3 |
+| SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis |
+| HMAC webhook verification | ~120 req/min/IP default |
+| Visual canvas + metadata mappings | Opinionated master schema — [details](./docs/limitations-and-roadmap.md) |
+| Local + S3 egress → PhilanthroPy ML bridge | ML requires optional `pip install -r examples/downstream/requirements-philanthropy.txt` |
+| Drift queue + experimental LLM agent | **Human review required** — [ai-agent-loop](./docs/ai-agent-loop.md) |
+| 3 event types: registration, donation, email click | New types via RFC — [schema-governance](./docs/schema-governance.md) |
 
 ---
 
-## Cloud deploy (low ops)
+## Downstream and ML
 
-No hosted tier yet. Use bundled Docker image + platform templates:
-
-| Platform | Docs |
-|----------|------|
-| Fly.io | [deploy/fly.toml](./deploy/fly.toml) + [deploy/README.md](./deploy/README.md) |
-| Railway | [deploy/railway.toml](./deploy/railway.toml) |
-| GHCR image | `docker pull ghcr.io/PhilanthroPy-Project/unischema:0.2.0` |
-| Any host | [Dockerfile](./Dockerfile) |
-
-Production checklist → [operator guide](./docs/operator-guide.md).
-
-**Minimum production env vars** (see [.env.example](./.env.example)):
-
-| Variable | Purpose |
-|----------|---------|
-| `GIVECAMPUS_WEBHOOK_SECRET` / `CVENT_WEBHOOK_SECRET` (+ per-vendor secrets) | HMAC verification (required in production) |
-| `MAPPING_SYNC_TOKEN` | Protects mapping sync, mapping GET, and ingestion polling |
-| `DRIFT_AGENT_TOKEN` | Protects drift queue API |
-| `TRUST_PROXY=true` | Trust `X-Forwarded-For` only when behind a reverse proxy |
-
----
-
-## Downstream example
-
-After the demo:
+After `npm run downstream-demo`:
 
 ```bash
-python3 examples/downstream/read_local_egress.py data/egress
+pip install -r examples/downstream/requirements-philanthropy.txt
+python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm-golden-record.csv
 ```
 
-Or open the **[Jupyter notebook](examples/downstream/egress_report.ipynb)** for a stakeholder-friendly summary chart.
-
-Board of Trustee engagement ML starter → [examples/downstream/bot_engagement_classifier.py](examples/downstream/bot_engagement_classifier.py).
+- **Integration guide:** [docs/philanthropy-integration.md](./docs/philanthropy-integration.md)
+- **Notebook:** [examples/downstream/egress_report.ipynb](./examples/downstream/egress_report.ipynb)
+- **Reference pilot:** [docs/case-studies/reference-givecampus-cvent-pilot.md](./docs/case-studies/reference-givecampus-cvent-pilot.md)
 
 ---
 
@@ -128,14 +157,14 @@ Board of Trustee engagement ML starter → [examples/downstream/bot_engagement_c
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/health` | Health check (version, egress, drift count) |
-| `GET` | `/api/vendors` | Vendor registry |
-| `POST` | `/webhooks/{vendor}` | Vendor webhooks (**202**) — givecampus, cvent, imodules, blackbaud, npsp, slate |
+| `GET` | `/health` | Health check (version, egress, `driftPendingCount`) |
+| `GET` | `/api/vendors` | Vendor registry with tier metadata |
+| `POST` | `/webhooks/{vendor}` | Vendor webhooks (**202**) |
 | `GET` | `/webhooks/ingestions/:id` | Poll async status (Bearer auth in production) |
 | `POST` | `/api/mappings/sync` | Save canvas mapping (Bearer auth in production) |
-| `POST` | `/api/mappings/preview` | Preview ConstituentEvent from artifact (no persist) |
-| `GET` | `/api/mappings/:vendor` | Load canvas mapping (Bearer auth in production) |
-| `GET` | `/api/drift/events` | Schema drift queue (Bearer auth in production) |
+| `POST` | `/api/mappings/preview` | Preview ConstituentEvent from artifact |
+| `GET` | `/api/mappings/:vendor` | Load canvas mapping |
+| `GET` | `/api/drift/events` | Schema drift queue |
 
 Admin routes are also available without the `/api` prefix. Local dev works without tokens when `NODE_ENV` is not `production`.
 
@@ -147,14 +176,12 @@ Full operator reference → [docs/operator-guide.md](./docs/operator-guide.md).
 
 ```
 UniSchema/
-├── src/                    # Hono API — app.ts, server.ts, mappers, egress
-├── frontend/               # React mapping canvas (npm workspace)
-├── tests/
-│   ├── unit/               # Module-level tests
-│   └── integration/        # Full HTTP route tests
-├── docs/                   # Role guides (admin, operator, vendor)
+├── src/                    # Hono API — mappers, egress, drift
+├── frontend/               # React mapping canvas
+├── tests/                  # Vitest unit + integration
+├── docs/                   # Role guides + PhilanthroPy integration
+├── examples/downstream/    # Analytics, dbt, PhilanthroPy pipelines
 ├── deploy/                 # Fly.io, Railway, Terraform
-├── examples/downstream/    # Analytics scripts + notebook
 ├── samples/                # Demo webhook payloads
 ├── scripts/                # demo-webhook.sh, benchmarks
 └── agents/                 # Experimental drift agent (Python)
@@ -168,6 +195,23 @@ UniSchema/
 npm test                  # backend
 npm run validate          # full CI parity (backend + frontend + build)
 ```
+
+---
+
+## Cloud deploy
+
+[![Deploy on Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7c3aed?style=for-the-badge&logo=fly.io)](https://fly.io/docs/languages-and-frameworks/docker/)
+[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://docs.railway.com/guides/dockerfiles)
+
+Docker image: `ghcr.io/PhilanthroPy-Project/unischema:0.3.0`
+
+| Platform | Docs |
+|----------|------|
+| Fly.io | [deploy/fly.toml](./deploy/fly.toml) + [deploy/README.md](./deploy/README.md) |
+| Railway | [deploy/railway.toml](./deploy/railway.toml) |
+| Any host | [Dockerfile](./Dockerfile) |
+
+**Minimum production env vars** → [.env.example](./.env.example) and [operator guide](./docs/operator-guide.md).
 
 ---
 

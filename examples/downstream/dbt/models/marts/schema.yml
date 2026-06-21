@@ -10,3 +10,35 @@ models:
       - name: constituent_email
         tests:
           - not_null
+
+  - name: mart_constituent_rfm_features
+    description: >
+      Per-constituent RFM-style rollup for PhilanthroPy batch scoring.
+      Column contract matches examples/downstream/unischema_features.py
+      and docs/philanthropy-integration.md.
+    columns:
+      - name: constituent_email
+        tests:
+          - not_null
+      - name: donation_count
+        description: Count of DONATION events
+      - name: registration_count
+        description: Count of EVENT_REGISTRATION events
+      - name: email_click_count
+        description: Count of EMAIL_CLICK events
+      - name: total_amount
+        description: Sum of donation amounts
+      - name: total_gift_amount
+        description: PhilanthroPy alias for total_amount
+      - name: event_attendance_count
+        description: PhilanthroPy alias for registration_count
+      - name: last_donation_date
+        description: Latest donation created_at
+      - name: last_event_date
+        description: Latest any-event created_at
+      - name: first_event_date
+        description: Earliest any-event created_at
+      - name: years_active
+        description: Years since first event
+      - name: recency_days
+        description: Days since last event (RFM recency)

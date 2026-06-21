@@ -7,7 +7,7 @@ import {
 } from '../src/data/samplePayloads'
 
 describe('samplePayloads vendor catalog', () => {
-  it('includes all six built-in vendors', () => {
+  it('includes all seven built-in vendors', () => {
     expect(VENDOR_OPTIONS.map((option) => option.slug)).toEqual([
       'givecampus',
       'cvent',
@@ -15,6 +15,7 @@ describe('samplePayloads vendor catalog', () => {
       'blackbaud',
       'npsp',
       'slate',
+      'ellucian',
     ])
   })
 
