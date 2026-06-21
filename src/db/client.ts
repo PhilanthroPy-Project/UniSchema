@@ -1,3 +1,6 @@
+import { mkdirSync } from 'node:fs'
+import path from 'node:path'
+
 import Database from 'better-sqlite3'
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
@@ -34,6 +37,17 @@ function resolveDatabasePath(): string {
   }
 
   return url
+}
+
+function ensureSqliteParentDirectory(databasePath: string): void {
+  if (databasePath === ':memory:' || databasePath.startsWith(':memory:')) {
+    return
+  }
+
+  const parent = path.dirname(databasePath)
+  if (parent && parent !== '.' && parent !== databasePath) {
+    mkdirSync(parent, { recursive: true })
+  }
 }
 
 function createTables(database: Database.Database): void {
@@ -134,8 +148,9 @@ export function initDatabase(): UniSchemaDatabase {
     return db
   }
 
-  const path = resolveDatabasePath()
-  sqlite = new Database(path)
+  const databasePath = resolveDatabasePath()
+  ensureSqliteParentDirectory(databasePath)
+  sqlite = new Database(databasePath)
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')
   createTables(sqlite)

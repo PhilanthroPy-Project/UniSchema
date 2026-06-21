@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 
 import { closeDatabase, initDatabase } from '../../src/db/client.js'
 
@@ -30,5 +33,19 @@ describe('database client', () => {
     process.env.DATABASE_URL = ':memory:?cache=shared'
 
     expect(() => initDatabase()).not.toThrow()
+  })
+
+  it('creates parent directories for file-backed SQLite paths', () => {
+    closeDatabase()
+    const tempRoot = mkdtempSync(path.join(tmpdir(), 'unischema-db-'))
+    const dbPath = path.join(tempRoot, 'nested', 'unischema.db')
+
+    try {
+      process.env.DATABASE_URL = dbPath
+      expect(() => initDatabase()).not.toThrow()
+    } finally {
+      closeDatabase()
+      rmSync(tempRoot, { recursive: true, force: true })
+    }
   })
 })
