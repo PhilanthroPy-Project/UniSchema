@@ -12,6 +12,14 @@ authors:
     family-names: Lalakiya
 version: 0.4.2
 date-released: "2026-07-18"
+doi: 10.5281/zenodo.21433294
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21433294
+    description: Concept DOI (all versions)
+  - type: doi
+    value: 10.5281/zenodo.21433295
+    description: Version DOI (v0.4.2)
 license: MIT
 repository-code: "https://github.com/PhilanthroPy-Project/UniSchema"
 url: "https://github.com/PhilanthroPy-Project/UniSchema"

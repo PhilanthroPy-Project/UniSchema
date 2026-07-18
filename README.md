@@ -3,6 +3,7 @@
 [![CI](https://github.com/PhilanthroPy-Project/UniSchema/actions/workflows/agent-validation.yml/badge.svg)](https://github.com/PhilanthroPy-Project/UniSchema/actions/workflows/agent-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-3c873a.svg?logo=node.js&logoColor=white)](https://nodejs.org)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21433294.svg)](https://doi.org/10.5281/zenodo.21433294)
 
 **v0.4.2** — Open-source webhook unification for university advancement & nonprofit fundraising teams.
 
@@ -155,7 +156,7 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 
 ## Citing
 
-If you use UniSchema in academic or applied fundraising-analytics work, cite the release you used — a [`CITATION.cff`](./CITATION.cff) ships with the repo, so GitHub shows a **Cite this repository** button in the sidebar.
+If you use UniSchema in academic or applied fundraising-analytics work, cite the release you used — a [`CITATION.cff`](./CITATION.cff) ships with the repo, so GitHub shows a **Cite this repository** button in the sidebar. Every tagged release is archived on [Zenodo](https://doi.org/10.5281/zenodo.21433294) with a citable DOI.
 
 ---
 
