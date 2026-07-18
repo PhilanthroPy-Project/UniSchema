@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend-build
+FROM node:22-slim AS frontend-build
 
 WORKDIR /app/frontend
 
@@ -10,11 +10,15 @@ COPY frontend/ ./
 ENV VITE_API_BASE_URL=/api
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache curl jq
+# node:22-slim (Debian/glibc) so better-sqlite3 installs a prebuilt binary
+# (its prebuilds don't cover Alpine/musl — that made this image fail to build).
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl jq \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
 RUN npm ci
