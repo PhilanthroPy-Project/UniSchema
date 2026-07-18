@@ -48,7 +48,7 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 | 1 | Complete [operator-guide.md](./operator-guide.md) production checklist | Operator |
 | 2 | Enable OIDC or oauth2-proxy for admin UI | Operator |
 | 3 | Review mapping audit log after canvas changes | Compliance |
-| 4 | Publish case study — [reference pilot](./case-studies/reference-givecampus-cvent-pilot.md) or [template](./case-studies/pilot-template.md) | Project lead |
+| 4 | Write up your pilot results (events normalized, CRM join rate, scores) | Project lead |
 | 5 | Go/no-go for production donor data | Leadership |
 
 ## When to scale beyond SQLite

@@ -23,7 +23,6 @@ Pick the guide that matches your role — you don't need to read everything.
 | Canvas vs code deploy boundary | [canvas-vs-code.md](./canvas-vs-code.md) |
 | vs Lambdas, Zapier, Fivetran | [competitive-positioning.md](./competitive-positioning.md) |
 | AI agent + drift loop | [ai-agent-loop.md](./ai-agent-loop.md) |
-| Reference pilot case study | [case-studies/reference-givecampus-cvent-pilot.md](./case-studies/reference-givecampus-cvent-pilot.md) |
 
 ## Vendor registry
 

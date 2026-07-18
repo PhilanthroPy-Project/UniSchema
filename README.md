@@ -159,7 +159,6 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 
 - **Integration guide:** [docs/philanthropy-integration.md](./docs/philanthropy-integration.md)
 - **Notebook:** [examples/downstream/egress_report.ipynb](./examples/downstream/egress_report.ipynb)
-- **Reference pilot:** [docs/case-studies/reference-givecampus-cvent-pilot.md](./docs/case-studies/reference-givecampus-cvent-pilot.md)
 
 ---
 
@@ -173,7 +172,7 @@ It operationally supports the analytics methods implemented in [PhilanthroPy](ht
 - **Donor propensity / major-gift likelihood** from engagement + giving features
 - **Lapse / attrition modeling** on longitudinal constituent event streams
 
-A worked end-to-end scenario — **synthetic, not a named institution** — is documented in [docs/case-studies/reference-givecampus-cvent-pilot.md](./docs/case-studies/reference-givecampus-cvent-pilot.md).
+Run it yourself end-to-end with `npm run downstream-demo` (see [Downstream and ML](#downstream-and-ml) above).
 
 ### Citing UniSchema
 
