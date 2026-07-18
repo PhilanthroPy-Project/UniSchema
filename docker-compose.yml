@@ -9,13 +9,12 @@ services:
       EGRESS_LOCAL_DIR: /app/data/egress
       DATABASE_URL: /app/data/unischema.db
     volumes:
-      - unischema-data:/app/data
+      # Bind-mount to the host ./data so `npm run demo` and the README quickstart
+      # can read the ConstituentEvent egress the container writes.
+      - ./data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:3000/health"]
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 20s
-
-volumes:
-  unischema-data:
