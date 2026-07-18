@@ -39,4 +39,4 @@ Export `mart_constituent_rfm_features` to CSV or query via Python:
 
 Column contract documented in `models/marts/schema.yml`.
 
-See [../../docs/downstream-pipeline.md](../../docs/downstream-pipeline.md) for the full pilot → warehouse path.
+See [../../../docs/downstream-pipeline.md](../../../docs/downstream-pipeline.md) for the full pilot → warehouse path.

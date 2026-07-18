@@ -50,7 +50,7 @@ Use slug `imodules` and enum `IMODULES` as a running example.
 | 3 | `src/utils/driftCapture.ts` | `'imodules'` to `DRIFT_VENDORS` + drift config entry |
 | 4 | `src/mappers/imodules.ts` | **New file** — Zod payload schema + `mapImodulesToMaster` |
 | 5 | `src/mappers/resolve.ts` | `case 'imodules': return mapImodulesToMaster` |
-| 6 | `src/config/webhookRoutes.ts` | Route config (secret env key, signature header) |
+| 6 | `src/config/webhookRoutes.ts` | Route config **and** entries in the exhaustive `VENDOR_TIERS`, `VENDOR_LABELS`, and `VENDOR_WEBHOOK_CONFIGS` maps — `Record<DriftVendor, …>`, so typecheck fails if any is missed |
 
 Routes are **auto-registered** from `webhookRoutes.ts` — you do **not** edit `src/app.ts` or `src/routes/register.ts`.
 
@@ -63,6 +63,7 @@ Also update:
 | `tests/fixtures/payloads.ts` | `validImodulesPayload` |
 | `tests/unit/mappers.test.ts` | Unit test mapper |
 | `tests/integration/webhooks.test.ts` | POST `/webhooks/imodules` integration |
+| `tests/unit/vendorRegistry.test.ts` | Bump `toHaveLength(8)` (and the "eight built-in vendors" label) to the new count |
 | `samples/imodules-registration.json` | Sample payload for docs / manual curl |
 
 ---
@@ -145,6 +146,12 @@ case 'imodules':
 
 ```typescript
 // src/config/webhookRoutes.ts
+
+// VENDOR_TIERS — exhaustive Record<DriftVendor, VendorTier>:
+imodules: 2,
+// VENDOR_LABELS — exhaustive Record<DriftVendor, string>:
+imodules: 'iModules',
+// VENDOR_WEBHOOK_CONFIGS — exhaustive Record<DriftVendor, WebhookRouteConfig>:
 imodules: {
   vendor: 'imodules',
   failureMessage: 'Failed to map iModules payload to master schema',

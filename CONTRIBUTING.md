@@ -47,4 +47,4 @@ Do not commit secrets, `.env` files, or real production webhook payloads with PI
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/PhilanthroPy-Project/UniSchema/discussions) or issue with the `question` label.
+Open an [issue](https://github.com/PhilanthroPy-Project/UniSchema/issues/new) with the `question` label.
