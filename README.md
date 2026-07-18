@@ -29,7 +29,7 @@ UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; 
 
 ## Who this is not for (today)
 
-- Teams that need a **fully managed SaaS** with vendor SLAs — [hosted tier RFC](./docs/hosted-tier-rfc.md)
+- Teams that need a **fully managed SaaS** with vendor SLAs — UniSchema is self-host only
 - **Full CRM sync** (bi-directional Slate/Salesforce) — UniSchema is webhook ingest + normalize, not a CRM
 - **Fully no-code vendor onboarding** — new vendors require a one-time code deploy; see [canvas vs code](./docs/canvas-vs-code.md)
 - Orgs whose canonical constituent model **differs significantly** from `ConstituentEvent` — use `normalizedMetadata` or fork via RFC
@@ -137,7 +137,7 @@ Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md
 
 | Today (v0.4.1) | Limits |
 |----------------|--------|
-| 8 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Tier 3 — verify with real payloads; [certification](./docs/vendor-certification.md) |
+| 8 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Tier 3 — verify with real payloads |
 | Tier 1: GiveCampus, Cvent · Tier 2: iModules · Tier 3: Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Ellucian + CiviCRM are bootstrap Tier 3 |
 | SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis |
 | HMAC webhook verification | ~120 req/min/IP default |

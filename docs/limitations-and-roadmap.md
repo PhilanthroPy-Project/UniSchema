@@ -19,7 +19,7 @@ UniSchema is **v0.4.1** — strong for pilots and webhook normalization proofs; 
 |------|---------|--------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures, primary support |
 | **Tier 2** | iModules | Reference vendor #3 implementation |
-| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community mappers — verify with your real payloads; [certification](./vendor-certification.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community mappers — verify with your real payloads |
 
 See [vendor registry](./README.md#vendor-registry) for the canonical list.
 
@@ -123,10 +123,9 @@ Node process(es)
 ## Roadmap themes (not committed dates)
 
 1. **Adoption** — GHCR releases, compose profiles, PhilanthroPy bridge ✅ v0.3
-2. **Vendors** — Slate/NPSP Tier 1 certification, community certification for Blackbaud/Ellucian
+2. **Vendors** — promote Tier 3 mappers to Tier 1 as real payload fixtures are contributed
 3. **Scale** — Redis rate limit, pg-boss queue, published benchmarks ✅ in progress
 4. **Product** — metadata canvas, import mapping, drift UI actions ✅ in progress
 5. **Trust (v1.0)** — OIDC admin auth, mapping audit log, compliance docs
-6. **Hosted tier** — RFC after v0.3 adoption signals
 
 Contributions welcome — especially vendor mappers with real payload fixtures and tests.

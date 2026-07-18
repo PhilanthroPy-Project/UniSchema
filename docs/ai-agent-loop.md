@@ -74,5 +74,4 @@ CI workflow: `.github/workflows/agent-validation.yml`
 
 ## Related
 
-- [vendor-certification.md](./vendor-certification.md)
 - [limitations-and-roadmap.md](./limitations-and-roadmap.md#drift-agent-is-experimental)

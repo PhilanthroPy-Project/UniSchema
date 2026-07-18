@@ -66,4 +66,3 @@ No. It is a **purpose-built webhook normalizer** with a visual override layer fo
 ## Related
 
 - [adding-a-vendor.md](./adding-a-vendor.md) — developer checklist
-- [vendor-certification.md](./vendor-certification.md) — promote Tier 3 → Tier 1

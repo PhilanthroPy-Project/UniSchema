@@ -32,7 +32,7 @@ Pick the guide that matches your role — you don't need to read everything.
 |------|---------|-------------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures; primary support |
 | **Tier 2** | iModules | Reference implementation for new vendors |
-| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community — verify with your real payloads; [certification](./vendor-certification.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community — verify with your real payloads |
 
 ### Compatibility matrix
 
@@ -48,7 +48,7 @@ Pick the guide that matches your role — you don't need to read everything.
 | CiviCRM | 3 | `/webhooks/civicrm` | Nonprofit CRM — contribution/participant/mailing; verify with your payloads |
 | Other CRMs | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
 
-Promote Tier 3 → Tier 1 → [vendor-certification.md](./vendor-certification.md)
+Promote Tier 3 → Tier 1 by contributing real payload fixtures + tests — see [adding-a-vendor.md](./adding-a-vendor.md).
 
 ## Additional references
 
@@ -84,4 +84,4 @@ Promote Tier 3 → Tier 1 → [vendor-certification.md](./vendor-certification.m
 
 **Do we need PhilanthroPy?** Optional for ingest-only pilots. Recommended for propensity/lapse scoring — [philanthropy-integration.md](./philanthropy-integration.md).
 
-**Is there a hosted SaaS?** Not yet — [hosted-tier-rfc.md](./hosted-tier-rfc.md).
+**Is there a hosted SaaS?** No — UniSchema is self-host only.

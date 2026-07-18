@@ -35,7 +35,7 @@ UniSchema + PhilanthroPy targets the **real-time normalization + ML scoring** pa
 
 - **Full CRM replacement** or bi-directional Slate/Salesforce sync
 - **Enterprise iPaaS** with 500+ connectors
-- **Managed multi-tenant SaaS** (hosted tier is RFC — [hosted-tier-rfc.md](./hosted-tier-rfc.md))
+- **Managed multi-tenant SaaS** — UniSchema is self-host only
 - **Bulk historical backfill** — webhooks are forward-looking; pair with CRM export for history
 
 ## Recommended combinations
