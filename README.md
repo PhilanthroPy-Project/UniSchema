@@ -1,6 +1,10 @@
 # UniSchema
 
-**v0.4.0** — Open-source webhook unification for university advancement teams.
+[![CI](https://github.com/PhilanthroPy-Project/UniSchema/actions/workflows/agent-validation.yml/badge.svg)](https://github.com/PhilanthroPy-Project/UniSchema/actions/workflows/agent-validation.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-3c873a.svg?logo=node.js&logoColor=white)](https://nodejs.org)
+
+**v0.4.0** — Open-source webhook unification for university advancement & nonprofit fundraising teams.
 
 UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) scores propensity, lapse, and engagement on the features you build from that stream.
 
@@ -57,7 +61,7 @@ Full stack map → [docs/ecosystem.md](./docs/ecosystem.md)
 
 ## Quick start (~15 minutes)
 
-**Requires:** [Docker](https://docs.docker.com/get-docker/) + Docker Compose. Demo scripts use `curl` and `jq`.
+**Requires:** [Docker](https://docs.docker.com/get-docker/) + Docker Compose, plus `curl` and `jq` for the demo scripts (`python3` for the downstream demo).
 
 ```bash
 git clone https://github.com/PhilanthroPy-Project/UniSchema.git
@@ -66,9 +70,9 @@ docker compose -f docker-compose.pilot.yml up --build
 ```
 
 1. Open [http://localhost:3000](http://localhost:3000) — mapping canvas + API together  
-2. In another terminal: `npm run demo` (single webhook) or `npm run demo:multi` (all vendors)  
+2. In another terminal: `bash scripts/demo-webhook.sh` (single webhook) or `bash scripts/demo-webhook.sh --multi` (all vendors)  
 3. See **ConstituentEvent** JSON under `data/egress/`  
-4. Prove downstream value: `npm run downstream-demo`
+4. Prove downstream value: `bash scripts/downstream-demo.sh` (needs `python3`)
 
 ```
 GiveCampus POST → 202 Accepted → background map → data/egress/.../eventId.json
@@ -78,7 +82,7 @@ GiveCampus POST → 202 Accepted → background map → data/egress/.../eventId.
 <summary>Without Docker</summary>
 
 ```bash
-npm install && cd frontend && npm install && cd ..
+npm install          # also installs the frontend workspace
 npm run build
 SERVE_FRONTEND=true npm start
 npm run demo:multi
@@ -173,7 +177,7 @@ A worked end-to-end scenario — **synthetic, not a named institution** — is d
 
 ### Citing UniSchema
 
-If you use UniSchema in academic or applied fundraising-analytics work, please cite the release you used. A citable DOI is minted per tagged GitHub release once the repository is connected to [Zenodo](https://zenodo.org/) — the DOI badge and a `CITATION.cff` will land here with the v0.4.0 tag.
+If you use UniSchema in academic or applied fundraising-analytics work, please cite the release you used. A [`CITATION.cff`](./CITATION.cff) ships with the repo, so GitHub renders a **Cite this repository** button in the sidebar. A citable DOI is minted per tagged GitHub release once the repository is connected to [Zenodo](https://zenodo.org/); the DOI badge will land here with the first Zenodo-linked release.
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "unischema",
   "version": "0.4.0",
-  "description": "Webhook Unifier for university advancement teams",
+  "description": "Normalize advancement & nonprofit fundraising webhooks from 8 CRMs into one validated ConstituentEvent stream. TypeScript + Hono, self-hosted.",
   "type": "module",
   "private": true,
   "workspaces": [
@@ -37,8 +37,14 @@
     "webhook",
     "university",
     "advancement",
+    "nonprofit",
+    "fundraising",
+    "higher-education",
+    "constituentevent",
+    "typescript",
     "zod",
-    "hono"
+    "hono",
+    "sqlite"
   ],
   "license": "MIT",
   "dependencies": {

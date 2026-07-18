@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use UniSchema, please cite it using the metadata below."
+title: UniSchema
+abstract: >-
+  Open-source webhook unification for university advancement and nonprofit
+  fundraising teams: normalizes fragmented CRM webhooks into a single,
+  Zod-validated ConstituentEvent stream with deterministic event IDs, for
+  reproducible feature tables and downstream fundraising analytics.
+type: software
+authors:
+  - given-names: Shivam
+    family-names: Lalakiya
+version: 0.4.0
+date-released: "2026-07-17"
+license: MIT
+repository-code: "https://github.com/PhilanthroPy-Project/UniSchema"
+url: "https://github.com/PhilanthroPy-Project/UniSchema"
+keywords:
+  - webhooks
+  - advancement
+  - fundraising
+  - nonprofit
+  - higher-education
+  - data-normalization

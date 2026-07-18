@@ -7,8 +7,8 @@ Thank you for helping make webhook unification easier for university advancement
 ```bash
 git clone https://github.com/PhilanthroPy-Project/UniSchema.git
 cd UniSchema
-npm install && cd frontend && npm install && cd ..
-npm run validate
+npm install          # installs the frontend workspace too
+npm test             # backend suite; run `npm run validate` for full CI parity before a PR
 ```
 
 ## What to contribute
