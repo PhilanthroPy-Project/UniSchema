@@ -66,7 +66,7 @@ Full stack map → [docs/ecosystem.md](./docs/ecosystem.md)
 ```bash
 git clone https://github.com/PhilanthroPy-Project/UniSchema.git
 cd UniSchema
-docker compose -f docker-compose.pilot.yml up --build
+docker compose up --build
 ```
 
 1. Open [http://localhost:3000](http://localhost:3000) — mapping canvas + API together  

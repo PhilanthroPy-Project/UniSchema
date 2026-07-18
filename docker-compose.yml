@@ -4,6 +4,9 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     environment:
+      # Dockerfile sets NODE_ENV=production; override it so the default
+      # `docker compose up` runs the pilot demo without requiring webhook secrets.
+      NODE_ENV: development
       SERVE_FRONTEND: "true"
       EGRESS_TARGET: local
       EGRESS_LOCAL_DIR: /app/data/egress

@@ -19,7 +19,7 @@ flowchart LR
 ## Pilot path (local, ~30 minutes)
 
 ```bash
-docker compose -f docker-compose.pilot.yml up --build
+docker compose up --build
 npm run demo:multi
 npm run downstream-demo
 ```

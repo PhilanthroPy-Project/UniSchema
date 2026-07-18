@@ -1,7 +1,7 @@
 # oauth2-proxy sidecar for UniSchema admin UI (enterprise SSO)
 #
 # Usage:
-#   docker compose -f docker-compose.pilot.yml -f deploy/oauth2-proxy/docker-compose.oauth2-proxy.yml up
+#   docker compose -f docker-compose.yml -f deploy/oauth2-proxy/docker-compose.oauth2-proxy.yml up
 #
 # Set OAUTH2_PROXY_* env vars in .env before starting.
 

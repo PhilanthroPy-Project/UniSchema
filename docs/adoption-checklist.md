@@ -6,7 +6,7 @@ Week-by-week path from evaluation to production UniSchema deployment.
 
 | Day | Task | Success signal |
 |-----|------|----------------|
-| 1 | `docker compose -f docker-compose.pilot.yml up --build` | Health check returns 200 |
+| 1 | `docker compose up --build` | Health check returns 200 |
 | 1 | Open mapping canvas at `:3000` | Vendor dropdown shows 8 vendors |
 | 2 | `npm run demo:multi` | Multiple ConstituentEvent JSON files in `data/egress/` |
 | 2 | `npm run downstream-demo` | Egress report + PhilanthroPy or CRM join output |

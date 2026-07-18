@@ -33,7 +33,7 @@ Before UniSchema:
 
 | Milestone | Duration | Notes |
 |-----------|----------|-------|
-| First ConstituentEvent | 15 min | `docker compose -f docker-compose.pilot.yml up` + `npm run demo` |
+| First ConstituentEvent | 15 min | `docker compose up` + `npm run demo` |
 | Multi-vendor demo | Day 1 | `npm run demo:multi` — 8 events across vendors |
 | Stakeholder notebook | Day 2 | `egress_report.ipynb` — donations by `sourceSystem` |
 | PhilanthroPy scoring demo | Day 3 | `philanthropy_crm_pipeline.py` on demo egress + sample CRM |

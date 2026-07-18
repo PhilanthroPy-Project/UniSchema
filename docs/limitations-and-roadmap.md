@@ -65,7 +65,7 @@ Email opens, volunteer shifts, membership renewals, etc. must map to the nearest
 
 ### Many environment variables
 
-Production requires webhook secrets, egress config, mapping sync token, etc. See [operator-guide.md](./operator-guide.md). Compose profiles (`docker-compose.pilot.yml` vs `docker-compose.prod.yml`) reduce guesswork.
+Production requires webhook secrets, egress config, mapping sync token, etc. See [operator-guide.md](./operator-guide.md). Compose files (`docker-compose.yml` for pilots vs `docker-compose.prod.yml`) reduce guesswork.
 
 ### Drift agent is experimental
 

@@ -64,7 +64,7 @@ Promote Tier 3 → Tier 1 → [vendor-certification.md](./vendor-certification.m
 
 | Goal | Start here |
 |------|------------|
-| Pilot (SQLite, local egress) | `docker compose -f docker-compose.pilot.yml up` |
+| Pilot (SQLite, local egress) | `docker compose up` |
 | Production (Postgres, secrets enforced) | [docker-compose.prod.yml](../docker-compose.prod.yml) |
 | Low-ops cloud (Fly / Railway) | [../deploy/README.md](../deploy/README.md) |
 | S3 bucket only (Terraform) | [../deploy/terraform/README.md](../deploy/terraform/README.md) |
