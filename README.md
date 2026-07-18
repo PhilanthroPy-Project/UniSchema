@@ -8,7 +8,7 @@
 
 UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) scores propensity, lapse, and engagement on the features you build from that stream.
 
-> **Pilot-ready, not forgettable yet.** Eight built-in vendors, SQLite or Postgres, self-hosted.  
+> **Pilot-ready, not production-hardened.** Eight built-in vendors, SQLite or Postgres, self-hosted.  
 > Read [docs/limitations-and-roadmap.md](./docs/limitations-and-roadmap.md) before production donor data.
 
 **One URL:** API + admin UI on the same port.
@@ -84,8 +84,8 @@ GiveCampus POST → 202 Accepted → background map → data/egress/.../eventId.
 ```bash
 npm install          # also installs the frontend workspace
 npm run build
-SERVE_FRONTEND=true npm start
-npm run demo:multi
+SERVE_FRONTEND=true npm start   # long-running — leave this in its own terminal
+npm run demo:multi              # then run this in a second terminal
 ```
 
 </details>
@@ -106,7 +106,7 @@ npm run demo:multi
 
 ---
 
-## Canvas vs code (read before buying)
+## Canvas vs code (what needs a deploy)
 
 The visual mapper **overrides fields** on registered vendors — it does **not** create new webhook routes.
 
