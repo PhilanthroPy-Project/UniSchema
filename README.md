@@ -21,18 +21,13 @@ UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; 
 
 ---
 
-## Who this is for
+## Who it's for
 
 - Advancement analytics teams ingesting **2–4 webhook vendors** (GiveCampus, Cvent, Slate, NPSP, etc.)
 - Shops that want a **single normalized event stream** for warehouse, dashboards, or ML
 - Teams comfortable **self-hosting** Node + secrets + S3 (or local egress for pilots)
 
-## Who this is not for (today)
-
-- Teams that need a **fully managed SaaS** with vendor SLAs — UniSchema is self-host only
-- **Full CRM sync** (bi-directional Slate/Salesforce) — UniSchema is webhook ingest + normalize, not a CRM
-- **Fully no-code vendor onboarding** — new vendors require a one-time code deploy; see [canvas vs code](./docs/canvas-vs-code.md)
-- Orgs whose canonical constituent model **differs significantly** from `ConstituentEvent` — use `normalizedMetadata` or fork via RFC
+**Not for (today):** a fully managed SaaS with vendor SLAs (UniSchema is self-host only) · bi-directional CRM sync (this is webhook ingest + normalize, not a CRM) · fully no-code vendor onboarding (new vendors need a one-time code deploy — see [canvas vs code](./docs/canvas-vs-code.md)) · orgs whose constituent model differs significantly from `ConstituentEvent` (use `normalizedMetadata` or fork via RFC).
 
 ---
 
@@ -121,19 +116,13 @@ Details → [docs/canvas-vs-code.md](./docs/canvas-vs-code.md)
 
 ---
 
-## Maturity (honest)
+## Maturity & limits
 
 | Stage | Stack | Throughput (typical) | Guide |
 |-------|-------|----------------------|-------|
 | **Pilot** (~15 min) | Docker + SQLite + local egress | ~600–900 req/min (Docker, limit raised) | [Quick start](#quick-start-15-minutes) |
 | **Production** | Fly/Railway + S3 + Postgres optional | ~120 req/min/IP default; tune for giving day | [Operator guide](./docs/operator-guide.md) |
 | **Scale** | Postgres + Redis + multi-instance | Benchmark before peak — `npm run benchmark` | [Benchmarks](./docs/benchmarks.md) |
-
-Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md#vendor-registry)
-
----
-
-## What UniSchema is (and isn't)
 
 | Today (v0.4.1) | Limits |
 |----------------|--------|
@@ -145,6 +134,8 @@ Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md
 | Local + S3 egress → PhilanthroPy ML bridge | ML requires optional `pip install -r examples/downstream/requirements-philanthropy.txt` |
 | Drift queue + experimental LLM agent | **Human review required** — [ai-agent-loop](./docs/ai-agent-loop.md) |
 | 3 event types: registration, donation, email click | New types via RFC — [schema-governance](./docs/schema-governance.md) |
+
+Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md#vendor-registry)
 
 ---
 
@@ -162,21 +153,9 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 
 ---
 
-## Research
+## Citing
 
-UniSchema is the **data-normalization and provenance layer** beneath fundraising-analytics work. It turns heterogeneous advancement webhooks into a single, Zod-validated `ConstituentEvent` stream with deterministic event IDs — so feature tables and models are built on reproducible, auditable inputs instead of ad-hoc per-vendor scripts.
-
-It operationally supports the analytics methods implemented in [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy):
-
-- **RFM segmentation** (recency / frequency / monetary) over normalized donation events
-- **Donor propensity / major-gift likelihood** from engagement + giving features
-- **Lapse / attrition modeling** on longitudinal constituent event streams
-
-Run it yourself end-to-end with `npm run downstream-demo` (see [Downstream and ML](#downstream-and-ml) above).
-
-### Citing UniSchema
-
-If you use UniSchema in academic or applied fundraising-analytics work, please cite the release you used. A [`CITATION.cff`](./CITATION.cff) ships with the repo, so GitHub renders a **Cite this repository** button in the sidebar. A citable DOI is minted per tagged GitHub release once the repository is connected to [Zenodo](https://zenodo.org/); the DOI badge will land here with the first Zenodo-linked release.
+If you use UniSchema in academic or applied fundraising-analytics work, cite the release you used — a [`CITATION.cff`](./CITATION.cff) ships with the repo, so GitHub shows a **Cite this repository** button in the sidebar.
 
 ---
 
