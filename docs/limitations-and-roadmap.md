@@ -1,6 +1,6 @@
 # Limitations & roadmap (read before production)
 
-UniSchema is **v0.4.1** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
+UniSchema is **v0.4.2** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
 
 ## What works well today
 
@@ -23,7 +23,7 @@ UniSchema is **v0.4.1** — strong for pilots and webhook normalization proofs; 
 
 See [vendor registry](./README.md#vendor-registry) for the canonical list.
 
-## Honest limitations (v0.4.1)
+## Honest limitations (v0.4.2)
 
 ### Not every advancement vendor is built-in
 

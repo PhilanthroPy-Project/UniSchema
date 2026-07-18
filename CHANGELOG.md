@@ -4,6 +4,25 @@ All notable changes to UniSchema are documented here. The project follows [Seman
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-07-18
+
+### Fixed
+
+- **Default `docker compose up` (and `npm run docker:up` / `docker:demo`) crash-looped.** The Dockerfile forces `NODE_ENV=production`, but the default compose file did not override it, so the server exited on missing production secrets. The canonical `docker-compose.yml` now sets `NODE_ENV: development`.
+- `docs/adding-a-vendor.md` omitted the typecheck-forcing `VENDOR_TIERS` / `VENDOR_LABELS` maps and the `vendorRegistry` test count, so following the checklist as written failed the build.
+- Stale version label in `docs/benchmarks.md`, a broken relative link in the dbt example, and a dead GitHub Discussions link in `CONTRIBUTING.md`.
+
+### Removed
+
+- Fabricated "reference pilot" case study — its headline metrics contradicted the real demo output in the same file, and the commands it documented actually failed — plus its blank template.
+- Pretend-enterprise apparatus inappropriate for a pre-adoption project: the managed-SaaS hosted-tier RFC, the vendor "certification program," and the `certify-vendor` / `pilot-feedback` issue templates. The honest tier labels are retained.
+- Duplicate `docker-compose.pilot.yml` (byte-identical to `docker-compose.yml` apart from the inert env line).
+
+### Changed
+
+- Slimmed the README from 15 sections to 13 (merged two duplicate status tables, trimmed a thrice-repeated value prop and an aspirational DOI blurb).
+- Enabled GitHub Discussions and restored the Discussions link in `CONTRIBUTING.md`.
+
 ## [0.4.1] - 2026-07-18
 
 ### Fixed

@@ -10,7 +10,7 @@ type: software
 authors:
   - given-names: Shivam
     family-names: Lalakiya
-version: 0.4.1
+version: 0.4.2
 date-released: "2026-07-18"
 license: MIT
 repository-code: "https://github.com/PhilanthroPy-Project/UniSchema"
