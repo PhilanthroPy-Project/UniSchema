@@ -4,6 +4,20 @@ All notable changes to UniSchema are documented here. The project follows [Seman
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-17
+
+### Added
+
+- CiviCRM vendor mapper (Tier 3 bootstrap) — contribution/participant/mailing entities → **ConstituentEvent**, HMAC verification via `CIVICRM_WEBHOOK_SECRET`
+- `samples/civicrm-donation.json` + canvas sample payload for CiviCRM
+- README **Research** section linking UniSchema to the fundraising-analytics methods it operationally supports
+- `.github/TOPICS.md` — repository topics for manual configuration
+
+### Changed
+
+- Vendor registry now lists **eight** built-in vendors (adds CiviCRM at Tier 3)
+- Docs, demo script, `.env.example`, and `/api/vendors` reconciled for 8-vendor consistency
+
 ## [0.3.0] - 2026-06-21
 
 ### Added

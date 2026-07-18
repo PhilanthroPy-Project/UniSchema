@@ -5,6 +5,7 @@ import {
   ConstituentEventSchema,
 } from '../../src/schema/master.js'
 import { mapBlackbaudToMaster } from '../../src/mappers/blackbaud.js'
+import { mapCivicrmToMaster } from '../../src/mappers/civicrm.js'
 import { mapCventToMaster } from '../../src/mappers/cvent.js'
 import { mapGiveCampusToMaster } from '../../src/mappers/givecampus.js'
 import { mapImodulesToMaster } from '../../src/mappers/imodules.js'
@@ -13,6 +14,7 @@ import { mapSlateToMaster } from '../../src/mappers/slate.js'
 import { mapEllucianToMaster } from '../../src/mappers/ellucian.js'
 import {
   validBlackbaudPayload,
+  validCivicrmPayload,
   validEllucianPayload,
   validImodulesPayload,
   validNpspPayload,
@@ -464,5 +466,39 @@ describe('mapEllucianToMaster', () => {
 
   it('throws on invalid payloads', () => {
     expect(() => mapEllucianToMaster({ id: 'x' })).toThrow()
+  })
+})
+
+describe('mapCivicrmToMaster', () => {
+  it('maps a valid CiviCRM contribution to the master schema', () => {
+    const result = mapCivicrmToMaster(validCivicrmPayload)
+
+    expect(result.constituentEmail).toBe(validCivicrmPayload.email)
+    expect(result.externalConstituentId).toBe('civi-contact-8842')
+    expect(result.amount).toBe(250)
+    expect(result.eventType).toBe('DONATION')
+    expect(result.sourceSystem).toBe('CIVICRM')
+  })
+
+  it('maps participant entities to event registrations', () => {
+    const result = mapCivicrmToMaster({ ...validCivicrmPayload, entity: 'participant' })
+
+    expect(result.eventType).toBe('EVENT_REGISTRATION')
+  })
+
+  it('maps mailing entities to email clicks', () => {
+    const result = mapCivicrmToMaster({ ...validCivicrmPayload, entity: 'mailing' })
+
+    expect(result.eventType).toBe('EMAIL_CLICK')
+  })
+
+  it('coerces locale-formatted contribution amounts', () => {
+    const result = mapCivicrmToMaster({ ...validCivicrmPayload, total_amount: '1,250.50' })
+
+    expect(result.amount).toBe(1250.5)
+  })
+
+  it('throws when required fields are missing', () => {
+    expect(() => mapCivicrmToMaster({ id: 'civi-1' })).toThrow(ZodError)
   })
 })

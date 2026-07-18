@@ -82,4 +82,4 @@ PhilanthroPy consumes **aggregated feature tables**, not raw vendor JSON. The br
 ## Related
 
 - [competitive-positioning.md](./competitive-positioning.md) — vs generic ETL and iPaaS
-- [limitations-and-roadmap.md](./limitations-and-roadmap.md) — honest v0.3 scope
+- [limitations-and-roadmap.md](./limitations-and-roadmap.md) — honest v0.4 scope

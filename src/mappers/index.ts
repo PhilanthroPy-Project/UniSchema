@@ -1,4 +1,5 @@
 export { mapBlackbaudToMaster, BlackbaudPayloadSchema, type BlackbaudPayload } from './blackbaud.js'
+export { mapCivicrmToMaster, CivicrmPayloadSchema, type CivicrmPayload } from './civicrm.js'
 export { mapCventToMaster, CventPayloadSchema, type CventPayload } from './cvent.js'
 export { mapEllucianToMaster, EllucianPayloadSchema, type EllucianPayload } from './ellucian.js'
 export { mapGiveCampusToMaster, GiveCampusPayloadSchema, type GiveCampusPayload } from './givecampus.js'

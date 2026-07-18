@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { VENDOR_REGISTRY, VENDOR_TIERS } from '../../src/config/webhookRoutes.js'
 
 describe('vendor registry', () => {
-  it('registers seven built-in vendors with tier metadata', () => {
-    expect(VENDOR_REGISTRY).toHaveLength(7)
+  it('registers eight built-in vendors with tier metadata', () => {
+    expect(VENDOR_REGISTRY).toHaveLength(8)
 
     for (const entry of VENDOR_REGISTRY) {
       expect(VENDOR_TIERS[entry.slug as keyof typeof VENDOR_TIERS]).toBe(entry.tier)

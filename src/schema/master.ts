@@ -16,6 +16,7 @@ export const SourceSystemSchema = z.enum([
   'NPSP',
   'SLATE',
   'ELLUCIAN',
+  'CIVICRM',
 ])
 
 export type SourceSystem = z.infer<typeof SourceSystemSchema>

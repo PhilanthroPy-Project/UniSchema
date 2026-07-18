@@ -12,7 +12,7 @@ Pick the guide that matches your role — you don't need to read everything.
 | **Data engineer** | [downstream-pipeline.md](./downstream-pipeline.md) | Pilot → S3 → dbt → analytics |
 | **Data scientist / ML engineer** | [philanthropy-integration.md](./philanthropy-integration.md) | ConstituentEvent → PhilanthroPy propensity scoring |
 | **New adopter** | [adoption-checklist.md](./adoption-checklist.md) | Week-by-week pilot → production |
-| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.3 scope |
+| **Everyone (before prod)** | [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Scale, vendor tiers, honest v0.4 scope |
 | **Security / privacy** | [security-and-privacy.md](./security-and-privacy.md) | FERPA-adjacent guidance, retention, rotation |
 
 ## Ecosystem and positioning
@@ -33,7 +33,7 @@ Pick the guide that matches your role — you don't need to read everything.
 |------|---------|-------------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures; primary support |
 | **Tier 2** | iModules | Reference implementation for new vendors |
-| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian | Community — verify with your real payloads; [certification](./vendor-certification.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community — verify with your real payloads; [certification](./vendor-certification.md) |
 
 ### Compatibility matrix
 
@@ -46,6 +46,7 @@ Pick the guide that matches your role — you don't need to read everything.
 | Salesforce NPSP | 3 | `/webhooks/npsp` | Donation objects — verify field API names |
 | Slate | 3 | `/webhooks/slate` | Form webhooks — verify field API names |
 | Ellucian | 3 | `/webhooks/ellucian` | Bootstrap mapper — verify with your payloads |
+| CiviCRM | 3 | `/webhooks/civicrm` | Nonprofit CRM — contribution/participant/mailing; verify with your payloads |
 | Other CRMs | — | — | See [adding-a-vendor.md](./adding-a-vendor.md) |
 
 Promote Tier 3 → Tier 1 → [vendor-certification.md](./vendor-certification.md)

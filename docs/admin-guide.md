@@ -17,7 +17,7 @@ Ask your **operator** (see [operator-guide.md](./operator-guide.md)) for:
 
 1. The UniSchema base URL (e.g. `https://unischema.university.edu`)
 2. Whether webhook HMAC secrets are configured (you don't set these, but ingest won't run in prod without them)
-3. Which vendor you're mapping — all seven built-in vendors are available: `givecampus`, `cvent`, `imodules`, `blackbaud`, `npsp`, `slate`, `ellucian`. See [vendor registry](./README.md#vendor-registry). Tier 1 (GiveCampus, Cvent) are production-tested; Tier 3 require verification with your real payloads.
+3. Which vendor you're mapping — all eight built-in vendors are available: `givecampus`, `cvent`, `imodules`, `blackbaud`, `npsp`, `slate`, `ellucian`, `civicrm`. See [vendor registry](./README.md#vendor-registry). Tier 1 (GiveCampus, Cvent) are production-tested; Tier 3 require verification with your real payloads.
 
 ## Canvas layout
 
@@ -82,7 +82,7 @@ Sync returns 401? Ask your operator for the token — see [admin-guide.md](./adm
 
 ## How canvas mappings interact with built-in mappers
 
-UniSchema ships **built-in TypeScript mappers** for all seven vendors. When you sync a canvas mapping with at least one edge:
+UniSchema ships **built-in TypeScript mappers** for all eight vendors. When you sync a canvas mapping with at least one edge:
 
 - **Canvas wins** — the dynamic mapper runs instead of the built-in mapper.
 - **Empty canvas** — the built-in mapper handles known payload shapes.

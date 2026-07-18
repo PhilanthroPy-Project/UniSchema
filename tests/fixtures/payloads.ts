@@ -61,6 +61,17 @@ export const validEllucianPayload = {
   person_id: 'P-12345',
 } as const
 
+export const validCivicrmPayload = {
+  id: 'civicrm-contrib-5501',
+  contact_id: 'civi-contact-8842',
+  email: 'donor@nonprofit.org',
+  first_name: 'Morgan',
+  last_name: 'Ellis',
+  entity: 'contribution',
+  total_amount: 250,
+  currency: 'USD',
+} as const
+
 export const validConstituentEvent: ConstituentEvent = {
   eventId: '550e8400-e29b-41d4-a716-446655440000',
   constituentEmail: 'alumni@school.edu',

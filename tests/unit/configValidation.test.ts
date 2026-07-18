@@ -39,7 +39,7 @@ describe('validateProductionConfig', () => {
     process.env.NPSP_WEBHOOK_SECRET = 'secret'
     process.env.SLATE_WEBHOOK_SECRET = 'secret'
     process.env.ELLUCIAN_WEBHOOK_SECRET = 'secret'
-    process.env.ELLUCIAN_WEBHOOK_SECRET = 'secret'
+    process.env.CIVICRM_WEBHOOK_SECRET = 'secret'
     process.env.EGRESS_TARGET = 's3'
     delete process.env.EGRESS_S3_BUCKET
     delete process.env.AWS_REGION

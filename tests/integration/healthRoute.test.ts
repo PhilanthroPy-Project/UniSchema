@@ -22,15 +22,16 @@ describe('health and vendor registry routes', () => {
     expect(['inline', 'pg-boss']).toContain(body.ingestQueue)
   })
 
-  it('GET /api/vendors lists all seven built-in vendors', async () => {
+  it('GET /api/vendors lists all eight built-in vendors', async () => {
     const response = await app.request('/api/vendors')
     const body = (await response.json()) as {
       vendors: Array<{ slug: string; webhookPath: string; tier: number }>
     }
 
-    expect(body.vendors).toHaveLength(7)
+    expect(body.vendors).toHaveLength(8)
     expect(body.vendors.map((vendor) => vendor.slug).sort()).toEqual([
       'blackbaud',
+      'civicrm',
       'cvent',
       'ellucian',
       'givecampus',

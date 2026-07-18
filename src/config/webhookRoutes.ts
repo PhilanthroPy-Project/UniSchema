@@ -12,6 +12,7 @@ export const VENDOR_TIERS: Record<DriftVendor, VendorTier> = {
   npsp: 3,
   slate: 3,
   ellucian: 3,
+  civicrm: 3,
 }
 
 const VENDOR_LABELS: Record<DriftVendor, string> = {
@@ -22,6 +23,7 @@ const VENDOR_LABELS: Record<DriftVendor, string> = {
   npsp: 'NPSP',
   slate: 'Slate',
   ellucian: 'Ellucian',
+  civicrm: 'CiviCRM',
 }
 export const VENDOR_WEBHOOK_CONFIGS: Record<DriftVendor, WebhookRouteConfig> = {
   cvent: {
@@ -65,6 +67,12 @@ export const VENDOR_WEBHOOK_CONFIGS: Record<DriftVendor, WebhookRouteConfig> = {
     failureMessage: 'Failed to map Ellucian payload to master schema',
     secretEnvKey: 'ELLUCIAN_WEBHOOK_SECRET',
     signatureHeader: 'x-ellucian-signature',
+  },
+  civicrm: {
+    vendor: 'civicrm',
+    failureMessage: 'Failed to map CiviCRM payload to master schema',
+    secretEnvKey: 'CIVICRM_WEBHOOK_SECRET',
+    signatureHeader: 'x-civicrm-signature',
   },
 }
 

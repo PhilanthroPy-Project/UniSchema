@@ -1,6 +1,6 @@
 # Adding a vendor (bring your own vendor)
 
-UniSchema ships **seven built-in vendors** (GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian). Additional CRMs follow the same **6-file checklist** below.
+UniSchema ships **eight built-in vendors** (GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian, CiviCRM). Additional CRMs follow the same **6-file checklist** below.
 
 Plan **~2–4 hours** if you have a sample webhook payload and the vendor's HMAC header name.
 

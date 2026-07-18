@@ -1,0 +1,10 @@
+{
+  "id": "civicrm-contrib-5501",
+  "contact_id": "civi-contact-8842",
+  "email": "donor@nonprofit.org",
+  "first_name": "Morgan",
+  "last_name": "Ellis",
+  "entity": "contribution",
+  "total_amount": 250,
+  "currency": "USD"
+}

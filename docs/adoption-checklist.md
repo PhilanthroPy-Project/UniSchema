@@ -7,7 +7,7 @@ Week-by-week path from evaluation to production UniSchema deployment.
 | Day | Task | Success signal |
 |-----|------|----------------|
 | 1 | `docker compose -f docker-compose.pilot.yml up --build` | Health check returns 200 |
-| 1 | Open mapping canvas at `:3000` | Vendor dropdown shows 7 vendors |
+| 1 | Open mapping canvas at `:3000` | Vendor dropdown shows 8 vendors |
 | 2 | `npm run demo:multi` | Multiple ConstituentEvent JSON files in `data/egress/` |
 | 2 | `npm run downstream-demo` | Egress report + PhilanthroPy or CRM join output |
 | 3 | Review [limitations-and-roadmap.md](./limitations-and-roadmap.md) | Team accepts schema + tier model |
@@ -27,7 +27,7 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 |-----|------|-------|
 | 1–2 | Set all 7 webhook HMAC secrets in `.env` | Operator |
 | 2 | Configure `MAPPING_SYNC_TOKEN` + `DRIFT_AGENT_TOKEN` | Operator |
-| 3 | Verify Tier 3 vendors (Blackbaud, NPSP, Slate, Ellucian) with real payloads | Admin + Developer |
+| 3 | Verify Tier 3 vendors (Blackbaud, NPSP, Slate, Ellucian, CiviCRM) with real payloads | Admin + Developer |
 | 4 | Canvas mapping for org-specific `normalizedMetadata` fields | Admin |
 | 5 | Document vendor webhook URLs for vendor portals | Operator |
 

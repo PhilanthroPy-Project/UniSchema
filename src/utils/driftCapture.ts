@@ -11,6 +11,7 @@ export const DRIFT_VENDORS = [
   'npsp',
   'slate',
   'ellucian',
+  'civicrm',
 ] as const
 
 export type DriftVendor = (typeof DRIFT_VENDORS)[number]
@@ -24,6 +25,7 @@ type DriftVendorConfig = {
     | 'mapNpspToMaster'
     | 'mapSlateToMaster'
     | 'mapEllucianToMaster'
+    | 'mapCivicrmToMaster'
   readonly mapperModule:
     | '../../src/mappers/cvent.js'
     | '../../src/mappers/givecampus.js'
@@ -32,6 +34,7 @@ type DriftVendorConfig = {
     | '../../src/mappers/npsp.js'
     | '../../src/mappers/slate.js'
     | '../../src/mappers/ellucian.js'
+    | '../../src/mappers/civicrm.js'
 }
 
 const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
@@ -62,6 +65,10 @@ const VENDOR_DRIFT_CONFIG: Record<DriftVendor, DriftVendorConfig> = {
   ellucian: {
     mapperFn: 'mapEllucianToMaster',
     mapperModule: '../../src/mappers/ellucian.js',
+  },
+  civicrm: {
+    mapperFn: 'mapCivicrmToMaster',
+    mapperModule: '../../src/mappers/civicrm.js',
   },
 }
 

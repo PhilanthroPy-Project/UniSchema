@@ -4,11 +4,11 @@ Built-in vendors are assigned **tiers** based on fixture quality and real-world 
 
 ## Tier definitions
 
-| Tier | Expectation | Vendors (v0.3) |
+| Tier | Expectation | Vendors (v0.4) |
 |------|-------------|----------------|
 | **Tier 1** | Production-tested fixtures; primary maintainer support | GiveCampus, Cvent |
 | **Tier 2** | Reference implementation for new vendors | iModules |
-| **Tier 3** | Community mapper — **verify with your real payloads** before production | Blackbaud, NPSP, Slate, Ellucian |
+| **Tier 3** | Community mapper — **verify with your real payloads** before production | Blackbaud, NPSP, Slate, Ellucian, CiviCRM |
 
 Canonical registry → [docs/README.md#vendor-registry](./README.md#vendor-registry)
 
@@ -59,6 +59,7 @@ Update:
 2. **NPSP** — Salesforce field API names vary by org
 3. **Blackbaud** — RENXT gift webhook shapes
 4. **Ellucian** — bootstrap mapper needs institutional payloads
+5. **CiviCRM** — contribution/participant/mailing entities; field names vary by extension and install
 
 ## Issue template
 
@@ -72,5 +73,5 @@ Use **Certify vendor** when opening a GitHub issue (`.github/ISSUE_TEMPLATE/cert
 
 ## Related
 
-- [adding-a-vendor.md](./adding-a-vendor.md) — add vendor #8
+- [adding-a-vendor.md](./adding-a-vendor.md) — add vendor #9
 - [admin-guide.md](./admin-guide.md) — Tier 3 verification warning in canvas

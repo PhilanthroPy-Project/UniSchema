@@ -103,6 +103,7 @@ const DEFAULT_EVENT_TYPES: Record<string, ConstituentEvent['eventType']> = {
   npsp: 'DONATION',
   slate: 'EVENT_REGISTRATION',
   ellucian: 'EVENT_REGISTRATION',
+  civicrm: 'EVENT_REGISTRATION',
 }
 
 /**

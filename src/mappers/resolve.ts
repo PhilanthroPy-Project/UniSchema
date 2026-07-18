@@ -2,6 +2,7 @@ import type { ConstituentEvent } from '../schema/master.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
 import { mapBlackbaudToMaster } from './blackbaud.js'
+import { mapCivicrmToMaster } from './civicrm.js'
 import { mapCventToMaster } from './cvent.js'
 import { mapWithArtifact } from './dynamic.js'
 import { mapEllucianToMaster } from './ellucian.js'
@@ -34,6 +35,8 @@ export async function resolveVendorMapper(
       return mapSlateToMaster
     case 'ellucian':
       return mapEllucianToMaster
+    case 'civicrm':
+      return mapCivicrmToMaster
     default:
       throw new Error(`Unsupported vendor: ${vendor}`)
   }

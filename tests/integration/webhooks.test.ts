@@ -348,6 +348,21 @@ describe('POST /webhooks/ellucian', () => {
   })
 })
 
+describe('POST /webhooks/civicrm', () => {
+  it('accepts valid CiviCRM payloads asynchronously', async () => {
+    const { validCivicrmPayload } = await import('../fixtures/payloads.js')
+    const response = await postJson('/webhooks/civicrm', validCivicrmPayload)
+    const body = await readJson<{ ingestionId: string }>(response)
+
+    expect(response.status).toBe(202)
+
+    const ingestion = await waitForIngestion(body.ingestionId)
+
+    expect(ingestion.status).toBe('completed')
+    expect(ingestion.result?.sourceSystem).toBe('CIVICRM')
+  })
+})
+
 describe('GET /api/vendors', () => {
   it('lists registered webhook vendors', async () => {
     const response = await app.request('/api/vendors')
@@ -363,6 +378,7 @@ describe('GET /api/vendors', () => {
         'npsp',
         'slate',
         'ellucian',
+        'civicrm',
       ]),
     )
   })

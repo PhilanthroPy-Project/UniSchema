@@ -21,7 +21,7 @@ UniSchema + PhilanthroPy targets the **real-time normalization + ML scoring** pa
 | **Zapier / Make** | Fast for simple flows | Expensive at volume, no strict Zod validation, no drift queue, not advancement-specific |
 | **Fivetran / Airbyte** | Great for bulk CRM/API sync | Not built for sparse advancement webhooks; no HMAC header conventions; no ConstituentEvent schema |
 | **Vendor-native exports** | Authoritative from source | Batch not real-time; still N shapes for N vendors |
-| **UniSchema** | Strict schema, 7 vendors, canvas, egress, PhilanthroPy bridge | Self-host ops; opinionated schema; new vendors need code |
+| **UniSchema** | Strict schema, 8 vendors, canvas, egress, PhilanthroPy bridge | Self-host ops; opinionated schema; new vendors need code |
 
 ## Where UniSchema wins
 

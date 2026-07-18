@@ -1,13 +1,19 @@
 # UniSchema
 
-**v0.3.0** — Open-source webhook unification for university advancement teams.
+**v0.4.0** — Open-source webhook unification for university advancement teams.
 
 UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) scores propensity, lapse, and engagement on the features you build from that stream.
 
-> **Pilot-ready, not forgettable yet.** Seven built-in vendors, SQLite or Postgres, self-hosted.  
+> **Pilot-ready, not forgettable yet.** Eight built-in vendors, SQLite or Postgres, self-hosted.  
 > Read [docs/limitations-and-roadmap.md](./docs/limitations-and-roadmap.md) before production donor data.
 
 **One URL:** API + admin UI on the same port.
+
+<!-- TODO(visual): drop a ~15s screen recording of the mapping canvas here — it's the first
+     thing that stops a reader scrolling. Record the canvas at http://localhost:3000, export
+     an animated GIF (GitHub READMEs autoplay GIFs) to docs/assets/mapping-canvas.gif, then
+     replace this comment with:  ![UniSchema mapping canvas](docs/assets/mapping-canvas.gif) -->
+
 
 ---
 
@@ -89,7 +95,7 @@ npm run demo:multi
 | **New adopter** — first webhook in ~15 min | [Quick start](#quick-start-15-minutes) above |
 | **Admin / analyst** — drawing mapping lines on the canvas | [docs/admin-guide.md](./docs/admin-guide.md) |
 | **Operator** — secrets, S3 egress, cloud deploy | [docs/operator-guide.md](./docs/operator-guide.md) |
-| **Developer** — adding vendor #8 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
+| **Developer** — adding vendor #9 | [docs/adding-a-vendor.md](./docs/adding-a-vendor.md) |
 | **Data engineer** — warehouse + dbt | [docs/downstream-pipeline.md](./docs/downstream-pipeline.md) |
 | **Data scientist / ML engineer** — PhilanthroPy scoring | [docs/philanthropy-integration.md](./docs/philanthropy-integration.md) |
 | **All docs** | [docs/README.md](docs/README.md) |
@@ -119,16 +125,16 @@ Details → [docs/canvas-vs-code.md](./docs/canvas-vs-code.md)
 | **Production** | Fly/Railway + S3 + Postgres optional | ~120 req/min/IP default; tune for giving day | [Operator guide](./docs/operator-guide.md) |
 | **Scale** | Postgres + Redis + multi-instance | Benchmark before peak — `npm run benchmark` | [Benchmarks](./docs/benchmarks.md) |
 
-Vendor registry (7 built-in) → [docs/README.md#vendor-registry](docs/README.md#vendor-registry)
+Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md#vendor-registry)
 
 ---
 
 ## What UniSchema is (and isn't)
 
-| Today (v0.3.0) | Limits |
+| Today (v0.4.0) | Limits |
 |----------------|--------|
-| 7 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian | Tier 3 — verify with real payloads; [certification](./docs/vendor-certification.md) |
-| Tier 1: GiveCampus, Cvent · Tier 2: iModules · Tier 3: Blackbaud, NPSP, Slate, Ellucian | Ellucian is bootstrap Tier 3 |
+| 8 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Tier 3 — verify with real payloads; [certification](./docs/vendor-certification.md) |
+| Tier 1: GiveCampus, Cvent · Tier 2: iModules · Tier 3: Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Ellucian + CiviCRM are bootstrap Tier 3 |
 | SQLite default + optional Postgres | Horizontal scale needs Postgres + Redis |
 | HMAC webhook verification | ~120 req/min/IP default |
 | Visual canvas + metadata mappings | Opinionated master schema — [details](./docs/limitations-and-roadmap.md) |
@@ -150,6 +156,24 @@ python3 examples/downstream/philanthropy_crm_pipeline.py data/egress samples/crm
 - **Integration guide:** [docs/philanthropy-integration.md](./docs/philanthropy-integration.md)
 - **Notebook:** [examples/downstream/egress_report.ipynb](./examples/downstream/egress_report.ipynb)
 - **Reference pilot:** [docs/case-studies/reference-givecampus-cvent-pilot.md](./docs/case-studies/reference-givecampus-cvent-pilot.md)
+
+---
+
+## Research
+
+UniSchema is the **data-normalization and provenance layer** beneath fundraising-analytics work. It turns heterogeneous advancement webhooks into a single, Zod-validated `ConstituentEvent` stream with deterministic event IDs — so feature tables and models are built on reproducible, auditable inputs instead of ad-hoc per-vendor scripts.
+
+It operationally supports the analytics methods implemented in [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy):
+
+- **RFM segmentation** (recency / frequency / monetary) over normalized donation events
+- **Donor propensity / major-gift likelihood** from engagement + giving features
+- **Lapse / attrition modeling** on longitudinal constituent event streams
+
+A worked end-to-end scenario — **synthetic, not a named institution** — is documented in [docs/case-studies/reference-givecampus-cvent-pilot.md](./docs/case-studies/reference-givecampus-cvent-pilot.md).
+
+### Citing UniSchema
+
+If you use UniSchema in academic or applied fundraising-analytics work, please cite the release you used. A citable DOI is minted per tagged GitHub release once the repository is connected to [Zenodo](https://zenodo.org/) — the DOI badge and a `CITATION.cff` will land here with the v0.4.0 tag.
 
 ---
 
@@ -203,7 +227,7 @@ npm run validate          # full CI parity (backend + frontend + build)
 [![Deploy on Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7c3aed?style=for-the-badge&logo=fly.io)](https://fly.io/docs/languages-and-frameworks/docker/)
 [![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://docs.railway.com/guides/dockerfiles)
 
-Docker image: `ghcr.io/PhilanthroPy-Project/unischema:0.3.0`
+Docker image: `ghcr.io/PhilanthroPy-Project/unischema:0.4.0`
 
 | Platform | Docs |
 |----------|------|

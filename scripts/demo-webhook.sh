@@ -25,6 +25,7 @@ declare -a MULTI_PAIRS=(
   "npsp|$ROOT/samples/npsp-donation.json"
   "slate|$ROOT/samples/slate-registration.json"
   "ellucian|$ROOT/samples/ellucian-registration.json"
+  "civicrm|$ROOT/samples/civicrm-donation.json"
 )
 
 if ! command -v curl >/dev/null 2>&1; then
@@ -154,8 +155,11 @@ case "$VENDOR" in
   ellucian)
     PAYLOAD_FILE="${PAYLOAD_FILE:-$ROOT/samples/ellucian-registration.json}"
     ;;
+  civicrm)
+    PAYLOAD_FILE="${PAYLOAD_FILE:-$ROOT/samples/civicrm-donation.json}"
+    ;;
   *)
-    echo "Unknown VENDOR=${VENDOR}. Supported: givecampus, cvent, imodules, blackbaud, npsp, slate, ellucian" >&2
+    echo "Unknown VENDOR=${VENDOR}. Supported: givecampus, cvent, imodules, blackbaud, npsp, slate, ellucian, civicrm" >&2
     exit 1
     ;;
 esac

@@ -1,10 +1,10 @@
 # Limitations & roadmap (read before production)
 
-UniSchema is **v0.3.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
+UniSchema is **v0.4.0** — strong for pilots and webhook normalization proofs; not yet "drop in and forget." This page states what works today and what teams ask about before trusting production donor data.
 
 ## What works well today
 
-- Seven built-in vendors → **ConstituentEvent** with HMAC verification
+- Eight built-in vendors → **ConstituentEvent** with HMAC verification
 - Async ingest with crash recovery
 - Local or S3 egress push
 - Visual mapping canvas for field overrides + `normalizedMetadata`
@@ -19,11 +19,11 @@ UniSchema is **v0.3.0** — strong for pilots and webhook normalization proofs; 
 |------|---------|--------|
 | **Tier 1** | GiveCampus, Cvent | Production-tested fixtures, primary support |
 | **Tier 2** | iModules | Reference vendor #3 implementation |
-| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian | Community mappers — verify with your real payloads; [certification](./vendor-certification.md) |
+| **Tier 3** | Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Community mappers — verify with your real payloads; [certification](./vendor-certification.md) |
 
 See [vendor registry](./README.md#vendor-registry) for the canonical list.
 
-## Honest limitations (v0.3.0)
+## Honest limitations (v0.4.0)
 
 ### Not every advancement vendor is built-in
 
