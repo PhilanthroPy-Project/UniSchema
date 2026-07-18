@@ -13,10 +13,10 @@ UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; 
 
 **One URL:** API + admin UI on the same port.
 
-<!-- TODO(visual): drop a ~15s screen recording of the mapping canvas here — it's the first
-     thing that stops a reader scrolling. Record the canvas at http://localhost:3000, export
-     an animated GIF (GitHub READMEs autoplay GIFs) to docs/assets/mapping-canvas.gif, then
-     replace this comment with:  ![UniSchema mapping canvas](docs/assets/mapping-canvas.gif) -->
+![UniSchema mapping canvas — visually map vendor webhook fields onto the ConstituentEvent master schema](docs/assets/mapping-canvas.png)
+
+<!-- Upgrade path: record a ~15s GIF of drawing mappings on the canvas (GitHub autoplays GIFs),
+     save it as docs/assets/mapping-canvas.gif, and swap the .png above. -->
 
 
 ---
