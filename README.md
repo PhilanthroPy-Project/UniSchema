@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-3c873a.svg?logo=node.js&logoColor=white)](https://nodejs.org)
 
-**v0.4.0** — Open-source webhook unification for university advancement & nonprofit fundraising teams.
+**v0.4.1** — Open-source webhook unification for university advancement & nonprofit fundraising teams.
 
 UniSchema normalizes fragmented advancement webhooks into **ConstituentEvent**; [PhilanthroPy](https://github.com/PhilanthroPy-Project/PhilanthroPy) scores propensity, lapse, and engagement on the features you build from that stream.
 
@@ -135,7 +135,7 @@ Vendor registry (8 built-in) → [docs/README.md#vendor-registry](docs/README.md
 
 ## What UniSchema is (and isn't)
 
-| Today (v0.4.0) | Limits |
+| Today (v0.4.1) | Limits |
 |----------------|--------|
 | 8 vendors: GiveCampus, Cvent, iModules, Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Tier 3 — verify with real payloads; [certification](./docs/vendor-certification.md) |
 | Tier 1: GiveCampus, Cvent · Tier 2: iModules · Tier 3: Blackbaud, NPSP, Slate, Ellucian, CiviCRM | Ellucian + CiviCRM are bootstrap Tier 3 |
@@ -231,7 +231,7 @@ npm run validate          # full CI parity (backend + frontend + build)
 [![Deploy on Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7c3aed?style=for-the-badge&logo=fly.io)](https://fly.io/docs/languages-and-frameworks/docker/)
 [![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://docs.railway.com/guides/dockerfiles)
 
-Docker image: `ghcr.io/PhilanthroPy-Project/unischema:0.4.0`
+Docker image: `ghcr.io/PhilanthroPy-Project/unischema:0.4.1`
 
 | Platform | Docs |
 |----------|------|

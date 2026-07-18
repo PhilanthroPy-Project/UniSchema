@@ -4,6 +4,25 @@ All notable changes to UniSchema are documented here. The project follows [Seman
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-18
+
+### Fixed
+
+- **Docker image now builds and publishes.** `frontend/package-lock.json` was missing the `@playwright/test` dependency tree, so the isolated `npm ci` in the Dockerfile frontend stage failed; and `node:20-alpine` (musl) had no `better-sqlite3` prebuild while better-sqlite3@12 dropped node-20 prebuilds. Both stages now use `node:22-slim` (glibc, prebuilt binary).
+- **Docker egress is visible on the host.** The pilot/default composes bind-mount `./data` instead of a named volume, so `npm run demo` and the quickstart find the `ConstituentEvent` output.
+- `SECURITY.md` supported-versions table (it listed the current release as unsupported).
+
+### Added
+
+- README trust badges (CI, license, Node) and a mapping-canvas hero screenshot.
+- `CITATION.cff` for GitHub's "Cite this repository" widget.
+- `CLAUDE.md` context file for AI coding sessions.
+
+### Changed
+
+- Quick start names the Node/`python3` prerequisites and points Docker-only users at the bash demo scripts.
+- Broadened package description and keywords to nonprofit + fundraising.
+
 ## [0.4.0] - 2026-07-17
 
 ### Added
