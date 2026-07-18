@@ -14,19 +14,19 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
-    "autoprefixer": "^10.4.20",
-    "lucide-react": "^0.468.0",
-    "postcss": "^8.4.49",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "autoprefixer": "^10.5.4",
+    "lucide-react": "^1.25.0",
+    "postcss": "^8.5.19",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "reactflow": "^11.11.4",
-    "tailwindcss": "^3.4.17",
-    "zustand": "^4.5.7"
+    "tailwindcss": "^4.3.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
