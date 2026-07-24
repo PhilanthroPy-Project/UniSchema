@@ -53,6 +53,8 @@ sequenceDiagram
 5. Run `npm run validate`, adjust, open PR
 6. After deploy: `POST /drift/events/:id/ack`
 
+`GET /health` also reports `humanAckRate` — the share of captured drift events a human has acknowledged — a human-intervention-frequency style signal for this loop (metric concept from the related work cited below; UniSchema's own telemetry, not a paper benchmark).
+
 Full guide → [agents/README.md](../agents/README.md)
 
 ## Expectations for AI coding agents

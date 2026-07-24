@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import type { ZodError } from 'zod'
 
 import {
+  countDriftEventRows,
   deleteAllDriftEvents,
   insertDriftEvent,
   listDriftEventRows,
@@ -121,6 +122,10 @@ export async function listPendingDriftEvents(limit = 50): Promise<DriftEventReco
 export async function markDriftEventProcessed(id: string): Promise<boolean> {
   const changes = await markDriftEventProcessedRow(id)
   return changes > 0
+}
+
+export async function countDriftEvents(status?: DriftEventRecord['status']): Promise<number> {
+  return countDriftEventRows(status)
 }
 
 export async function clearDriftQueue(): Promise<void> {

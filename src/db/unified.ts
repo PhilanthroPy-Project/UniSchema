@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
 
 import { getDb } from './client.js'
 import { getDatabaseDialect } from './dialect.js'
@@ -236,6 +236,20 @@ export async function markDriftEventProcessedRow(id: string): Promise<number> {
     .set({ status: 'processed' })
     .where(eq(driftEvents.id, id))
     .run().changes
+}
+
+export async function countDriftEventRows(status?: string): Promise<number> {
+  const whereClause = status ? eq(driftEvents.status, status) : undefined
+
+  if (isPostgres()) {
+    const rows = await pgDb().select({ value: count() }).from(driftEvents).where(whereClause)
+
+    return Number(rows[0]?.value ?? 0)
+  }
+
+  const row = getDb().select({ value: count() }).from(driftEvents).where(whereClause).get()
+
+  return Number(row?.value ?? 0)
 }
 
 export async function deleteAllDriftEvents(): Promise<void> {
