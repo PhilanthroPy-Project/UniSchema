@@ -13,8 +13,8 @@ on:
       - '.github/workflows/downstream-ml.yml'
 
 jobs:
-  feature-contract:
-    name: Python feature contract tests
+  pipeline-compile:
+    name: Downstream pipeline scripts compile
     runs-on: ubuntu-latest
 
     steps:
@@ -26,20 +26,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install pandas pytest
-          pip install -r examples/downstream/requirements-philanthropy.txt || pip install pandas pytest
-
-      - name: Run feature contract tests
+      # The feature contract now lives in philanthropy.ingest (PhilanthroPy repo)
+      # and is pinned TS-side by tests/unit/schemaContract.test.ts, so there is no
+      # local Python contract test. This gate just catches syntax breakage in the
+      # example scripts (py_compile parses only — no third-party imports executed).
+      - name: Byte-compile downstream pipeline scripts
         working-directory: examples/downstream
-        run: pytest tests/test_feature_contract.py -q
+        run: python3 -m py_compile *.py
 
   philanthropy-smoke:
     name: PhilanthroPy pipeline smoke (optional)
     runs-on: ubuntu-latest
     needs:
-      - feature-contract
+      - pipeline-compile
     continue-on-error: true
 
     steps:
@@ -54,6 +53,6 @@ jobs:
       - name: Install PhilanthroPy stack
         run: pip install -r examples/downstream/requirements-philanthropy.txt
 
-      - name: Smoke test unischema_features import
+      - name: Smoke test philanthropy.ingest import
         working-directory: examples/downstream
-        run: python3 -c "from unischema_features import REQUIRED_FEATURE_COLUMNS; print(len(REQUIRED_FEATURE_COLUMNS), 'columns')"
+        run: python3 -c "from philanthropy.ingest import constituent_events_to_features, read_constituent_events; print('philanthropy.ingest OK')"

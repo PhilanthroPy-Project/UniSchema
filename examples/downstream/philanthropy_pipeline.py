@@ -14,6 +14,7 @@ from pathlib import Path
 try:
     import numpy as np
     from sklearn.model_selection import train_test_split
+    from philanthropy.ingest import constituent_events_to_features, read_constituent_events
     from philanthropy.models import DonorPropensityModel
 except ImportError:
     print(
@@ -23,19 +24,17 @@ except ImportError:
     )
     sys.exit(1)
 
-from unischema_features import egress_dir_to_features, load_events
-
 FEATURE_COLS = ["total_gift_amount", "years_active", "event_attendance_count"]
 
 
 def _proxy_labels(features) -> np.ndarray:
-    """Demo proxy when CRM labels are unavailable."""
+    """Demo proxy when CRM labels are unavailable (columns from philanthropy.ingest)."""
     score = (
-        features["donation_count"] * 3
-        + features["registration_count"] * 2
+        features["gift_count"] * 3
+        + features["event_attendance_count"] * 2
         + features["email_click_count"]
-        + features["metadata_key_count"] * 0.5
-        + (features["total_amount"] >= 500).astype(float)
+        + features["distinct_source_systems"] * 0.5
+        + (features["total_gift_amount"] >= 500).astype(float)
     )
     return (score >= 4).astype(int).to_numpy()
 
@@ -46,13 +45,13 @@ def main() -> None:
         sys.exit(1)
 
     egress_dir = Path(sys.argv[1])
-    events = load_events(egress_dir)
+    events = read_constituent_events(egress_dir)
 
     if len(events) < 2:
         print(f"Need at least 2 events (found {len(events)}). Run: npm run demo:multi")
         sys.exit(0)
 
-    features = egress_dir_to_features(egress_dir)
+    features = constituent_events_to_features(events)
 
     if features.empty:
         print("No constituent features produced.")

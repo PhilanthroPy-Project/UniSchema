@@ -65,7 +65,7 @@ Add `VOLUNTEER_SHIFT` to `EventTypeSchema` in `src/schema/master.ts`.
 |-----------|--------|
 | dbt `mart_constituent_engagement_daily` | Add `volunteer_shift_count` column |
 | dbt `mart_constituent_rfm_features` | Optional engagement feature |
-| `unischema_features.py` | Add `volunteer_shift_count` to contract |
+| `philanthropy.ingest` (PhilanthroPy repo) | Add `volunteer_shift_count` to the feature contract |
 | PhilanthroPy pipelines | Map to engagement features or separate model |
 
 ### Do not implement until

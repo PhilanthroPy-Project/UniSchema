@@ -78,6 +78,11 @@ export const SCAN_SKIP_DIRECTORY_NAMES = new Set([
   'node_modules',
   'dist',
   'coverage',
+  // Python local dirs (gitignored) — the downstream examples create a venv here;
+  // walking site-packages balloons the scan and never holds first-party secrets.
+  '.venv',
+  'venv',
+  '__pycache__',
 ])
 
 export const SCAN_SKIP_FILE_EXTENSIONS = new Set([

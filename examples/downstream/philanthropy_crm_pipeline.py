@@ -17,6 +17,7 @@ from pathlib import Path
 try:
     import numpy as np
     from sklearn.model_selection import train_test_split
+    from philanthropy.ingest import constituent_events_to_features, read_constituent_events
     from philanthropy.models import DonorPropensityModel
     from philanthropy.preprocessing import WealthScreeningImputer
 except ImportError:
@@ -26,8 +27,6 @@ except ImportError:
         file=sys.stderr,
     )
     sys.exit(1)
-
-from unischema_features import egress_dir_to_features, load_events
 
 FEATURE_COLS = ["total_gift_amount", "years_active", "event_attendance_count"]
 WEALTH_COL = "estimated_net_worth"
@@ -99,12 +98,12 @@ def main() -> None:
     parser.add_argument("crm_csv", type=Path, help="CRM export with email and engagement_tier")
     args = parser.parse_args()
 
-    events = load_events(args.egress_dir)
+    events = read_constituent_events(args.egress_dir)
     if not events:
         print("No ConstituentEvent files found. Run: npm run demo:multi")
         sys.exit(0)
 
-    features = egress_dir_to_features(args.egress_dir)
+    features = constituent_events_to_features(events)
     crm_indexes = load_crm(args.crm_csv)
     joined, y, frame = join_crm(features, crm_indexes, events)
 

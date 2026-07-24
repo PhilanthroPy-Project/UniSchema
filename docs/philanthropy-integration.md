@@ -6,11 +6,13 @@
 
 ```
 ConstituentEvent (egress JSON / S3 NDJSON)
-    → unischema_features.py (per-email feature table)
+    → philanthropy.ingest.constituent_events_to_features (per-donor feature table)
     → optional CRM join (engagement_tier, lifetime_giving)
     → PhilanthroPy DonorPropensityModel / LapsePredictor
     → affinity or lapse scores (0–100)
 ```
+
+Both reading and aggregation live in PhilanthroPy's `philanthropy.ingest` — the single source of truth. `read_constituent_events` walks UniSchema's date-partitioned egress tree (recursively; skips `.manifest.json` sidecars); `constituent_events_to_features` is **leakage-safe** (recency anchored to the batch, never a moving "now") and **deduplicates** redelivered webhooks by `eventId`.
 
 Warehouse path: dbt `mart_constituent_rfm_features` → export CSV → same PhilanthroPy pipeline.
 
@@ -38,31 +40,29 @@ npm run downstream-demo
 
 ## Feature column contract
 
-`examples/downstream/unischema_features.py` aggregates events to one row per `constituent_email`:
+`philanthropy.ingest.constituent_events_to_features` aggregates events to one row per donor, indexed by `constituent_id` (the `externalConstituentId` when present, else `constituentEmail`). This contract is owned and tested in the PhilanthroPy repo (`tests/test_ingest.py`):
 
 | Column | Type | Source |
 |--------|------|--------|
-| `constituent_email` | string | Group key |
-| `donation_count` | int | `eventType == DONATION` |
-| `registration_count` | int | `eventType == EVENT_REGISTRATION` |
-| `email_click_count` | int | `eventType == EMAIL_CLICK` |
-| `total_amount` | float | Sum of donation `amount` |
-| `total_gift_amount` | float | Alias of `total_amount` (PhilanthroPy naming) |
-| `event_attendance_count` | int | Alias of `registration_count` |
-| `last_donation_date` | ISO string | Latest donation `createdAt` |
-| `last_event_date` | ISO string | Latest any-event `createdAt` |
-| `first_event_date` | ISO string | Earliest any-event `createdAt` |
-| `years_active` | float | Years from `first_event_date` to reference date |
-| `metadata_key_count` | float | Sum of `normalizedMetadata` key counts |
+| `constituent_email` | string | First email seen for the donor |
+| `total_gift_amount` | float | Sum of `DONATION` `amount` (single-currency; warns on mixed) |
+| `gift_count` | int | Count of `DONATION` events |
+| `event_attendance_count` | int | Count of `EVENT_REGISTRATION` events |
+| `email_click_count` | int | Count of `EMAIL_CLICK` events |
+| `first_gift_date` | datetime | Earliest donation `createdAt` |
+| `last_gift_date` | datetime | Latest donation `createdAt` |
+| `years_active` | float | First event → reference date |
+| `recency_days` | int | Last event → reference date |
+| `distinct_source_systems` | int | Channel breadth |
 
-Contract tests: `examples/downstream/tests/test_feature_contract.py`
+Index: `constituent_id` (`externalConstituentId` ?? `constituentEmail`).
 
 ### PhilanthroPy model inputs
 
 | PhilanthroPy component | UniSchema-derived columns |
 |------------------------|---------------------------|
 | `DonorPropensityModel` | `total_gift_amount`, `years_active`, `event_attendance_count` |
-| `RFMTransformer` | Use `last_donation_date`, `donation_count`, `total_amount` after date parsing |
+| `RFMTransformer` | `recency_days`, `gift_count`, `total_gift_amount` |
 | `WealthScreeningImputer` | CRM `lifetime_giving` → `estimated_net_worth` |
 | `LapsePredictor` | CRM-derived lapse labels + RFM features from warehouse |
 
@@ -86,7 +86,6 @@ Example CRM columns (see `samples/crm-golden-record.csv`):
 
 | Script | Purpose |
 |--------|---------|
-| `unischema_features.py` | Library — egress → DataFrame |
 | `philanthropy_pipeline.py` | Egress only, proxy labels (demo) |
 | `philanthropy_crm_pipeline.py` | **Recommended** — CRM labels + `DonorPropensityModel` |
 
@@ -101,11 +100,10 @@ Example CRM columns (see `samples/crm-golden-record.csv`):
 ## sklearn pipeline example
 
 ```python
-from pathlib import Path
+from philanthropy.ingest import constituent_events_to_features, read_constituent_events
 from philanthropy.models import DonorPropensityModel
-from unischema_features import egress_dir_to_features
 
-features = egress_dir_to_features(Path("data/egress"))
+features = constituent_events_to_features(read_constituent_events("data/egress"))
 X = features[["total_gift_amount", "years_active", "event_attendance_count"]].to_numpy()
 
 # y from CRM engagement_tier after join — see philanthropy_crm_pipeline.py

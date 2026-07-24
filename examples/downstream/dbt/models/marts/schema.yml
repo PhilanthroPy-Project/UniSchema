@@ -13,9 +13,10 @@ models:
 
   - name: mart_constituent_rfm_features
     description: >
-      Per-constituent RFM-style rollup for PhilanthroPy batch scoring.
-      Column contract matches examples/downstream/unischema_features.py
-      and docs/philanthropy-integration.md.
+      Per-constituent RFM-style rollup for PhilanthroPy batch scoring. A
+      warehouse-side alternative to the philanthropy.ingest event aggregation:
+      it produces model-ready aliases (total_gift_amount, event_attendance_count)
+      consumed directly by PhilanthroPy models. See docs/philanthropy-integration.md.
     columns:
       - name: constituent_email
         tests:

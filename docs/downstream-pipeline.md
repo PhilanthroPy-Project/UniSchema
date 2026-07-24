@@ -8,7 +8,7 @@ End-to-end path from UniSchema pilot to warehouse analytics and ML with [Philant
 flowchart LR
   Vendors[Vendor webhooks] --> UniSchema[UniSchema API]
   UniSchema --> Egress[Local or S3 egress]
-  Egress --> Features[unischema_features.py]
+  Egress --> Features[philanthropy.ingest]
   Egress --> dbt[dbt staging and marts]
   Features --> PhilanthroPy[PhilanthroPy pipelines]
   dbt --> PhilanthroPy
@@ -104,7 +104,6 @@ events group onto one key across vendors before RFM aggregation.
 |--------|--------|
 | `philanthropy_crm_pipeline.py` | **Primary** — CRM labels + `DonorPropensityModel` |
 | `philanthropy_pipeline.py` | Egress-only demo with proxy labels |
-| `unischema_features.py` | Feature table library |
 | `crm_join_example.py` | CRM join (`externalConstituentId` or email) |
 
 CRM join prefers `externalConstituentId` → CRM `constituent_id`, then email fallback.

@@ -33,7 +33,7 @@ npm run downstream-demo
 
 ## Feature column contract
 
-`unischema_features.py` aggregates egress JSON to a per-constituent DataFrame. Required columns are tested in `tests/test_feature_contract.py`.
+`philanthropy.ingest` is the single source of truth: `read_constituent_events` walks the date-partitioned local egress tree (recursive; skips `.manifest.json`), and `constituent_events_to_features` aggregates it (leakage-safe, dedup by `eventId`). Owned and tested in the PhilanthroPy repo.
 
 | Column | PhilanthroPy use |
 |--------|------------------|
@@ -47,7 +47,6 @@ Full contract → [philanthropy-integration.md](../../docs/philanthropy-integrat
 
 | Script | Purpose |
 |--------|---------|
-| `unischema_features.py` | Egress → feature DataFrame |
 | `philanthropy_crm_pipeline.py` | **Recommended** ML path with CRM labels |
 | `philanthropy_pipeline.py` | Demo with proxy labels |
 | `crm_join_example.py` | CRM join (`externalConstituentId` or email) |

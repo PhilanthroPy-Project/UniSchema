@@ -33,7 +33,7 @@ dbt run
 Export `mart_constituent_rfm_features` to CSV or query via Python:
 
 ```python
-# Warehouse export columns align with unischema_features.py contract
+# Warehouse mart produces model-ready aliases (total_gift_amount, event_attendance_count)
 # See docs/philanthropy-integration.md
 ```
 
