@@ -75,3 +75,4 @@ CI workflow: `.github/workflows/agent-validation.yml`
 ## Related
 
 - [limitations-and-roadmap.md](./limitations-and-roadmap.md#drift-agent-is-experimental)
+- Related reading behind the human-in-the-loop stance above — "Enterprise AI Agents: Secure, Scalable, and Autonomous Intelligence for the Modern Workforce," co-authored work by S. K. Venugopal, S. A. Lalakiya, R. Bharathan, and P. Raja, in *2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)*, IEEE, 2025, [doi:10.1109/ICCED68324.2025.11324763](https://doi.org/10.1109/ICCED68324.2025.11324763). It studies agentic/multi-agent AI for the workforce with an explicit human-in-the-loop framing (Stanford's Human Agency Scale, a human-intervention-frequency metric, value alignment and governance) — thematically adjacent to the human-reviewed loop described here, not a description or validation of UniSchema's specifics.

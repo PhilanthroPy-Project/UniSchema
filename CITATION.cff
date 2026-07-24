@@ -30,3 +30,22 @@ keywords:
   - nonprofit
   - higher-education
   - data-normalization
+references:
+  - type: conference-paper
+    title: "Enterprise AI Agents: Secure, Scalable, and Autonomous Intelligence for the Modern Workforce"
+    authors:
+      - given-names: Shanmugaraja Krishnasamy
+        family-names: Venugopal
+      - given-names: Shivam Ashokbhai
+        family-names: Lalakiya
+      - given-names: Rashmi
+        family-names: Bharathan
+      - given-names: Pradeep
+        family-names: Raja
+    collection-title: "2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)"
+    conference:
+      name: "2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)"
+    publisher:
+      name: IEEE
+    year: 2025
+    doi: 10.1109/ICCED68324.2025.11324763
