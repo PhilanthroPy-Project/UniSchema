@@ -18,7 +18,7 @@
     "lucide-react": "^0.468.0",
     "postcss": "^8.4.49",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.2.7",
     "reactflow": "^11.11.4",
     "tailwindcss": "^3.4.17",
     "zustand": "^4.5.7"
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
