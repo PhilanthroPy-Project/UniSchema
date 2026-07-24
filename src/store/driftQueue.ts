@@ -1,17 +1,36 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 import type { ZodError } from 'zod'
 
 import {
   countDriftEventRows,
+  countPendingDriftBySignature,
   deleteAllDriftEvents,
   insertDriftEvent,
   listDriftEventRows,
   markDriftEventProcessedRow,
   selectDriftEventById,
 } from '../db/unified.js'
+import { resolveEgressConfig } from '../egress/config.js'
+import { notifyDriftDetected } from '../egress/driftNotifier.js'
 import type { MappingArtifact } from '../schema/mapping.js'
 import type { DriftVendor } from '../utils/driftCapture.js'
+import { logError } from '../utils/logger.js'
+
+/**
+ * Structural fingerprint of a drift event: vendor + the sorted set of failing
+ * field paths and error codes. Payloads that break the same way collapse to one
+ * signature so a single bad vendor deploy is one incident, not thousands of
+ * alerts. See docs/ai-agent-loop.md for the alert-fatigue framing.
+ */
+export function computeDriftSignature(vendor: string, validationError: ZodError): string {
+  const shape = validationError.issues
+    .map((issue) => `${issue.path.join('.')}:${issue.code}`)
+    .sort()
+    .join('|')
+
+  return createHash('sha256').update(`${vendor}\n${shape}`).digest('hex').slice(0, 16)
+}
 
 export type DriftMapperKind = 'builtin' | 'dynamic'
 
@@ -26,6 +45,9 @@ export type DriftEventRecord = {
   mappingArtifact?: MappingArtifact
   localFixturePath?: string
   localTestPath?: string
+  signature?: string
+  processedAt?: string
+  resolution?: string
 }
 
 function mapDriftRow(row: {
@@ -39,6 +61,9 @@ function mapDriftRow(row: {
   mappingArtifactJson: string | null
   localFixturePath: string | null
   localTestPath: string | null
+  signature: string | null
+  processedAt: string | null
+  resolution: string | null
 }): DriftEventRecord {
   return {
     id: row.id,
@@ -53,6 +78,9 @@ function mapDriftRow(row: {
       : undefined,
     localFixturePath: row.localFixturePath ?? undefined,
     localTestPath: row.localTestPath ?? undefined,
+    signature: row.signature ?? undefined,
+    processedAt: row.processedAt ?? undefined,
+    resolution: row.resolution ?? undefined,
   }
 }
 
@@ -69,6 +97,8 @@ export async function enqueueDriftEvent(
   const id = randomUUID()
   const capturedAt = new Date().toISOString()
   const mapperKind = options?.mapperKind ?? 'builtin'
+  const signature = computeDriftSignature(vendor, validationError)
+  const priorForSignature = await countPendingDriftBySignature(signature)
 
   await insertDriftEvent({
     id,
@@ -83,9 +113,10 @@ export async function enqueueDriftEvent(
     mappingArtifactJson: options?.mappingArtifact
       ? JSON.stringify(options.mappingArtifact)
       : undefined,
+    signature,
   })
 
-  return {
+  const record: DriftEventRecord = {
     id,
     vendor,
     rawPayload,
@@ -96,7 +127,20 @@ export async function enqueueDriftEvent(
     mappingArtifact: options?.mappingArtifact,
     localFixturePath: options?.localPaths?.fixturePath,
     localTestPath: options?.localPaths?.testPath,
+    signature,
   }
+
+  // Fire once per new signature so a burst of identical failures is one alert,
+  // not thousands. No-op unless DRIFT_WEBHOOK_URL is configured.
+  if (priorForSignature === 0) {
+    void notifyDriftDetected(record, resolveEgressConfig()).catch((error) => {
+      logError('[drift] incident notify failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+    })
+  }
+
+  return record
 }
 
 export async function getDriftEvent(id: string): Promise<DriftEventRecord | undefined> {
@@ -119,8 +163,9 @@ export async function listPendingDriftEvents(limit = 50): Promise<DriftEventReco
   return listDriftEvents(undefined, limit, 'pending')
 }
 
-export async function markDriftEventProcessed(id: string): Promise<boolean> {
-  const changes = await markDriftEventProcessedRow(id)
+export async function markDriftEventProcessed(id: string, resolution?: string): Promise<boolean> {
+  const processedAt = new Date().toISOString()
+  const changes = await markDriftEventProcessedRow(id, processedAt, resolution)
   return changes > 0
 }
 

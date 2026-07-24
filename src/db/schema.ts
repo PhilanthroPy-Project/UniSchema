@@ -21,8 +21,17 @@ export const driftEvents = sqliteTable(
     localTestPath: text('local_test_path'),
     mapperKind: text('mapper_kind').notNull().default('builtin'),
     mappingArtifactJson: text('mapping_artifact_json'),
+    /** Structural fingerprint (vendor + sorted error paths/codes) for alert-noise grouping. */
+    signature: text('signature'),
+    /** Stamped when a human acks the event — drives drift-loop MTTR. */
+    processedAt: text('processed_at'),
+    /** Optional triage label on ack: schema_change | false_positive | spam. */
+    resolution: text('resolution'),
   },
-  (table) => [index('drift_events_vendor_idx').on(table.vendor)],
+  (table) => [
+    index('drift_events_vendor_idx').on(table.vendor),
+    index('drift_events_signature_idx').on(table.signature),
+  ],
 )
 
 export const webhookIngestions = sqliteTable('webhook_ingestions', {

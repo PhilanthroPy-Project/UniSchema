@@ -10,13 +10,17 @@ import { listPendingEgressEvents, acknowledgeEgressEvents } from '../store/egres
 import { getIngestion } from '../store/ingestionQueue.js'
 import { getMapping } from '../store/mappingRegistry.js'
 import { listMappingAuditLogRows } from '../db/unified.js'
-import { isDriftVendor, type DriftVendor } from '../utils/driftCapture.js'
+import { isDriftVendor, summarizeDriftRootCause, type DriftVendor } from '../utils/driftCapture.js'
 import { isDriftAgentAuthorized, isDriftListAuthorized, resolveDriftListAuth } from '../utils/driftAgentAuth.js'
 import { isEgressPullAuthorized, resolveEgressPullAuth } from '../utils/egressPullAuth.js'
 import { isMappingSyncAuthorized, resolveMappingSyncAuth } from '../utils/mappingSyncAuth.js'
 
 const EgressAckSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
+})
+
+const DriftAckSchema = z.object({
+  resolution: z.enum(['schema_change', 'false_positive', 'spam']).optional(),
 })
 
 export async function handleMappingGet(c: Context): Promise<Response> {
@@ -208,6 +212,8 @@ export async function handleDriftList(c: Context): Promise<Response> {
       capturedAt: event.capturedAt,
       status: event.status,
       validationErrors: event.validationErrors,
+      rootCause: summarizeDriftRootCause(event.validationErrors),
+      signature: event.signature,
       mapperKind: event.mapperKind,
       localFixturePath: event.localFixturePath,
       ...(includePayload ? { rawPayload: event.rawPayload } : {}),
@@ -268,7 +274,24 @@ export async function handleDriftAck(c: Context): Promise<Response> {
     return c.json({ success: false, message: 'Drift event not found' }, 404)
   }
 
-  await markDriftEventProcessed(driftEventId)
+  // Optional triage label; body is allowed to be absent (agents ack without one).
+  let resolution: string | undefined
+  const rawBody = await c.req.json().catch(() => undefined)
 
-  return c.json({ success: true, id: driftEventId, status: 'processed' })
+  if (rawBody !== undefined) {
+    const parsed = DriftAckSchema.safeParse(rawBody)
+
+    if (!parsed.success) {
+      return c.json(
+        { success: false, message: 'Invalid ack payload', errors: parsed.error.flatten() },
+        400,
+      )
+    }
+
+    resolution = parsed.data.resolution
+  }
+
+  await markDriftEventProcessed(driftEventId, resolution)
+
+  return c.json({ success: true, id: driftEventId, status: 'processed', resolution: resolution ?? null })
 }

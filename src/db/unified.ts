@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
+import { and, count, countDistinct, desc, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
 
 import { getDb } from './client.js'
 import { getDatabaseDialect } from './dialect.js'
@@ -220,11 +220,17 @@ export async function listDriftEventRows(
     .all()
 }
 
-export async function markDriftEventProcessedRow(id: string): Promise<number> {
+export async function markDriftEventProcessedRow(
+  id: string,
+  processedAt: string,
+  resolution?: string,
+): Promise<number> {
+  const set = { status: 'processed', processedAt, ...(resolution ? { resolution } : {}) }
+
   if (isPostgres()) {
     const rows = await pgDb()
       .update(driftEvents)
-      .set({ status: 'processed' })
+      .set(set)
       .where(eq(driftEvents.id, id))
       .returning({ id: driftEvents.id })
 
@@ -233,9 +239,74 @@ export async function markDriftEventProcessedRow(id: string): Promise<number> {
 
   return getDb()
     .update(driftEvents)
-    .set({ status: 'processed' })
+    .set(set)
     .where(eq(driftEvents.id, id))
     .run().changes
+}
+
+/** Distinct structural signatures among pending drift events — the alert-noise floor. */
+export async function countDistinctPendingDriftSignatures(): Promise<number> {
+  const whereClause = eq(driftEvents.status, 'pending')
+
+  if (isPostgres()) {
+    const rows = await pgDb()
+      .select({ value: countDistinct(driftEvents.signature) })
+      .from(driftEvents)
+      .where(whereClause)
+
+    return Number(rows[0]?.value ?? 0)
+  }
+
+  const row = getDb()
+    .select({ value: countDistinct(driftEvents.signature) })
+    .from(driftEvents)
+    .where(whereClause)
+    .get()
+
+  return Number(row?.value ?? 0)
+}
+
+/** How many pending drift events already share this signature (0 ⇒ a new incident). */
+export async function countPendingDriftBySignature(signature: string): Promise<number> {
+  const whereClause = and(eq(driftEvents.status, 'pending'), eq(driftEvents.signature, signature))
+
+  if (isPostgres()) {
+    const rows = await pgDb().select({ value: count() }).from(driftEvents).where(whereClause)
+
+    return Number(rows[0]?.value ?? 0)
+  }
+
+  const row = getDb().select({ value: count() }).from(driftEvents).where(whereClause).get()
+
+  return Number(row?.value ?? 0)
+}
+
+export async function countDriftEventsByResolution(resolution: string): Promise<number> {
+  const whereClause = eq(driftEvents.resolution, resolution)
+
+  if (isPostgres()) {
+    const rows = await pgDb().select({ value: count() }).from(driftEvents).where(whereClause)
+
+    return Number(rows[0]?.value ?? 0)
+  }
+
+  const row = getDb().select({ value: count() }).from(driftEvents).where(whereClause).get()
+
+  return Number(row?.value ?? 0)
+}
+
+/** capturedAt/processedAt pairs for acked events — feeds drift-loop MTTR. */
+export async function listProcessedDriftTimestamps(): Promise<
+  Array<{ capturedAt: string; processedAt: string | null }>
+> {
+  const whereClause = and(eq(driftEvents.status, 'processed'), isNotNull(driftEvents.processedAt))
+  const columns = { capturedAt: driftEvents.capturedAt, processedAt: driftEvents.processedAt }
+
+  if (isPostgres()) {
+    return pgDb().select(columns).from(driftEvents).where(whereClause)
+  }
+
+  return getDb().select(columns).from(driftEvents).where(whereClause).all()
 }
 
 export async function countDriftEventRows(status?: string): Promise<number> {
@@ -433,6 +504,19 @@ export async function countPendingIngestionRows(): Promise<number> {
     .from(webhookIngestions)
     .where(eq(webhookIngestions.status, 'pending'))
     .all().length
+}
+
+/** Total ingestion attempts — denominator for the drift detection rate. */
+export async function countAllIngestionRows(): Promise<number> {
+  if (isPostgres()) {
+    const rows = await pgDb().select({ value: count() }).from(webhookIngestions)
+
+    return Number(rows[0]?.value ?? 0)
+  }
+
+  const row = getDb().select({ value: count() }).from(webhookIngestions).get()
+
+  return Number(row?.value ?? 0)
 }
 
 export async function insertMappingAuditLog(

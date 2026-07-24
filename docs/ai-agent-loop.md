@@ -57,6 +57,33 @@ sequenceDiagram
 
 Full guide → [agents/README.md](../agents/README.md)
 
+## Drift-loop observability
+
+Treating a schema-drift event as an **incident** (capture = detect, human ack = resolve) lets the
+loop report the operational metrics an AIOps pipeline would. `GET /health` and `GET /metrics`
+(Prometheus text exposition, scrapeable into Grafana) expose:
+
+| Metric | Meaning |
+|--------|---------|
+| `humanAckRate` | Share of drift events a human has acknowledged |
+| `driftMttrSeconds` | Median seconds from capture to ack — the loop's MTTR |
+| `driftDistinctPendingSignatures` | Distinct failure fingerprints among pending events (vs `driftPendingCount`) — the alert-noise floor |
+| `driftDetectionRate` | Drift events ÷ total ingestion attempts |
+| `driftFalsePositiveRate` | Share of acked events labelled `false_positive` |
+
+Every captured event carries a **signature** (vendor + sorted failing field paths/codes) so a
+vendor deploy that fires thousands of identical failures is one incident, not thousands of
+alerts. `DRIFT_WEBHOOK_URL` fires an incident webhook (PagerDuty/Slack/Jira/generic) **once per
+new signature**, and `POST /drift/events/:id/ack` accepts an optional `resolution`
+(`schema_change` | `false_positive` | `spam`) for triage.
+
+These framings (MTTD/MTTR, alert-fatigue reduction, detection/false-alarm rates) follow the
+authors' AIOps work, "AI-Driven Observability for Real-Time Incident Management," P. Verma,
+S. A. Lalakiya, and R. Bharathan, *2025 IEEE ICRTEECT*, IEEE, 2025, pp. 1–7,
+[doi:10.1109/ICRTEECT67512.2025.11448853](https://doi.org/10.1109/ICRTEECT67512.2025.11448853).
+UniSchema's detection is deterministic (Zod validation), not the paper's ML anomaly scoring, and
+the numbers reported are UniSchema's own telemetry, not paper benchmarks.
+
 ## Expectations for AI coding agents
 
 When an autonomous coding agent updates mappers:
@@ -77,4 +104,4 @@ CI workflow: `.github/workflows/agent-validation.yml`
 ## Related
 
 - [limitations-and-roadmap.md](./limitations-and-roadmap.md#drift-agent-is-experimental)
-- Related reading behind the human-in-the-loop stance above — "Enterprise AI Agents: Secure, Scalable, and Autonomous Intelligence for the Modern Workforce," co-authored work by S. K. Venugopal, S. A. Lalakiya, R. Bharathan, and P. Raja, in *2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)*, IEEE, 2025, [doi:10.1109/ICCED68324.2025.11324763](https://doi.org/10.1109/ICCED68324.2025.11324763). It studies agentic/multi-agent AI for the workforce with an explicit human-in-the-loop framing (Stanford's Human Agency Scale, a human-intervention-frequency metric, value alignment and governance) — thematically adjacent to the human-reviewed loop described here, not a description or validation of UniSchema's specifics.
+- Related reading behind the human-in-the-loop stance above — "Enterprise AI Agents: Secure, Scalable, and Autonomous Intelligence for the Modern Workforce," co-authored work by S. K. Venugopal, S. A. Lalakiya, R. Bharathan, and P. Raja, in *2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)*, IEEE, 2025, pp. 1–6, [doi:10.1109/ICCED68324.2025.11324763](https://doi.org/10.1109/ICCED68324.2025.11324763). It studies agentic/multi-agent AI for the workforce with an explicit human-in-the-loop framing (Stanford's Human Agency Scale, a human-intervention-frequency metric, value alignment and governance) — thematically adjacent to the human-reviewed loop described here, not a description or validation of UniSchema's specifics.

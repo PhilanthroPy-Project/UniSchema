@@ -72,6 +72,26 @@ Models:
 
 Export `mart_constituent_rfm_features` to CSV or query from Python for batch scoring.
 
+#### RFM feature map
+
+UniSchema already emits every input the RFM/donor-engagement models in the advancement
+literature train on — it produces the model inputs, not the predictions (those live in
+PhilanthroPy). Each of the top SHAP features in *AI for Advancement: Predictive Donor
+Analytics and Fundraising Intelligence at Scale* (S. A. Lalakiya, 2025 IEEE ICCED, pp. 1–5,
+[doi:10.1109/ICCED68324.2025.11325064](https://doi.org/10.1109/ICCED68324.2025.11325064))
+maps to a field already on `ConstituentEvent`:
+
+| Paper feature | ConstituentEvent source |
+|---------------|--------------------------|
+| Monetary | `amount` (on `DONATION` events) |
+| Frequency | count of `DONATION` events per `constituentEmail` |
+| Recency | latest `createdAt` per `constituentEmail` |
+| Event Participation | count of `EVENT_REGISTRATION` events |
+| Geographic Region / vendor extras | `normalizedMetadata` (canvas-mapped) |
+
+`constituentEmail` is canonicalized (trimmed + lowercased) at the schema boundary so a donor's
+events group onto one key across vendors before RFM aggregation.
+
 ### 4. Airflow (optional)
 
 [`examples/downstream/airflow_dag_stub.py`](../examples/downstream/airflow_dag_stub.py) loads NDJSON when triggered by UniSchema's `AIRFLOW_WEBHOOK_URL` POST (`egress.batch.ready` event).

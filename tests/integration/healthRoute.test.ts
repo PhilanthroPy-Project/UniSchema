@@ -59,6 +59,59 @@ describe('health and vendor registry routes', () => {
     await clearDriftQueue()
   })
 
+  it('collapses same-shape drift into one distinct pending signature', async () => {
+    await clearDriftQueue()
+    // Two different payloads that fail identically ⇒ one signature.
+    await enqueueDriftEvent('cvent', { AttendeeStub: 'a' }, sampleZodError)
+    await enqueueDriftEvent('cvent', { AttendeeStub: 'b' }, sampleZodError)
+
+    const response = await app.request('/health')
+    const body = (await response.json()) as {
+      driftPendingCount: number
+      driftDistinctPendingSignatures: number
+    }
+
+    expect(body.driftPendingCount).toBe(2)
+    expect(body.driftDistinctPendingSignatures).toBe(1)
+
+    await clearDriftQueue()
+  })
+
+  it('reports MTTR and false-positive rate from acked drift events', async () => {
+    await clearDriftQueue()
+    const fp = await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
+    const real = await enqueueDriftEvent('givecampus', { id: 'gc-1' }, sampleZodError)
+    await markDriftEventProcessed(fp.id, 'false_positive')
+    await markDriftEventProcessed(real.id)
+
+    const response = await app.request('/health')
+    const body = (await response.json()) as {
+      driftProcessedCount: number
+      humanAckRate: number | null
+      driftMttrSeconds: number | null
+      driftFalsePositiveRate: number | null
+    }
+
+    expect(body.driftProcessedCount).toBe(2)
+    expect(body.humanAckRate).toBe(1)
+    expect(body.driftFalsePositiveRate).toBe(0.5)
+    expect(typeof body.driftMttrSeconds).toBe('number')
+    expect(body.driftMttrSeconds).toBeGreaterThanOrEqual(0)
+
+    await clearDriftQueue()
+  })
+
+  it('GET /metrics returns Prometheus text exposition', async () => {
+    const response = await app.request('/metrics')
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/plain')
+
+    const text = await response.text()
+    expect(text).toContain('# TYPE unischema_drift_total gauge')
+    expect(text).toMatch(/unischema_drift_total \d+/)
+  })
+
   it('GET /api/vendors lists all eight built-in vendors', async () => {
     const response = await app.request('/api/vendors')
     const body = (await response.json()) as {

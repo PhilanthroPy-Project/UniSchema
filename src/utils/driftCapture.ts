@@ -89,6 +89,32 @@ export function isDriftVendor(value: string): value is DriftVendor {
   return (DRIFT_VENDORS as readonly string[]).includes(value)
 }
 
+/**
+ * One-line, human-readable root cause from a captured ZodError's flattened form
+ * (e.g. `amount: Expected number, received string; missing key EmailAddress`).
+ * Deterministic and fully explainable — no model behind it — surfaced in the
+ * drift list and usable in the drift agent's prompt.
+ */
+export function summarizeDriftRootCause(errors: {
+  formErrors: unknown[]
+  fieldErrors: Record<string, unknown[] | undefined>
+}): string {
+  const parts: string[] = []
+
+  for (const [field, messages] of Object.entries(errors.fieldErrors)) {
+    const first = messages?.[0]
+    if (first !== undefined) {
+      parts.push(`${field}: ${String(first)}`)
+    }
+  }
+
+  for (const formError of errors.formErrors) {
+    parts.push(String(formError))
+  }
+
+  return parts.length > 0 ? parts.join('; ') : 'No field-level validation errors captured'
+}
+
 export function isDriftCaptureEnabled(): boolean {
   if (process.env.DRIFT_CAPTURE === 'disabled') {
     return false

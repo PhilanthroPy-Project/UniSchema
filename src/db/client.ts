@@ -70,7 +70,10 @@ function createTables(database: Database.Database): void {
       local_fixture_path TEXT,
       local_test_path TEXT,
       mapper_kind TEXT NOT NULL DEFAULT 'builtin',
-      mapping_artifact_json TEXT
+      mapping_artifact_json TEXT,
+      signature TEXT,
+      processed_at TEXT,
+      resolution TEXT
     );
 
     CREATE INDEX IF NOT EXISTS drift_events_vendor_idx ON drift_events (vendor);
@@ -124,6 +127,22 @@ function migrateDriftEventsTable(database: Database.Database): void {
   if (!columnNames.has('mapping_artifact_json')) {
     database.exec('ALTER TABLE drift_events ADD COLUMN mapping_artifact_json TEXT')
   }
+
+  if (!columnNames.has('signature')) {
+    database.exec('ALTER TABLE drift_events ADD COLUMN signature TEXT')
+  }
+
+  if (!columnNames.has('processed_at')) {
+    database.exec('ALTER TABLE drift_events ADD COLUMN processed_at TEXT')
+  }
+
+  if (!columnNames.has('resolution')) {
+    database.exec('ALTER TABLE drift_events ADD COLUMN resolution TEXT')
+  }
+
+  // Created here (not in createTables) so it runs only after the column above is
+  // guaranteed present — createTables skips existing tables that predate signature.
+  database.exec('CREATE INDEX IF NOT EXISTS drift_events_signature_idx ON drift_events (signature)')
 }
 
 function migrateWebhookIngestionsTable(database: Database.Database): void {

@@ -85,6 +85,32 @@ describe('drift agent API', () => {
     expect(body.count).toBe(0)
   })
 
+  it('records an optional resolution label on ack', async () => {
+    const event = await enqueueDriftEvent('givecampus', { id: 'gc-1' }, sampleZodError)
+
+    const ackResponse = await app.request(`/drift/events/${event.id}/ack`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-agent-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolution: 'false_positive' }),
+    })
+
+    expect(ackResponse.status).toBe(200)
+    const body = (await ackResponse.json()) as { resolution: string | null }
+    expect(body.resolution).toBe('false_positive')
+  })
+
+  it('rejects an unknown resolution label', async () => {
+    const event = await enqueueDriftEvent('givecampus', { id: 'gc-1' }, sampleZodError)
+
+    const ackResponse = await app.request(`/drift/events/${event.id}/ack`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-agent-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolution: 'nonsense' }),
+    })
+
+    expect(ackResponse.status).toBe(400)
+  })
+
   it('rejects unauthorized drift ack requests', async () => {
     const event = await enqueueDriftEvent('cvent', { AttendeeStub: 'x' }, sampleZodError)
 

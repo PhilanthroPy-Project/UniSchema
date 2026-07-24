@@ -48,4 +48,38 @@ references:
     publisher:
       name: IEEE
     year: 2025
+    start: 1
+    end: 6
     doi: 10.1109/ICCED68324.2025.11324763
+  - type: conference-paper
+    title: "AI for Advancement: Predictive Donor Analytics and Fundraising Intelligence at Scale"
+    authors:
+      - given-names: Shivam Ashokbhai
+        family-names: Lalakiya
+    collection-title: "2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)"
+    conference:
+      name: "2025 IEEE 11th International Conference on Computing, Engineering and Design (ICCED)"
+    publisher:
+      name: IEEE
+    year: 2025
+    start: 1
+    end: 5
+    doi: 10.1109/ICCED68324.2025.11325064
+  - type: conference-paper
+    title: "AI-Driven Observability for Real-Time Incident Management"
+    authors:
+      - given-names: Priyanka
+        family-names: Verma
+      - given-names: Shivam Ashokbhai
+        family-names: Lalakiya
+      - given-names: Rashmi
+        family-names: Bharathan
+    collection-title: "2025 IEEE International Conference on Recent Trends in Electrical, Electronics, Communication Technologies (ICRTEECT)"
+    conference:
+      name: "2025 IEEE International Conference on Recent Trends in Electrical, Electronics, Communication Technologies (ICRTEECT)"
+    publisher:
+      name: IEEE
+    year: 2025
+    start: 1
+    end: 7
+    doi: 10.1109/ICRTEECT67512.2025.11448853

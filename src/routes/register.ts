@@ -13,7 +13,7 @@ import {
   handleMappingAudit,
   handleMappingGet,
 } from './api.js'
-import { handleHealth, handlePublicConfig, handleVendorsList } from './health.js'
+import { handleHealth, handleMetrics, handlePublicConfig, handleVendorsList } from './health.js'
 import { handleMappingPreview } from './mappingPreview.js'
 import { handleMappingSync } from './mappingsSync.js'
 
@@ -51,6 +51,7 @@ function registerAdminRoutes(target: Hono): void {
   target.get('/vendors', handleVendorsList)
   target.get('/config/public', handlePublicConfig)
   target.get('/health', handleHealth)
+  target.get('/metrics', handleMetrics)
 }
 
 /** Mount admin, webhook, and API-prefixed routes on the root Hono app. */

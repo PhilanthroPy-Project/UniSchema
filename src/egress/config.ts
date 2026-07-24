@@ -14,6 +14,10 @@ export type EgressConfig = {
   readonly airflowWebhookUrl?: string
   /** Optional shared secret sent as `Authorization: Bearer <secret>`. */
   readonly airflowWebhookSecret?: string
+  /** Optional incident webhook (PagerDuty/Slack/Jira/generic) fired on new schema drift. */
+  readonly driftWebhookUrl?: string
+  /** Optional shared secret sent as `Authorization: Bearer <secret>`. */
+  readonly driftWebhookSecret?: string
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -39,6 +43,8 @@ export function resolveEgressConfig(): EgressConfig {
     s3FlushIntervalMs: parsePositiveInt(process.env.EGRESS_S3_FLUSH_INTERVAL_MS, 120_000),
     airflowWebhookUrl: process.env.AIRFLOW_WEBHOOK_URL,
     airflowWebhookSecret: process.env.AIRFLOW_WEBHOOK_SECRET,
+    driftWebhookUrl: process.env.DRIFT_WEBHOOK_URL,
+    driftWebhookSecret: process.env.DRIFT_WEBHOOK_SECRET,
   }
 }
 

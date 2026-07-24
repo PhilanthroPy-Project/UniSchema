@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS drift_events (
   local_fixture_path TEXT,
   local_test_path TEXT,
   mapper_kind TEXT NOT NULL DEFAULT 'builtin',
-  mapping_artifact_json TEXT
+  mapping_artifact_json TEXT,
+  signature TEXT,
+  processed_at TEXT,
+  resolution TEXT
 );
 
 CREATE INDEX IF NOT EXISTS drift_events_vendor_idx ON drift_events (vendor);
@@ -80,6 +83,12 @@ export async function initPostgresDatabase(): Promise<UniSchemaPostgresDatabase>
   await sql.unsafe(CREATE_TABLES_SQL)
   await sql.unsafe(
     'ALTER TABLE webhook_ingestions ADD COLUMN IF NOT EXISTS claimed_at TEXT',
+  )
+  await sql.unsafe('ALTER TABLE drift_events ADD COLUMN IF NOT EXISTS signature TEXT')
+  await sql.unsafe('ALTER TABLE drift_events ADD COLUMN IF NOT EXISTS processed_at TEXT')
+  await sql.unsafe('ALTER TABLE drift_events ADD COLUMN IF NOT EXISTS resolution TEXT')
+  await sql.unsafe(
+    'CREATE INDEX IF NOT EXISTS drift_events_signature_idx ON drift_events (signature)',
   )
   db = drizzle(sql, { schema })
 

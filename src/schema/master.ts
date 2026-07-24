@@ -26,7 +26,8 @@ export const NormalizedMetadataSchema = PrimitiveRecordSchema
 export const ConstituentEventSchema = z.object({
   schemaVersion: z.literal(1).optional(),
   eventId: z.string().uuid(),
-  constituentEmail: z.string().email(),
+  /** Canonicalized (trimmed + lowercased) so re-ingested events collapse onto one donor key downstream. */
+  constituentEmail: z.string().trim().toLowerCase().email(),
   /** Optional CRM or vendor-native constituent identifier for golden-record joins. */
   externalConstituentId: z.string().optional(),
   firstName: z.string().optional(),
