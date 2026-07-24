@@ -53,6 +53,8 @@ flowchart LR
 
 Full stack map → [docs/ecosystem.md](./docs/ecosystem.md)
 
+The `ConstituentEvent` contract is published as a versioned JSON Schema — [`schema/constituent-event.schema.json`](./schema/constituent-event.schema.json) — so downstream consumers validate against a fixed artifact instead of hand-copied field names. Regenerate with `npm run schema:export`; a drift test fails CI if it falls out of sync with the Zod schema.
+
 ---
 
 ## Quick start (~15 minutes)

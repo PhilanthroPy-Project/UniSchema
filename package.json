@@ -18,6 +18,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "build": "npm run build -w unischema-frontend",
+    "schema:export": "tsx scripts/export-schema.ts",
     "demo": "bash scripts/demo-webhook.sh",
     "demo:multi": "bash scripts/demo-webhook.sh --multi",
     "downstream-demo": "bash scripts/downstream-demo.sh",
