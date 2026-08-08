@@ -13,20 +13,20 @@
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^3.0.0",
-    "autoprefixer": "^10.4.20",
-    "lucide-react": "^0.468.0",
-    "postcss": "^8.4.49",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@dagrejs/dagre": "^3.1.0",
+    "autoprefixer": "^10.5.4",
+    "lucide-react": "^1.28.0",
+    "postcss": "^8.5.25",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "reactflow": "^11.11.4",
-    "tailwindcss": "^3.4.17",
-    "zustand": "^4.5.7"
+    "tailwindcss": "^4.3.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.3",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",

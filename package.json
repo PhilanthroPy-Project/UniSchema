@@ -49,15 +49,15 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1073.0",
-    "@hono/node-server": "^2.0.5",
-    "better-sqlite3": "^12.11.1",
+    "@aws-sdk/client-s3": "^3.1104.0",
+    "@hono/node-server": "^2.1.0",
+    "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.26",
-    "jose": "^6.2.3",
-    "pg-boss": "^10.1.5",
+    "hono": "^4.13.0",
+    "jose": "^6.2.8",
+    "pg-boss": "^12.27.0",
     "postgres": "^3.4.9",
-    "redis": "^4.7.0",
+    "redis": "^6.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
